@@ -10,9 +10,9 @@
     // Any unknown path opens the app instead of a bare 404.
     "not_found_handling": "single-page-application",
   },
-  // Keep the palaka.*.workers.dev address until the own domain is live;
-  // then set this to false so only the real domain serves the app.
-  "workers_dev": true,
+  // Only https://palaka.thesurfboard.in serves the app; the workers.dev
+  // address is off so search engines and links see one home.
+  "workers_dev": false,
   // Every push to main deploys; per-branch preview links are not needed.
   "preview_urls": false,
 }
