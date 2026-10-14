@@ -1,0 +1,18 @@
+// Cloudflare Workers config. Palaka is a fully static app: the Worker only
+// serves the built files in dist/ (plus the security headers in
+// public/_headers, which Vite copies into dist/). No server code runs.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "palaka",
+  "compatibility_date": "2026-10-15",
+  "assets": {
+    "directory": "./dist",
+    // Any unknown path opens the app instead of a bare 404.
+    "not_found_handling": "single-page-application",
+  },
+  // Keep the palaka.*.workers.dev address until the own domain is live;
+  // then set this to false so only the real domain serves the app.
+  "workers_dev": true,
+  // Every push to main deploys; per-branch preview links are not needed.
+  "preview_urls": false,
+}

@@ -26,3 +26,6 @@ dist-ssr
 # Private working notes and local agent config stay off the public repo
 .agents
 .claude
+
+# Wrangler local state (dry runs, dev server)
+.wrangler
