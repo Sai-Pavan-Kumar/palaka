@@ -1,117 +1,77 @@
 import { Code, Sparkles, Type } from 'lucide-react'
-import {
-  DEFAULT_THEME,
-  DefaultColorStyle,
-  DefaultFontStyle,
-  DefaultSizeStyle,
-  useValue,
-  type Editor,
-  type TLDefaultColorStyle,
-  type TLDefaultSizeStyle,
-} from 'tldraw'
 import { IconButton } from '../../shared/ui/IconButton'
-import { useActiveEditor } from '../board/boardStore'
-import { useUiStore } from '../shell/uiStore'
+import { applyStyle } from '../engine/boardActions'
+import { useEngineStore } from '../engine/engineStore'
+import { COLOR_KEYS, SIZE_KEYS } from '../engine/model/boardSpec'
+import { getPalette } from '../engine/model/paper'
+import type { ShapeStyle } from '../engine/model/shapeFactory'
+import { setSession, useSessionStore } from '../engine/sessionStore'
 import { MoreStylesMenu } from './MoreStylesMenu'
 import { SelectionActions } from './SelectionActions'
-import { applyStyle, useSharedValue } from './styleActions'
+import { useShownStyle, type ShownStyle } from './styleActions'
 import './styleBar.css'
 
-// A short, high-contrast palette that reads well on a white board in video.
-const COLORS: TLDefaultColorStyle[] = [
-  'black',
-  'blue',
-  'red',
-  'green',
-  'orange',
-  'violet',
-]
-const SIZES: TLDefaultSizeStyle[] = ['s', 'm', 'l', 'xl']
-const STYLED_TOOLS = new Set([
-  'draw',
-  'highlight',
-  'geo',
-  'line',
-  'arrow',
-  'text',
-])
-
 export function StyleBar() {
-  const editor = useActiveEditor()
-  const toolId = useValue('tool id', () => editor.getCurrentToolId(), [editor])
-  const hasSelection = useValue(
-    'has selection',
-    () => editor.getSelectedShapeIds().length > 0,
-    [editor],
-  )
-  const color = useSharedValue(editor, DefaultColorStyle)
-  const size = useSharedValue(editor, DefaultSizeStyle)
-  const font = useSharedValue(editor, DefaultFontStyle)
-
-  if (!hasSelection && !STYLED_TOOLS.has(toolId)) return null
-  const showFont = font !== undefined || toolId === 'text'
+  const shown = useShownStyle()
+  const tool = useSessionStore((s) => s.tool)
+  if (!shown) return null
+  const { fields, hasSelection } = shown
+  const hasMoreStyles =
+    fields.has('fill') || fields.has('dash') || fields.has('opacity')
 
   return (
     <div className="style-bar floating-bar chrome" aria-label="Style">
-      <ColorAndSize editor={editor} color={color} size={size} />
-      {showFont && <span className="floating-bar__divider" />}
-      {showFont && <FontToggle editor={editor} font={font} />}
-      {toolId === 'draw' && <span className="floating-bar__divider" />}
-      {toolId === 'draw' && <CleanupToggle />}
-      <span className="floating-bar__divider" />
-      <MoreStylesMenu editor={editor} />
+      {fields.has('color') && <ColorRow current={shown.values.color} />}
+      {fields.has('size') && <span className="floating-bar__divider" />}
+      {fields.has('size') && <SizeRow current={shown.values.size} />}
+      {fields.has('font') && <span className="floating-bar__divider" />}
+      {fields.has('font') && <FontToggle font={shown.values.font} />}
+      {tool === 'pen' && !hasSelection && (
+        <span className="floating-bar__divider" />
+      )}
+      {tool === 'pen' && !hasSelection && <CleanupToggle />}
+      {hasMoreStyles && <span className="floating-bar__divider" />}
+      {hasMoreStyles && <MoreStylesMenu shown={shown} />}
       {hasSelection && <span className="floating-bar__divider" />}
-      {hasSelection && <SelectionActions editor={editor} />}
+      {hasSelection && <SelectionActions />}
     </div>
   )
 }
 
-function ColorAndSize({
-  editor,
-  color,
-  size,
-}: {
-  editor: Editor
-  color: TLDefaultColorStyle | undefined
-  size: TLDefaultSizeStyle | undefined
-}) {
-  return (
-    <>
-      {COLORS.map((name) => (
-        <button
-          key={name}
-          type="button"
-          className={`style-bar__swatch ${color === name ? 'is-active' : ''}`}
-          style={{ color: DEFAULT_THEME.colors.light[name].solid }}
-          aria-label={`Color ${name}`}
-          onClick={() => applyStyle(editor, DefaultColorStyle, name)}
-        />
-      ))}
-      <span className="floating-bar__divider" />
-      {SIZES.map((name, index) => (
-        <button
-          key={name}
-          type="button"
-          className={`style-bar__size ${size === name ? 'is-active' : ''}`}
-          aria-label={`Size ${name.toUpperCase()}`}
-          onClick={() => applyStyle(editor, DefaultSizeStyle, name)}
-        >
-          <span style={{ width: 4 + index * 4, height: 4 + index * 4 }} />
-        </button>
-      ))}
-    </>
-  )
+// Swatches show the ink as it looks on the current paper.
+function ColorRow({ current }: { current: ShapeStyle['color'] | undefined }) {
+  const ink = useEngineStore((s) => getPalette(s.doc.paper).ink)
+  return COLOR_KEYS.map((name) => (
+    <button
+      key={name}
+      type="button"
+      className={`style-bar__swatch ${current === name ? 'is-active' : ''}`}
+      style={{ color: ink[name] }}
+      aria-label={`Colour ${name}`}
+      aria-pressed={current === name}
+      onClick={() => applyStyle({ color: name })}
+    />
+  ))
 }
 
-function FontToggle({
-  editor,
-  font,
-}: {
-  editor: Editor
-  font: string | undefined
-}) {
-  // Brand text by default; one click turns a label into code (Geist Mono).
-  const isCode = font === 'mono'
+function SizeRow({ current }: { current: ShapeStyle['size'] | undefined }) {
+  return SIZE_KEYS.map((name, index) => (
+    <button
+      key={name}
+      type="button"
+      className={`style-bar__size ${current === name ? 'is-active' : ''}`}
+      aria-label={`Size ${name.toUpperCase()}`}
+      aria-pressed={current === name}
+      onClick={() => applyStyle({ size: name })}
+    >
+      <span style={{ width: 4 + index * 4, height: 4 + index * 4 }} />
+    </button>
+  ))
+}
+
+// Brand text by default; one click turns a label into code (Geist Mono).
+function FontToggle({ font }: { font: ShownStyle['values']['font'] }) {
+  const isCode = font === 'code'
   return (
     <IconButton
       icon={isCode ? Code : Type}
@@ -119,22 +79,19 @@ function FontToggle({
         isCode ? 'Code font (click for text)' : 'Text font (click for code)'
       }
       isActive={isCode}
-      onClick={() =>
-        applyStyle(editor, DefaultFontStyle, isCode ? 'draw' : 'mono')
-      }
+      onClick={() => applyStyle({ font: isCode ? 'brand' : 'code' })}
     />
   )
 }
 
 function CleanupToggle() {
-  const isShapeCleanupOn = useUiStore((s) => s.isShapeCleanupOn)
-  const toggleShapeCleanup = useUiStore((s) => s.toggleShapeCleanup)
+  const isOn = useSessionStore((s) => s.isShapeCleanupOn)
   return (
     <IconButton
       icon={Sparkles}
       label="Clean shapes: boxes, circles and lines snap neat"
-      isActive={isShapeCleanupOn}
-      onClick={toggleShapeCleanup}
+      isActive={isOn}
+      onClick={() => setSession({ isShapeCleanupOn: !isOn })}
     />
   )
 }

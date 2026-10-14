@@ -1,52 +1,41 @@
 import { Presentation, Undo2 } from 'lucide-react'
-import { useValue, type Editor } from 'tldraw'
 import { IconButton } from '../../shared/ui/IconButton'
-import { useActiveEditor } from '../board/boardStore'
+import { useEngineStore } from '../engine/engineStore'
+import { setTool, useSessionStore } from '../engine/sessionStore'
 import { ExportMenu } from '../export/ExportMenu'
 import { RecordControls } from '../recorder/RecordControls'
 import { useRecorderStore } from '../recorder/recorderStore'
-import { getRevealSession, setPresenting } from '../reveal/revealModel'
+import { setPresenting } from '../reveal/revealModel'
 import { PenMenu, ShapesMenu } from './ShapesMenu'
 import { MAIN_TOOLS, TRAILING_TOOLS, type ToolDefinition } from './toolList'
 import './topBar.css'
 
-function ToolButton({
-  tool,
-  editor,
-  toolId,
-}: {
-  tool: ToolDefinition
-  editor: Editor
-  toolId: string
-}) {
+function ToolButton({ tool }: { tool: ToolDefinition }) {
+  const isActive = useSessionStore((s) => s.tool === tool.id)
   return (
     <IconButton
       icon={tool.icon}
       label={tool.label}
       shortcut={tool.shortcut}
-      isActive={tool.isActive(toolId, editor)}
-      onClick={() => {
-        tool.select(editor)
-        // Clicks outside the canvas would otherwise leave tldraw's shortcuts asleep.
-        editor.focus()
-      }}
+      isActive={isActive}
+      onClick={() => setTool(tool.id)}
     />
   )
 }
 
-function ToolGroup({ editor }: { editor: Editor }) {
-  const toolId = useValue('tool id', () => editor.getCurrentToolId(), [editor])
-  const canUndo = useValue('can undo', () => editor.getCanUndo(), [editor])
+function ToolGroup() {
+  const canUndo = useEngineStore((s) => s.past.length > 0)
+  const undo = useEngineStore((s) => s.undo)
 
   return (
     <nav className="floating-bar" aria-label="Tools">
       {MAIN_TOOLS.map((tool) => (
-        <ToolButton key={tool.id} tool={tool} editor={editor} toolId={toolId} />
+        <ToolButton key={tool.id} tool={tool} />
       ))}
-      <PenMenu editor={editor} toolId={toolId} />
-      <ShapesMenu editor={editor} toolId={toolId} />
+      <PenMenu />
+      <ShapesMenu />
       {TRAILING_TOOLS.map((tool) => (
-        <ToolButton key={tool.id} tool={tool} editor={editor} toolId={toolId} />
+        <ToolButton key={tool.id} tool={tool} />
       ))}
       <span className="floating-bar__divider" />
       <IconButton
@@ -54,18 +43,14 @@ function ToolGroup({ editor }: { editor: Editor }) {
         label="Undo"
         shortcut="Ctrl Z"
         disabled={!canUndo}
-        onClick={() => editor.undo()}
+        onClick={undo}
       />
     </nav>
   )
 }
 
-function SessionGroup({ editor }: { editor: Editor }) {
-  const isPresenting = useValue(
-    'presenting',
-    () => getRevealSession(editor).presenting,
-    [editor],
-  )
+function SessionGroup() {
+  const isPresenting = useSessionStore((s) => s.presenting)
   const isRecording = useRecorderStore((s) => s.status !== 'idle')
 
   return (
@@ -76,20 +61,19 @@ function SessionGroup({ editor }: { editor: Editor }) {
         shortcut="P"
         isActive={isPresenting}
         disabled={isRecording}
-        onClick={() => setPresenting(editor, !isPresenting)}
+        onClick={() => setPresenting(!isPresenting)}
       />
-      <ExportMenu editor={editor} disabled={isPresenting} />
+      <ExportMenu disabled={isPresenting} />
       <RecordControls />
     </div>
   )
 }
 
 export function TopBar() {
-  const editor = useActiveEditor()
   return (
     <header className="top-bar chrome">
-      <ToolGroup editor={editor} />
-      <SessionGroup editor={editor} />
+      <ToolGroup />
+      <SessionGroup />
     </header>
   )
 }

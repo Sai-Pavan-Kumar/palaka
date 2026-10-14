@@ -1,0 +1,73 @@
+.paper-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 320px;
+}
+
+.paper-menu__patterns {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.paper-menu__pattern {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-card);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.paper-menu__pattern svg {
+  width: 100%;
+  aspect-ratio: 8 / 5;
+  border-radius: var(--space-1);
+}
+
+.paper-menu__pattern:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.paper-menu__pattern.is-active {
+  color: var(--color-text-primary);
+  box-shadow: 0 0 0 2px var(--color-brand-primary);
+}
+
+.paper-menu__colors {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-2);
+}
+
+/* 44px touch target around a 32px swatch. */
+.paper-menu__color {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border: 6px solid var(--color-surface-elevated);
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 1px var(--color-border-default);
+  cursor: pointer;
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.paper-menu__color.is-active {
+  box-shadow: 0 0 0 2px var(--color-brand-primary);
+}
+
+.paper-menu__brand {
+  width: 100%;
+}

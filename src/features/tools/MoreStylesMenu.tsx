@@ -1,26 +1,21 @@
 import { SlidersHorizontal } from 'lucide-react'
-import {
-  DefaultDashStyle,
-  DefaultFillStyle,
-  useValue,
-  type Editor,
-  type StyleProp,
-} from 'tldraw'
 import { IconButton } from '../../shared/ui/IconButton'
 import { Popover } from '../../shared/ui/Popover'
-import { applyOpacity, applyStyle, useSharedValue } from './styleActions'
+import { applyStyle } from '../engine/boardActions'
+import type { DashStyle, FillStyle } from '../engine/model/types'
+import type { ShownStyle } from './styleActions'
 
 type Choice<T> = { value: T; label: string }
 
-const FILLS: Choice<'none' | 'semi' | 'solid' | 'pattern'>[] = [
+const FILLS: Choice<FillStyle>[] = [
   { value: 'none', label: 'None' },
-  { value: 'semi', label: 'Tint' },
+  { value: 'tint', label: 'Tint' },
   { value: 'solid', label: 'Solid' },
-  { value: 'pattern', label: 'Hatch' },
+  { value: 'hatch', label: 'Hatch' },
 ]
-const DASHES: Choice<'draw' | 'solid' | 'dashed' | 'dotted'>[] = [
-  { value: 'draw', label: 'Hand' },
-  { value: 'solid', label: 'Clean' },
+const DASHES: Choice<DashStyle>[] = [
+  { value: 'hand', label: 'Hand' },
+  { value: 'clean', label: 'Clean' },
   { value: 'dashed', label: 'Dashed' },
   { value: 'dotted', label: 'Dotted' },
 ]
@@ -51,6 +46,7 @@ function ChoiceRow<T>({
             key={String(choice.value)}
             type="button"
             className={`chip ${current === choice.value ? 'is-active' : ''}`}
+            aria-pressed={current === choice.value}
             onClick={() => onPick(choice.value)}
           >
             {choice.label}
@@ -61,39 +57,9 @@ function ChoiceRow<T>({
   )
 }
 
-function StyleRow<T>({
-  editor,
-  title,
-  style,
-  choices,
-}: {
-  editor: Editor
-  title: string
-  style: StyleProp<T>
-  choices: Choice<T>[]
-}) {
-  const current = useSharedValue(editor, style)
-  return (
-    <ChoiceRow
-      title={title}
-      choices={choices}
-      current={current}
-      onPick={(value) => applyStyle(editor, style, value)}
-    />
-  )
-}
-
 // Less-used styles live one click away, so the main bar stays calm.
-export function MoreStylesMenu({ editor }: { editor: Editor }) {
-  const opacity = useValue(
-    'shared opacity',
-    () => {
-      const shared = editor.getSharedOpacity()
-      return shared.type === 'shared' ? shared.value : undefined
-    },
-    [editor],
-  )
-
+export function MoreStylesMenu({ shown }: { shown: ShownStyle }) {
+  const { fields, values } = shown
   return (
     <Popover
       align="end"
@@ -107,23 +73,27 @@ export function MoreStylesMenu({ editor }: { editor: Editor }) {
     >
       {() => (
         <div className="more-styles">
-          <StyleRow
-            editor={editor}
-            title="Fill"
-            style={DefaultFillStyle}
-            choices={FILLS}
-          />
-          <StyleRow
-            editor={editor}
-            title="Line"
-            style={DefaultDashStyle}
-            choices={DASHES}
-          />
+          {fields.has('fill') && (
+            <ChoiceRow
+              title="Fill"
+              choices={FILLS}
+              current={values.fill}
+              onPick={(fill) => applyStyle({ fill })}
+            />
+          )}
+          {fields.has('dash') && (
+            <ChoiceRow
+              title="Line"
+              choices={DASHES}
+              current={values.dash}
+              onPick={(dash) => applyStyle({ dash })}
+            />
+          )}
           <ChoiceRow
             title="Opacity"
             choices={OPACITIES}
-            current={opacity}
-            onPick={(value) => applyOpacity(editor, value)}
+            current={values.opacity}
+            onPick={(opacity) => applyStyle({ opacity })}
           />
         </div>
       )}

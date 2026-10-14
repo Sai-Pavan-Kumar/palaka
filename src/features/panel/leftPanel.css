@@ -22,6 +22,7 @@
 .left-panel__sheet {
   width: 280px;
   max-height: calc(100vh - var(--space-16) * 2);
+  overflow-x: hidden;
   overflow-y: auto;
   padding: var(--space-4);
   display: flex;
@@ -63,13 +64,15 @@
 
 .asset-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, …): long file names must shorten with “…”, not widen the panel. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
   padding: 0;
   list-style: none;
 }
 
 .asset-grid__item {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);

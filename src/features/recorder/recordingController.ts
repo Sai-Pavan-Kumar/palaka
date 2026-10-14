@@ -44,9 +44,9 @@ async function discardTake(take: ActiveTake): Promise<void> {
 }
 
 export async function startRecording(): Promise<void> {
-  const { boardElement, editor } = useBoardStore.getState()
+  const { boardElement } = useBoardStore.getState()
   const store = useRecorderStore.getState()
-  if (!boardElement || !editor || store.status !== 'idle') return
+  if (!boardElement || store.status !== 'idle') return
   store.setStatus('arming')
   try {
     const session = await openCaptureSession(boardElement, store.isMicOn)
@@ -54,7 +54,7 @@ export async function startRecording(): Promise<void> {
     const take: ActiveTake = { session, writer, recorder: null }
     activeTake = take
     session.videoTrack.onended = () => void stopRecording()
-    setPresenting(editor, true)
+    setPresenting(true)
     if (!(await runCountdown())) return
     take.recorder = startFileRecorder(
       session,

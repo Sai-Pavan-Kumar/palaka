@@ -1,36 +1,26 @@
 import { ArrowDown, ArrowUp, Pin, PinOff } from 'lucide-react'
-import { useValue, type TLShape } from 'tldraw'
 import { IconButton } from '../../shared/ui/IconButton'
-import { useActiveEditor } from '../board/boardStore'
+import { useEngineStore } from '../engine/engineStore'
+import { findPage } from '../engine/model/documentOps'
+import type { BoardDocument, Page, Shape } from '../engine/model/types'
+import { selectShapes, setTool, useSessionStore } from '../engine/sessionStore'
 import { describeShape } from './describeShape'
-import {
-  getRevealStep,
-  moveRevealStep,
-  toggleAlwaysVisible,
-} from './revealModel'
+import { moveRevealStep, toggleAlwaysVisible } from './revealModel'
 import './reveal.css'
 
-type OrderRow = { shape: TLShape; step: number | null; label: string }
+type OrderRow = { shape: Shape; step: number | null; label: string }
 
-function useOrderRows(): OrderRow[] {
-  const editor = useActiveEditor()
-  return useValue(
-    'reveal order rows',
-    () => {
-      const rows = editor
-        .getSortedChildIdsForParent(editor.getCurrentPageId())
-        .map((id) => editor.getShape(id)!)
-        .map((shape) => ({
-          shape,
-          step: getRevealStep(shape),
-          label: describeShape(editor, shape),
-        }))
-      // Always-visible objects first (they are on screen from the start),
-      // then the reveal steps in the order the audience will see them.
-      return rows.sort((a, b) => (a.step ?? 0) - (b.step ?? 0))
-    },
-    [editor],
-  )
+// Always-visible objects first (they are on screen from the start), then the
+// reveal steps in the order the audience will see them.
+function buildRows(doc: BoardDocument, page: Page): OrderRow[] {
+  return page.order
+    .map((id) => page.shapes[id])
+    .map((shape) => ({
+      shape,
+      step: shape.revealStep ?? null,
+      label: describeShape(doc, shape),
+    }))
+    .sort((a, b) => (a.step ?? 0) - (b.step ?? 0))
 }
 
 function OrderRowItem({
@@ -40,7 +30,6 @@ function OrderRowItem({
   row: OrderRow
   isSelected: boolean
 }) {
-  const editor = useActiveEditor()
   const { shape, step, label } = row
   return (
     <li className={`order-list__item ${isSelected ? 'is-selected' : ''}`}>
@@ -50,7 +39,10 @@ function OrderRowItem({
       <button
         type="button"
         className="order-list__name"
-        onClick={() => editor.select(shape.id)}
+        onClick={() => {
+          setTool('select')
+          selectShapes([shape.id])
+        }}
       >
         {label}
       </button>
@@ -60,19 +52,19 @@ function OrderRowItem({
             <IconButton
               icon={ArrowUp}
               label="Earlier"
-              onClick={() => moveRevealStep(editor, shape.id, -1)}
+              onClick={() => moveRevealStep(shape.id, -1)}
             />
             <IconButton
               icon={ArrowDown}
               label="Later"
-              onClick={() => moveRevealStep(editor, shape.id, 1)}
+              onClick={() => moveRevealStep(shape.id, 1)}
             />
           </>
         )}
         <IconButton
           icon={step === null ? PinOff : Pin}
           label={step === null ? 'Make it a step' : 'Always visible'}
-          onClick={() => toggleAlwaysVisible(editor, shape.id)}
+          onClick={() => toggleAlwaysVisible(shape.id)}
         />
       </span>
     </li>
@@ -80,13 +72,11 @@ function OrderRowItem({
 }
 
 export function RevealOrderList() {
-  const editor = useActiveEditor()
-  const rows = useOrderRows()
-  const selectedIds = useValue(
-    'selected ids',
-    () => editor.getSelectedShapeIds(),
-    [editor],
-  )
+  const doc = useEngineStore((s) => s.doc)
+  const pageId = useSessionStore((s) => s.pageId)
+  const selectedIds = useSessionStore((s) => s.selectedIds)
+  const page = findPage(doc, pageId)
+  const rows = page ? buildRows(doc, page) : []
 
   if (rows.length === 0) {
     return (

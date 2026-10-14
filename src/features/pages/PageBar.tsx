@@ -3,27 +3,29 @@ import {
   ChevronRight,
   NotebookPen,
   Plus,
+  RectangleHorizontal,
+  RectangleVertical,
   Trash2,
 } from 'lucide-react'
-import { useValue } from 'tldraw'
 import { IconButton } from '../../shared/ui/IconButton'
 import { Popover } from '../../shared/ui/Popover'
-import { useActiveEditor } from '../board/boardStore'
+import { useEngineStore } from '../engine/engineStore'
+import { useSessionStore } from '../engine/sessionStore'
+import { PaperMenu } from '../paper/PaperMenu'
 import { StepCounter } from '../reveal/StepCounter'
 import { useUiStore } from '../shell/uiStore'
 import {
   addPageAfterCurrent,
   deleteCurrentPage,
   goToPageOffset,
+  setAspect,
+  switchToPage,
 } from './pageActions'
 import './pageBar.css'
 
 function PageList() {
-  const editor = useActiveEditor()
-  const pages = useValue('pages', () => editor.getPages(), [editor])
-  const currentId = useValue('current page', () => editor.getCurrentPageId(), [
-    editor,
-  ])
+  const pages = useEngineStore((s) => s.doc.pages)
+  const currentId = useSessionStore((s) => s.pageId)
   const position = pages.findIndex((page) => page.id === currentId) + 1
 
   return (
@@ -43,7 +45,7 @@ function PageList() {
               type="button"
               className={`menu-item ${page.id === currentId ? 'is-active' : ''}`}
               onClick={() => {
-                editor.setCurrentPage(page.id)
+                switchToPage(page.id)
                 close()
               }}
             >
@@ -53,40 +55,43 @@ function PageList() {
               {page.name}
             </button>
           ))}
-          <DeletePageItem canDelete={pages.length > 1} onDone={close} />
+          <button
+            type="button"
+            className="menu-item"
+            disabled={pages.length <= 1}
+            onClick={() => {
+              deleteCurrentPage()
+              close()
+            }}
+          >
+            <Trash2 size={18} strokeWidth={1.75} aria-hidden />
+            Delete this page
+          </button>
         </>
       )}
     </Popover>
   )
 }
 
-// Undo (Ctrl Z) brings a deleted page back, so no confirm dialog is needed.
-function DeletePageItem({
-  canDelete,
-  onDone,
-}: {
-  canDelete: boolean
-  onDone: () => void
-}) {
-  const editor = useActiveEditor()
+// One shape for the whole board: a video is either landscape or portrait.
+function AspectToggle() {
+  const aspect = useEngineStore((s) => s.doc.aspect)
+  const isPortrait = aspect === '9:16'
   return (
-    <button
-      type="button"
-      className="menu-item"
-      disabled={!canDelete}
-      onClick={() => {
-        deleteCurrentPage(editor)
-        onDone()
-      }}
-    >
-      <Trash2 size={18} strokeWidth={1.75} aria-hidden />
-      Delete this page
-    </button>
+    <IconButton
+      icon={isPortrait ? RectangleVertical : RectangleHorizontal}
+      label={
+        isPortrait
+          ? 'Portrait 9:16 (click for landscape 16:9)'
+          : 'Landscape 16:9 (click for portrait 9:16)'
+      }
+      tooltipSide="above"
+      onClick={() => setAspect(isPortrait ? '16:9' : '9:16')}
+    />
   )
 }
 
 export function PageBar() {
-  const editor = useActiveEditor()
   const isNotesOpen = useUiStore((s) => s.isNotesOpen)
   const toggleNotes = useUiStore((s) => s.toggleNotes)
 
@@ -98,7 +103,7 @@ export function PageBar() {
           label="Previous page"
           shortcut="PgUp"
           tooltipSide="above"
-          onClick={() => goToPageOffset(editor, -1)}
+          onClick={() => goToPageOffset(-1)}
         />
         <PageList />
         <IconButton
@@ -106,15 +111,17 @@ export function PageBar() {
           label="Next page"
           shortcut="PgDn"
           tooltipSide="above"
-          onClick={() => goToPageOffset(editor, 1)}
+          onClick={() => goToPageOffset(1)}
         />
         <IconButton
           icon={Plus}
           label="New page"
           tooltipSide="above"
-          onClick={() => addPageAfterCurrent(editor)}
+          onClick={addPageAfterCurrent}
         />
         <span className="floating-bar__divider" />
+        <AspectToggle />
+        <PaperMenu />
         <IconButton
           icon={NotebookPen}
           label="Script notes (private)"

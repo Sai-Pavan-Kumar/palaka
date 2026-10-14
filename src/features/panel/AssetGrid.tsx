@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ImageOff } from 'lucide-react'
 import type { FolderFile } from '../../shared/fileSystem'
-import { useActiveEditor } from '../board/boardStore'
 import { getObjectUrlForPath } from '../project/folderAssetStore'
 import { useProjectStore } from '../project/projectStore'
 import { addFolderImage, FOLDER_IMAGE_MIME } from './addFolderImage'
@@ -29,7 +28,6 @@ function AssetThumb({ image }: { image: FolderFile }) {
 }
 
 export function AssetGrid() {
-  const editor = useActiveEditor()
   const assets = useProjectStore((s) => s.project?.assets ?? NO_ASSETS)
   const hasFolder = useProjectStore((s) => s.project !== null)
 
@@ -64,7 +62,7 @@ export function AssetGrid() {
               event.dataTransfer.setData(FOLDER_IMAGE_MIME, image.path)
               event.dataTransfer.effectAllowed = 'copy'
             }}
-            onClick={() => void addFolderImage(editor, image)}
+            onClick={() => void addFolderImage(image)}
           >
             <AssetThumb image={image} />
             <span className="asset-grid__name">{image.name}</span>

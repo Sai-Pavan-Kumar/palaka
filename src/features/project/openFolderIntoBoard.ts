@@ -1,53 +1,55 @@
-import { loadSnapshot, type Editor } from 'tldraw'
-import { importLegacyNotes } from '../notes/pageNotes'
+import { useEngineStore } from '../engine/engineStore'
+import {
+  createEmptyDocument,
+  getOrderedShapes,
+} from '../engine/model/documentOps'
+import { finishTextEditing } from '../engine/textEditing'
+import { useNotesStore } from '../notes/pageNotes'
+import { saveBoardNow } from './boardPersistence'
 import { forgetObjectUrls } from './folderAssetStore'
 import { loadProject, pickProjectFolder } from './openProject'
 import { useProjectStore } from './projectStore'
-import { saveBoardNow } from './useAutosave'
 
 const COPY_QUESTION =
   'This folder has no board yet.\n\nOK = copy the board you are working on into this folder.\nCancel = start this folder with an empty board.'
 
-function hasAnyContent(editor: Editor): boolean {
-  return editor
-    .getPages()
-    .some((page) => editor.getSortedChildIdsForParent(page.id).length > 0)
-}
-
-function clearBoard(editor: Editor): void {
-  editor.run(
-    () => {
-      const [firstPage, ...otherPages] = editor.getPages()
-      editor.setCurrentPage(firstPage.id)
-      otherPages.forEach((page) => editor.deletePage(page.id))
-      editor.deleteShapes([...editor.getCurrentPageShapeIds()])
-      editor.deleteAssets(editor.getAssets().map((asset) => asset.id))
-      editor.updatePage({ id: firstPage.id, name: 'Page 1', meta: {} })
-    },
-    { history: 'ignore' },
-  )
+function hasAnyContent(): boolean {
+  return useEngineStore
+    .getState()
+    .doc.pages.some((page) => getOrderedShapes(page).length > 0)
 }
 
 // Returns false when the user cancelled the picker. Throws if the folder's
-// files are damaged, before anything is written, so nothing gets overwritten.
-export async function openFolderIntoBoard(editor: Editor): Promise<boolean> {
+// board is damaged or from the old version, before anything is written.
+export async function openFolderIntoBoard(): Promise<boolean> {
   const root = await pickProjectFolder()
   if (!root) return false
-  const project = await loadProject(root)
-  // Finish writing the current folder, then disconnect it, before the board
-  // changes, so one folder's content can never be saved into another.
-  await saveBoardNow(editor)
+  const { assets, board } = await loadProject(root)
+  // Finish writing where the board lives now, then disconnect it, before the
+  // board changes, so one folder's content can never be saved into another.
+  finishTextEditing()
+  await saveBoardNow()
   useProjectStore.getState().closeProject()
   forgetObjectUrls()
 
-  if (project.initialBoard) {
-    loadSnapshot(editor.store, project.initialBoard)
-  } else if (hasAnyContent(editor) && !window.confirm(COPY_QUESTION)) {
-    clearBoard(editor)
+  const engine = useEngineStore.getState()
+  if (board) {
+    engine.replaceDocument(board.document)
+    useNotesStore.getState().replaceNotes(board.notes)
+  } else if (hasAnyContent() && !window.confirm(COPY_QUESTION)) {
+    engine.replaceDocument(createEmptyDocument(engine.doc.aspect))
+    useNotesStore.getState().replaceNotes({})
+  } else {
+    // Copying keeps the content but starts a clean undo history, so Ctrl Z
+    // can't reach back into the previous location's edits.
+    engine.replaceDocument(engine.doc)
   }
-  importLegacyNotes(editor, project.legacyNotes)
-  editor.clearHistory()
-  useProjectStore.getState().setProject({ ...project, boundEditor: editor })
-  await saveBoardNow(editor)
+  useProjectStore.getState().setProject({
+    root,
+    folderName: root.name,
+    assets,
+    boundSessionId: engine.sessionId,
+  })
+  await saveBoardNow()
   return true
 }

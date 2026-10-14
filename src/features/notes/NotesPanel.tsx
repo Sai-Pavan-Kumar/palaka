@@ -1,27 +1,21 @@
 import { X } from 'lucide-react'
-import { useValue } from 'tldraw'
 import { IconButton } from '../../shared/ui/IconButton'
-import { useActiveEditor } from '../board/boardStore'
+import { useEngineStore } from '../engine/engineStore'
+import { findPage } from '../engine/model/documentOps'
+import { useSessionStore } from '../engine/sessionStore'
 import { useUiStore } from '../shell/uiStore'
-import { getPageNote, setPageNote } from './pageNotes'
+import { useNotesStore } from './pageNotes'
 import './notesPanel.css'
 
 // Script notes are per page and live outside the board element, so they are
 // readable while recording but can never appear in the video.
 export function NotesPanel() {
-  const editor = useActiveEditor()
   const isOpen = useUiStore((s) => s.isNotesOpen)
   const toggleNotes = useUiStore((s) => s.toggleNotes)
-  const pageId = useValue('current page', () => editor.getCurrentPageId(), [
-    editor,
-  ])
-  const pageName = useValue('page name', () => editor.getCurrentPage().name, [
-    editor,
-  ])
-  const note = useValue('page note', () => getPageNote(editor, pageId), [
-    editor,
-    pageId,
-  ])
+  const pageId = useSessionStore((s) => s.pageId)
+  const pageName = useEngineStore((s) => findPage(s.doc, pageId)?.name ?? '')
+  const note = useNotesStore((s) => s.notes[pageId] ?? '')
+  const setNote = useNotesStore((s) => s.setNote)
 
   return (
     <aside
@@ -40,7 +34,7 @@ export function NotesPanel() {
         className="notes-panel__text"
         value={note}
         placeholder="What you want to say on this page. Only you see this."
-        onChange={(event) => setPageNote(editor, pageId, event.target.value)}
+        onChange={(event) => setNote(pageId, event.target.value)}
       />
     </aside>
   )

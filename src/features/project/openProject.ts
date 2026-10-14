@@ -7,12 +7,9 @@ import {
 import {
   ASSETS_DIR,
   BOARD_FILE,
-  PROJECT_FILE,
-  createEmptyProject,
   parseBoard,
-  parseProject,
+  type BoardFile,
 } from './projectFiles'
-import type { OpenProject } from './projectStore'
 
 // Chrome remembers the last folder per picker id, so reopening a video folder
 // starts in the right place without us storing any handle.
@@ -47,24 +44,19 @@ export async function listProjectAssets(
   return [...rootImages, ...assetImages]
 }
 
+export type LoadedFolder = {
+  assets: FolderFile[]
+  board: BoardFile | null
+}
+
+// Parse errors are thrown on purpose: the caller must stop before autosave
+// can replace a damaged (or old tldraw) board with an empty one.
 export async function loadProject(
   root: FileSystemDirectoryHandle,
-): Promise<OpenProject> {
-  const [assets, projectText, boardText] = await Promise.all([
+): Promise<LoadedFolder> {
+  const [assets, boardText] = await Promise.all([
     listProjectAssets(root),
-    readTextFile(root, PROJECT_FILE),
     readTextFile(root, BOARD_FILE),
   ])
-  // Parse errors are thrown on purpose: the caller must stop before autosave
-  // can replace a damaged file with an empty board.
-  const projectData = projectText
-    ? parseProject(projectText)
-    : createEmptyProject()
-  return {
-    root,
-    folderName: root.name,
-    assets,
-    legacyNotes: projectData.notes,
-    initialBoard: boardText ? parseBoard(boardText) : null,
-  }
+  return { assets, board: boardText ? parseBoard(boardText) : null }
 }

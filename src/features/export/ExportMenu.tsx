@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { Download, FileArchive, FileImage, FileText, Save } from 'lucide-react'
-import type { Editor } from 'tldraw'
 import { IconButton } from '../../shared/ui/IconButton'
 import { Popover } from '../../shared/ui/Popover'
 import { useProjectStore } from '../project/projectStore'
-import { saveBoardNow } from '../project/useAutosave'
+import { saveBoardNow } from '../project/boardPersistence'
 import { useUiStore } from '../shell/uiStore'
 import {
   exportAllPagesPdf,
@@ -14,7 +13,6 @@ import {
 } from './exportActions'
 
 type ExportMenuProps = {
-  editor: Editor
   disabled: boolean
 }
 
@@ -25,10 +23,10 @@ const EXPORT_ITEMS = [
   { label: 'All pages as ZIP', icon: FileArchive, run: exportAllPagesZip },
 ] as const
 
-type ExportAction = (editor: Editor) => Promise<string | void>
+type ExportAction = () => Promise<string | void>
 
 // Runs one export, tells the user where the file went, and blocks double runs.
-function useExportRunner(editor: Editor) {
+function useExportRunner() {
   const [isBusy, setIsBusy] = useState(false)
   const showToast = useUiStore((s) => s.showToast)
 
@@ -36,7 +34,7 @@ function useExportRunner(editor: Editor) {
     close()
     setIsBusy(true)
     try {
-      const savedPath = await action(editor)
+      const savedPath = await action()
       showToast(savedPath ? `Saved ${savedPath}` : 'Project saved', 'success')
     } catch (error) {
       console.error('Export failed', error)
@@ -51,8 +49,8 @@ function useExportRunner(editor: Editor) {
   return { isBusy, run }
 }
 
-export function ExportMenu({ editor, disabled }: ExportMenuProps) {
-  const { isBusy, run } = useExportRunner(editor)
+export function ExportMenu({ disabled }: ExportMenuProps) {
+  const { isBusy, run } = useExportRunner()
   const hasFolder = useProjectStore((s) => s.project !== null)
 
   return (

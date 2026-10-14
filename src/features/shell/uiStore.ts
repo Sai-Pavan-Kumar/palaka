@@ -10,14 +10,12 @@ type UiState = {
   leftPanelTab: LeftPanelTab
   isNotesOpen: boolean
   isDrawing: boolean
-  isShapeCleanupOn: boolean
   toast: Toast | null
   toggleFocusMode: () => void
   setFocusMode: (on: boolean) => void
   toggleLeftPanel: (tab?: LeftPanelTab) => void
   toggleNotes: () => void
   setDrawing: (drawing: boolean) => void
-  toggleShapeCleanup: () => void
   showToast: (message: string, tone?: ToastTone) => void
   dismissToast: () => void
 }
@@ -30,7 +28,6 @@ export const useUiStore = create<UiState>((set) => ({
   leftPanelTab: 'files',
   isNotesOpen: false,
   isDrawing: false,
-  isShapeCleanupOn: false,
   toast: null,
   toggleFocusMode: () => set((s) => ({ isFocusMode: !s.isFocusMode })),
   setFocusMode: (isFocusMode) => set({ isFocusMode }),
@@ -43,8 +40,6 @@ export const useUiStore = create<UiState>((set) => ({
     }),
   toggleNotes: () => set((s) => ({ isNotesOpen: !s.isNotesOpen })),
   setDrawing: (isDrawing) => set({ isDrawing }),
-  toggleShapeCleanup: () =>
-    set((s) => ({ isShapeCleanupOn: !s.isShapeCleanupOn })),
   showToast: (message, tone = 'info') =>
     set({ toast: { id: nextToastId++, message, tone } }),
   dismissToast: () => set({ toast: null }),

@@ -1,12 +1,10 @@
 import type { LucideIcon } from 'lucide-react'
-import type { Editor } from 'tldraw'
+import { setTool, useSessionStore } from '../engine/sessionStore'
 import { IconButton } from '../../shared/ui/IconButton'
 import { Popover } from '../../shared/ui/Popover'
 import type { ToolDefinition } from './toolList'
 
 type ToolMenuProps = {
-  editor: Editor
-  toolId: string
   tools: ToolDefinition[]
   label: string
   shortcutHint: string
@@ -16,14 +14,13 @@ type ToolMenuProps = {
 // Groups related tools behind one button (keeps the bar under 10 buttons).
 // The button shows the group's active tool, so you can see what you hold.
 export function ToolMenu({
-  editor,
-  toolId,
   tools,
   label,
   shortcutHint,
   fallbackIcon,
 }: ToolMenuProps) {
-  const activeTool = tools.find((tool) => tool.isActive(toolId, editor))
+  const toolId = useSessionStore((s) => s.tool)
+  const activeTool = tools.find((tool) => tool.id === toolId)
 
   return (
     <Popover
@@ -42,10 +39,9 @@ export function ToolMenu({
           <button
             key={tool.id}
             type="button"
-            className={`menu-item ${tool.isActive(toolId, editor) ? 'is-active' : ''}`}
+            className={`menu-item ${tool.id === toolId ? 'is-active' : ''}`}
             onClick={() => {
-              tool.select(editor)
-              editor.focus()
+              setTool(tool.id)
               close()
             }}
           >

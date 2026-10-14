@@ -1,0 +1,102 @@
+import { HIGHLIGHT, INK, TINT } from './boardSpec'
+import type { ColorKey, Paper, PaperColor, PaperPattern } from './types'
+
+export type PaperTone = 'light' | 'dark'
+
+export const DEFAULT_PAPER: Paper = {
+  pattern: 'plain',
+  color: 'white',
+  showBrand: true,
+}
+
+export const PAPER_PATTERNS: { value: PaperPattern; label: string }[] = [
+  { value: 'plain', label: 'Plain' },
+  { value: 'dots', label: 'Dots' },
+  { value: 'grid', label: 'Grid' },
+  { value: 'grain', label: 'Grain' },
+  { value: 'blueprint', label: 'Blueprint' },
+]
+
+// SVG needs plain strings. Values and contrast checks: .agents/Design
+// System.md, "Board paper". Every ink keeps ≥ 4.5:1 on every paper.
+export const PAPER_COLORS: Record<
+  PaperColor,
+  { fill: string; tone: PaperTone; label: string }
+> = {
+  white: { fill: '#ffffff', tone: 'light', label: 'White' },
+  cream: { fill: '#fdfaf2', tone: 'light', label: 'Cream' },
+  mist: { fill: '#f4f8ff', tone: 'light', label: 'Mist' },
+  blueprint: { fill: '#0a4494', tone: 'dark', label: 'Blueprint' }, // --color-brand-deep
+  chalk: { fill: '#1d2b25', tone: 'dark', label: 'Chalk' },
+}
+
+// On dark paper black ink would vanish, so every colour swaps to a light
+// version that keeps its meaning (red stays red) and its contrast.
+const DARK_INK: Record<ColorKey, string> = {
+  black: '#f5f5fa',
+  blue: '#a9c9ff',
+  red: '#ffa39a',
+  green: '#7ce8b4',
+  orange: '#ffc085',
+  violet: '#cdbcff',
+}
+
+export type BoardPalette = {
+  tone: PaperTone
+  ink: Record<ColorKey, string>
+  // Tint fill: light paper uses pale colours, dark paper uses the ink itself
+  // at low opacity (a pale fill would glare on a dark board).
+  tint: (color: ColorKey) => { fill: string; opacity: number }
+  highlight: Record<ColorKey, string>
+  highlightBlend: 'multiply' | 'screen'
+  brand: string
+  patternLine: string
+  patternMajor: string
+}
+
+const LIGHT_PALETTE: BoardPalette = {
+  tone: 'light',
+  ink: INK,
+  tint: (color) => ({ fill: TINT[color], opacity: 1 }),
+  highlight: HIGHLIGHT,
+  highlightBlend: 'multiply',
+  brand: '#005ae0', // --color-brand-primary
+  // Faint on purpose (1.2–1.5:1): the paper must never compete with text.
+  patternLine: 'rgba(13, 13, 26, 0.1)',
+  patternMajor: 'rgba(13, 13, 26, 0.18)',
+}
+
+const DARK_PALETTE: BoardPalette = {
+  tone: 'dark',
+  ink: DARK_INK,
+  tint: (color) => ({ fill: DARK_INK[color], opacity: 0.22 }),
+  highlight: HIGHLIGHT,
+  highlightBlend: 'screen',
+  // Brand blue disappears on blueprint blue, so the mark turns white.
+  brand: '#ffffff',
+  patternLine: 'rgba(255, 255, 255, 0.14)',
+  patternMajor: 'rgba(255, 255, 255, 0.26)',
+}
+
+export function getPalette(paper: Paper): BoardPalette {
+  return PAPER_COLORS[paper.color].tone === 'dark'
+    ? DARK_PALETTE
+    : LIGHT_PALETTE
+}
+
+// Boards saved before paper existed (or with an unknown value) get the
+// default, instead of failing to load.
+export function normalizePaper(value: unknown): Paper {
+  if (typeof value !== 'object' || value === null) return DEFAULT_PAPER
+  const paper = value as Partial<Paper>
+  const isPattern = PAPER_PATTERNS.some((p) => p.value === paper.pattern)
+  const isColor = typeof paper.color === 'string' && paper.color in PAPER_COLORS
+  return {
+    pattern: isPattern ? paper.pattern! : DEFAULT_PAPER.pattern,
+    color: isColor ? paper.color! : DEFAULT_PAPER.color,
+    showBrand:
+      typeof paper.showBrand === 'boolean'
+        ? paper.showBrand
+        : DEFAULT_PAPER.showBrand,
+  }
+}

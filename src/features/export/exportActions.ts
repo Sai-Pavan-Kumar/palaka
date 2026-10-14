@@ -1,10 +1,11 @@
-import type { Editor } from 'tldraw'
 import {
   getDirectory,
   timestampForFileName,
   writeFile,
 } from '../../shared/fileSystem'
-import { BOARD_HEIGHT, BOARD_WIDTH } from '../board/boardCamera'
+import { useEngineStore } from '../engine/engineStore'
+import { SLIDE_SIZE } from '../engine/model/boardSpec'
+import { useSessionStore } from '../engine/sessionStore'
 import { EXPORTS_DIR } from '../project/projectFiles'
 import { downloadFile } from '../../shared/downloadFile'
 import { useProjectStore } from '../project/projectStore'
@@ -43,19 +44,21 @@ async function saveToExports(
   return `${EXPORTS_DIR}/${name}`
 }
 
-const allPageIds = (editor: Editor) => editor.getPages().map((page) => page.id)
+const allPageIds = () =>
+  useEngineStore.getState().doc.pages.map((page) => page.id)
+const currentPageId = () => useSessionStore.getState().pageId
 
-export async function exportCurrentPagePng(editor: Editor): Promise<string> {
-  const [page] = await renderPages(editor, [editor.getCurrentPageId()])
-  const index = allPageIds(editor).indexOf(editor.getCurrentPageId())
+export async function exportCurrentPagePng(): Promise<string> {
+  const [page] = await renderPages([currentPageId()])
+  const index = allPageIds().indexOf(currentPageId())
   return saveToExports(numbered(page, index, 'png'), page.png)
 }
 
 // fflate and pdf-lib load only here, so they never slow the first paint.
-export async function exportAllPagesZip(editor: Editor): Promise<string> {
+export async function exportAllPagesZip(): Promise<string> {
   const [{ zipSync }, pages] = await Promise.all([
     import('fflate'),
-    renderPages(editor, allPageIds(editor)),
+    renderPages(allPageIds()),
   ])
   const entries: Record<string, Uint8Array> = {}
   for (const [index, page] of pages.entries()) {
@@ -73,29 +76,30 @@ async function buildPdf(
   pages: RenderedPage[],
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { PDFDocument } = await import('pdf-lib')
+  const { width, height } = SLIDE_SIZE[useEngineStore.getState().doc.aspect]
   const pdf = await PDFDocument.create()
   for (const page of pages) {
     const image = await pdf.embedPng(await page.png.arrayBuffer())
-    pdf.addPage([BOARD_WIDTH, BOARD_HEIGHT]).drawImage(image, {
+    pdf.addPage([width, height]).drawImage(image, {
       x: 0,
       y: 0,
-      width: BOARD_WIDTH,
-      height: BOARD_HEIGHT,
+      width,
+      height,
     })
   }
   return (await pdf.save()) as Uint8Array<ArrayBuffer>
 }
 
-export async function exportAllPagesPdf(editor: Editor): Promise<string> {
-  const pages = await renderPages(editor, allPageIds(editor))
+export async function exportAllPagesPdf(): Promise<string> {
+  const pages = await renderPages(allPageIds())
   return saveToExports(
     `pages-${timestampForFileName()}.pdf`,
     await buildPdf(pages),
   )
 }
 
-export async function exportCurrentPagePdf(editor: Editor): Promise<string> {
-  const pages = await renderPages(editor, [editor.getCurrentPageId()])
-  const index = allPageIds(editor).indexOf(editor.getCurrentPageId())
+export async function exportCurrentPagePdf(): Promise<string> {
+  const pages = await renderPages([currentPageId()])
+  const index = allPageIds().indexOf(currentPageId())
   return saveToExports(numbered(pages[0], index, 'pdf'), await buildPdf(pages))
 }

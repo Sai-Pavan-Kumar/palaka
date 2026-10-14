@@ -1,35 +1,54 @@
-import { useValue, type Editor, type StyleProp } from 'tldraw'
+import { useEngineStore } from '../engine/engineStore'
+import { findPage, getShapesInOrder } from '../engine/model/documentOps'
+import type { ShapeStyle } from '../engine/model/shapeFactory'
+import { getSharedStyle, styleFieldsFor } from '../engine/model/stylePatch'
+import type { ShapeType } from '../engine/model/types'
+import { useSessionStore, type EngineTool } from '../engine/sessionStore'
 
-// The value shared by the whole selection (or the next shape when nothing is
-// selected); undefined when the selection mixes values.
-export function useSharedValue<T>(
-  editor: Editor,
-  style: StyleProp<T>,
-): T | undefined {
-  return useValue(
-    `style ${style.id}`,
-    () => {
-      const shared = editor.getSharedStyles().get(style)
-      return shared?.type === 'shared' ? (shared.value as T) : undefined
-    },
-    [editor, style],
-  )
+// What each drawing tool creates, so the bar shows only the styles that
+// shape can use (no "fill" while holding the pen).
+const TOOL_SHAPE: Partial<Record<EngineTool, ShapeType>> = {
+  pen: 'stroke',
+  highlighter: 'stroke',
+  rectangle: 'geo',
+  ellipse: 'geo',
+  triangle: 'geo',
+  diamond: 'geo',
+  heart: 'geo',
+  line: 'line',
+  arrow: 'line',
+  text: 'text',
 }
 
-// Styles apply to what is selected and to whatever is drawn next, so picking
-// "red" then drawing keeps drawing red.
-export function applyStyle<T>(editor: Editor, style: StyleProp<T>, value: T) {
-  editor.markHistoryStoppingPoint('change style')
-  if (editor.getSelectedShapeIds().length)
-    editor.setStyleForSelectedShapes(style, value)
-  editor.setStyleForNextShapes(style, value)
-  editor.focus()
+export type ShownStyle = {
+  values: Partial<ShapeStyle>
+  fields: Set<keyof ShapeStyle>
+  hasSelection: boolean
 }
 
-export function applyOpacity(editor: Editor, opacity: number) {
-  editor.markHistoryStoppingPoint('change opacity')
-  if (editor.getSelectedShapeIds().length)
-    editor.setOpacityForSelectedShapes(opacity)
-  editor.setOpacityForNextShapes(opacity)
-  editor.focus()
+// The selection's styles when something is selected, otherwise the styles
+// the next shape will get. Null when the bar has nothing to show.
+export function useShownStyle(): ShownStyle | null {
+  const doc = useEngineStore((s) => s.doc)
+  const pageId = useSessionStore((s) => s.pageId)
+  const selectedIds = useSessionStore((s) => s.selectedIds)
+  const tool = useSessionStore((s) => s.tool)
+  const nextStyle = useSessionStore((s) => s.style)
+
+  const page = findPage(doc, pageId)
+  const selected = page ? getShapesInOrder(page, selectedIds) : []
+  if (selected.length > 0) {
+    return {
+      values: getSharedStyle(selected),
+      fields: styleFieldsFor(selected.map((shape) => shape.type)),
+      hasSelection: true,
+    }
+  }
+  const shapeType = TOOL_SHAPE[tool]
+  if (!shapeType) return null
+  return {
+    values: nextStyle,
+    fields: styleFieldsFor([shapeType]),
+    hasSelection: false,
+  }
 }

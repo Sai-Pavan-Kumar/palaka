@@ -1,4 +1,3 @@
-import type { Editor, TLStoreSnapshot } from 'tldraw'
 import { create } from 'zustand'
 import type { FolderFile } from '../../shared/fileSystem'
 
@@ -8,20 +7,16 @@ export type OpenProject = {
   root: FileSystemDirectoryHandle
   folderName: string
   assets: FolderFile[]
-  // Read once when the folder opens, then handed to the editor.
-  legacyNotes: Record<string, string>
-  initialBoard: TLStoreSnapshot | null
-  // The exact editor this folder was loaded into. Autosave only ever writes
-  // that editor's content, so a restarted (empty) board can never overwrite it.
-  boundEditor?: Editor
+  // The board session this folder was loaded into. Autosave only writes when
+  // the running board is that same session, so a restarted (empty) board can
+  // never overwrite the folder's board.
+  boundSessionId: string
 }
 
 type ProjectState = {
   project: OpenProject | null
-  loadError: string | null
   saveStatus: SaveStatus
   setProject: (project: OpenProject) => void
-  setLoadError: (message: string | null) => void
   setAssets: (assets: FolderFile[]) => void
   setSaveStatus: (status: SaveStatus) => void
   closeProject: () => void
@@ -29,11 +24,8 @@ type ProjectState = {
 
 export const useProjectStore = create<ProjectState>((set) => ({
   project: null,
-  loadError: null,
   saveStatus: 'saved',
-  setProject: (project) =>
-    set({ project, loadError: null, saveStatus: 'saved' }),
-  setLoadError: (loadError) => set({ loadError }),
+  setProject: (project) => set({ project, saveStatus: 'saved' }),
   setAssets: (assets) =>
     set((state) =>
       state.project ? { project: { ...state.project, assets } } : state,

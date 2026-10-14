@@ -13,13 +13,13 @@
     "check": "tsc -b && oxlint && prettier --check ."
   },
   "dependencies": {
-    "@tldraw/assets": "^5.5.2",
     "fflate": "^0.8.3",
     "lucide-react": "^1.57.0",
     "pdf-lib": "^1.17.1",
+    "perfect-freehand": "^1.2.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tldraw": "^5.5.2",
+    "roughjs": "^4.6.6",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

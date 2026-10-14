@@ -1,50 +1,101 @@
-import type { Editor, TLPageId } from 'tldraw'
-import { BOARD_BOUNDS, BOARD_HEIGHT, BOARD_WIDTH } from '../board/boardCamera'
+import { createElement } from 'react'
+import { useEngineStore } from '../engine/engineStore'
+import { SLIDE_SIZE } from '../engine/model/boardSpec'
+import type { BoardDocument, Page } from '../engine/model/types'
+import { PageSvg } from '../engine/render/PageSvg'
+import {
+  readAsDataUrl,
+  resolveAssetAsDataUrl,
+} from '../project/folderAssetStore'
 
 export type RenderedPage = { name: string; png: Blob }
 
-// toImage cannot render zero shapes, but an empty slide is still a slide.
-async function blankPagePng(): Promise<Blob> {
-  const canvas = new OffscreenCanvas(BOARD_WIDTH, BOARD_HEIGHT)
-  const context = canvas.getContext('2d')!
-  context.fillStyle = 'white'
-  context.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT)
-  return canvas.convertToBlob({ type: 'image/png' })
+// Same files fonts.css serves to the app. An SVG drawn into a canvas cannot
+// fetch anything, so the fonts travel inside it as data URLs.
+const EMBEDDED_FONTS = [
+  {
+    family: 'Overused Grotesk',
+    url: '/fonts/OverusedGrotesk-VF.woff2',
+    weight: '300 900',
+  },
+  {
+    family: 'Geist Mono',
+    url: '/fonts/GeistMono-latin.woff2',
+    weight: '100 900',
+  },
+]
+let fontCssPromise: Promise<string> | null = null
+
+function getEmbeddedFontCss(): Promise<string> {
+  fontCssPromise ??= Promise.all(
+    EMBEDDED_FONTS.map(async ({ family, url, weight }) => {
+      const dataUrl = await readAsDataUrl(await (await fetch(url)).blob())
+      return `@font-face{font-family:'${family}';src:url(${dataUrl}) format('woff2');font-weight:${weight};}`
+    }),
+  ).then((rules) => rules.join(''))
+  return fontCssPromise
 }
 
-// Always the full 1920x1080 slide, never "fit to content", so every page and
-// the video share one frame.
-async function renderCurrentPagePng(editor: Editor): Promise<Blob> {
-  const shapeIds = editor.getSortedChildIdsForParent(editor.getCurrentPageId())
-  if (shapeIds.length === 0) return blankPagePng()
-  const { blob } = await editor.toImage(shapeIds, {
-    format: 'png',
-    bounds: BOARD_BOUNDS,
-    background: true,
-    padding: 0,
-    scale: 1,
-    pixelRatio: 1,
-  })
-  return blob
+async function getImageDataUrls(doc: BoardDocument, pages: Page[]) {
+  const usedIds = new Set(
+    pages.flatMap((page) =>
+      Object.values(page.shapes).flatMap((s) =>
+        s.type === 'image' ? [s.assetId] : [],
+      ),
+    ),
+  )
+  const entries = await Promise.all(
+    [...usedIds]
+      .filter((id) => doc.assets[id])
+      .map(
+        async (id) =>
+          [id, await resolveAssetAsDataUrl(doc.assets[id].src)] as const,
+      ),
+  )
+  return Object.fromEntries(entries)
 }
 
-// Pages render one at a time on screen; the original page comes back after.
-export async function renderPages(
-  editor: Editor,
-  pageIds: TLPageId[],
-): Promise<RenderedPage[]> {
-  const startPageId = editor.getCurrentPageId()
-  const rendered: RenderedPage[] = []
+async function svgToPng(
+  svg: string,
+  width: number,
+  height: number,
+): Promise<Blob> {
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
   try {
-    for (const pageId of pageIds) {
-      editor.setCurrentPage(pageId)
-      rendered.push({
-        name: editor.getPage(pageId)!.name,
-        png: await renderCurrentPagePng(editor),
-      })
-    }
+    const image = new Image()
+    image.src = url
+    await image.decode()
+    const canvas = new OffscreenCanvas(width, height)
+    canvas.getContext('2d')!.drawImage(image, 0, 0, width, height)
+    return await canvas.convertToBlob({ type: 'image/png' })
   } finally {
-    editor.setCurrentPage(startPageId)
+    URL.revokeObjectURL(url)
+  }
+}
+
+// Always the full slide, never "fit to content", so every page and the video
+// share one frame. Every shape is drawn: reveal steps do not apply to exports.
+export async function renderPages(pageIds: string[]): Promise<RenderedPage[]> {
+  const { doc } = useEngineStore.getState()
+  const pages = pageIds
+    .map((id) => doc.pages.find((page) => page.id === id))
+    .filter((page) => page !== undefined)
+  const { width, height } = SLIDE_SIZE[doc.aspect]
+  const [{ renderToStaticMarkup }, fontCss, imageUrls] = await Promise.all([
+    import('react-dom/server'),
+    getEmbeddedFontCss(),
+    getImageDataUrls(doc, pages),
+  ])
+  const rendered: RenderedPage[] = []
+  for (const page of pages) {
+    const svg = renderToStaticMarkup(
+      createElement(
+        PageSvg,
+        { page, aspect: doc.aspect, paper: doc.paper, imageUrls },
+        createElement('style', null, fontCss),
+      ),
+    )
+    rendered.push({ name: page.name, png: await svgToPng(svg, width, height) })
   }
   return rendered
 }
