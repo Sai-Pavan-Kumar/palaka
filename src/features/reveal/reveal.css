@@ -1,0 +1,93 @@
+/* Hangs off the right of the page bar so the bar never shifts when it appears. */
+.step-counter {
+  position: absolute;
+  left: calc(100% + var(--space-3));
+  white-space: nowrap;
+  height: 52px;
+  padding: 0 var(--space-4);
+  gap: var(--space-2);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.step-counter__live {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-primary-light);
+  box-shadow: var(--shadow-active);
+}
+
+.step-counter__hint {
+  margin-left: var(--space-2);
+  color: var(--color-text-secondary);
+  font-weight: 300;
+}
+
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.order-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-card);
+}
+
+.order-list__item.is-selected {
+  box-shadow: var(--shadow-active);
+}
+
+.order-list__step {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.order-list__step.is-pinned {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.order-list__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.order-list__actions {
+  display: flex;
+}
+
+.order-list__actions .icon-button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.order-list__empty {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}

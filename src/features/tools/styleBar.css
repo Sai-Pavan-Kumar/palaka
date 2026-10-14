@@ -1,0 +1,102 @@
+.style-bar {
+  position: fixed;
+  top: calc(var(--space-3) + 52px + var(--space-2));
+  left: 50%;
+  /* Below the top bar, so its open menus (Rec settings, Export) cover this bar. */
+  z-index: var(--z-raised);
+  /* Wraps on small laptop screens instead of running off the edges. */
+  max-width: calc(100vw - var(--space-8));
+  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  transform: translateX(-50%);
+  animation: style-bar-in var(--duration-fast) var(--ease-out);
+}
+
+@keyframes style-bar-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px);
+  }
+}
+
+.style-bar__swatch,
+.style-bar__size {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.style-bar__swatch::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  box-shadow: 0 0 0 2px var(--color-surface-elevated);
+}
+
+.style-bar__swatch:hover,
+.style-bar__size:hover {
+  background: var(--color-surface-hover);
+}
+
+.style-bar__swatch.is-active {
+  box-shadow: inset 0 0 0 2px var(--color-brand-primary-light);
+}
+
+.style-bar__size span {
+  border-radius: var(--radius-full);
+  background: var(--color-text-secondary);
+}
+
+.style-bar__size.is-active {
+  background: var(--color-surface-hover);
+}
+
+.style-bar__size.is-active span {
+  background: var(--color-text-primary);
+}
+
+.more-styles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 260px;
+}
+
+.chip-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-1);
+}
+
+.chip {
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-card);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.chip:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.chip.is-active {
+  background: var(--color-brand-primary);
+  color: var(--color-text-primary);
+}

@@ -1,0 +1,3 @@
+# Same line endings everywhere: Windows dev machine and Linux build servers
+* text=auto eol=lf
+*.woff2 binary

@@ -1,0 +1,9 @@
+.top-bar {
+  position: fixed;
+  top: var(--space-3);
+  left: 50%;
+  z-index: var(--z-sticky);
+  display: flex;
+  gap: var(--space-3);
+  transform: translateX(-50%);
+}

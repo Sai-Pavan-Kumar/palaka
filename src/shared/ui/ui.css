@@ -1,0 +1,193 @@
+.icon-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 var(--space-3);
+  gap: var(--space-2);
+  grid-auto-flow: column;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.icon-button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.icon-button.is-active {
+  background: var(--color-brand-primary);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-active);
+}
+
+.icon-button.tone-danger {
+  color: var(--color-error);
+}
+
+.icon-button:disabled {
+  opacity: var(--opacity-40);
+  cursor: not-allowed;
+}
+
+/* Hover labels: shown after a short delay so they never flash while moving. */
+.icon-button[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + var(--space-2));
+  z-index: var(--z-dropdown);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: pre;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -4px);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.icon-button[data-tooltip-side='above']::after {
+  top: auto;
+  bottom: calc(100% + var(--space-2));
+  transform: translate(-50%, 4px);
+}
+
+.icon-button[data-tooltip-side='right']::after {
+  top: 50%;
+  left: calc(100% + var(--space-2));
+  transform: translate(-4px, -50%);
+}
+
+.icon-button:hover::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition-delay: 400ms;
+}
+
+.icon-button[data-tooltip-side='right']:hover::after {
+  transform: translate(0, -50%);
+}
+
+.popover {
+  position: relative;
+}
+
+.popover__panel {
+  position: absolute;
+  z-index: var(--z-dropdown);
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+  animation: popover-in var(--duration-fast) var(--ease-out);
+}
+
+.popover__panel.side-below {
+  top: calc(100% + var(--space-2));
+}
+
+.popover__panel.side-above {
+  bottom: calc(100% + var(--space-2));
+}
+
+.popover__panel.align-start {
+  left: 0;
+}
+
+.popover__panel.align-end {
+  right: 0;
+}
+
+.popover__panel.align-center {
+  left: 50%;
+  translate: -50% 0;
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover:not(:disabled),
+.menu-item.is-active {
+  background: var(--color-surface-hover);
+}
+
+.menu-item:disabled {
+  opacity: var(--opacity-40);
+  cursor: not-allowed;
+}
+
+.menu-item__hint {
+  margin-left: auto;
+  color: var(--color-text-secondary);
+  font-weight: 300;
+}
+
+.menu-label {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+}
+
+.floating-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-float);
+}
+
+.floating-bar__divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 var(--space-1);
+  background: var(--color-border-default);
+}

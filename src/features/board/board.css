@@ -1,0 +1,46 @@
+/*
+ * The board is the Element Capture target. Chrome only captures an element that
+ * forms its own stacking context (isolation: isolate) and drops alpha, so the
+ * background must stay fully opaque or empty areas turn black in the video.
+ */
+.board {
+  --board-gutter: var(--space-16);
+
+  position: relative;
+  isolation: isolate;
+  width: min(
+    100vw - var(--board-gutter) * 2,
+    (100vh - var(--board-gutter) * 2) * 16 / 9
+  );
+  aspect-ratio: 16 / 9;
+  background: var(--color-surface-card-light);
+  color: var(--color-text-primary-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  container-type: size;
+}
+
+/* tldraw paints its canvas from this variable, not from the theme object. */
+.board .tl-container {
+  --tl-color-background: var(--color-surface-card-light);
+}
+
+/* Focus mode gives the board almost the whole screen. */
+.shell.is-focus .board {
+  --board-gutter: var(--space-4);
+}
+
+/*
+ * Hidden reveal steps are not rendered at all, so a shape that becomes visible
+ * mounts fresh and this plays once. Only while presenting, so normal drawing
+ * stays instant.
+ */
+.board.is-presenting .tl-shape {
+  animation: reveal-fade var(--duration-slow) var(--ease-out);
+}
+
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+  }
+}

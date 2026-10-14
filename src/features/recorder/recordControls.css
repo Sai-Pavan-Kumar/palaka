@@ -1,0 +1,154 @@
+.record-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-error);
+  color: var(--color-text-primary);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    filter var(--duration-fast) var(--ease-out),
+    transform var(--duration-instant) var(--ease-out);
+}
+
+.record-button:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.record-button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.record-button:disabled {
+  opacity: var(--opacity-40);
+  cursor: not-allowed;
+}
+
+.record-button__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-primary);
+}
+
+.record-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-3);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.record-timer__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-error);
+  animation: record-pulse 1.2s var(--ease-out) infinite;
+}
+
+.record-timer.is-paused .record-timer__dot {
+  background: var(--color-warning);
+  animation: none;
+}
+
+@keyframes record-pulse {
+  50% {
+    opacity: var(--opacity-20);
+  }
+}
+
+.countdown {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  display: grid;
+  place-items: center;
+  background: var(--color-surface-overlay);
+  pointer-events: none;
+}
+
+.countdown__number {
+  font-size: 160px;
+  font-weight: 800;
+  letter-spacing: -6px;
+  color: var(--color-text-primary);
+  animation: countdown-pop 1s var(--ease-out);
+}
+
+@keyframes countdown-pop {
+  from {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.take-card {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-overlay);
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  animation: popover-in var(--duration-fast) var(--ease-out);
+}
+
+.take-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.take-card__header .menu-label {
+  padding: 0;
+}
+
+.take-card__where {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.take-card__video {
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-base);
+}
+
+.take-card__download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-primary);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.take-card__download:hover {
+  background: var(--color-brand-primary-light);
+}

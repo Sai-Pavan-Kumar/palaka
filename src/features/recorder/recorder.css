@@ -1,0 +1,129 @@
+/*
+ * The panel deliberately overlaps the board's corner: if any of it shows up in
+ * a recording, Element Capture is not isolating the board.
+ */
+.recorder {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-dropdown);
+  width: 280px;
+  max-height: calc(100vh - var(--space-8));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  font-size: 13px;
+}
+
+.recorder--blocked {
+  color: var(--color-warning);
+}
+
+.recorder__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.recorder__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.recorder__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+}
+
+.recorder__field select {
+  min-height: 36px;
+  padding: 0 var(--space-2);
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+}
+
+.recorder__record {
+  min-height: 44px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.recorder__record:hover:not(:disabled) {
+  background: var(--color-brand-primary-light);
+}
+
+.recorder__record.is-recording {
+  background: var(--color-error);
+}
+
+.recorder__record:disabled {
+  opacity: 0.4;
+  cursor: wait;
+}
+
+.recorder__error {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.recorder__results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.recorder__empty {
+  color: var(--color-text-secondary);
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface-card);
+  border-radius: var(--radius-md);
+}
+
+.result__video {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-base);
+}
+
+.result__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+}
+
+.result__facts dt {
+  color: var(--color-text-secondary);
+}
+
+.result__facts dd {
+  overflow-wrap: anywhere;
+}
+
+.result__download {
+  color: var(--color-brand-primary-light);
+  font-weight: 600;
+}

@@ -1,0 +1,148 @@
+/*
+ * "chrome" = every piece of tool UI around the board. It hides completely while
+ * the mouse is pressed on the board (half-faded panels over a drawing were
+ * distracting) and returns on release. Focus mode hides it until F/Esc.
+ */
+.chrome {
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.shell.is-drawing .chrome {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shell.is-focus .chrome {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.welcome {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.welcome__title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--color-text-primary-light);
+}
+
+.welcome__body {
+  max-width: 420px;
+  color: var(--color-text-secondary-light);
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.welcome__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 48px;
+  margin-top: var(--space-3);
+  padding: 0 var(--space-6);
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-primary);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    transform var(--duration-instant) var(--ease-out);
+}
+
+.welcome__button:hover:not(:disabled) {
+  background: var(--color-brand-primary-light);
+}
+
+.welcome__button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.welcome__button:disabled {
+  opacity: var(--opacity-40);
+}
+
+.welcome__error {
+  max-width: 480px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.toast {
+  position: fixed;
+  bottom: calc(var(--space-3) + 52px + var(--space-3));
+  left: 50%;
+  z-index: var(--z-toast);
+  max-width: min(480px, calc(100vw - var(--space-8)));
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-elevated);
+  box-shadow: var(--shadow-float);
+  font-size: 13px;
+  font-weight: 600;
+  transform: translateX(-50%);
+  animation: toast-in var(--duration-fast) var(--ease-out);
+}
+
+.toast.tone-success {
+  color: var(--color-success);
+}
+
+.toast.tone-error {
+  color: var(--color-error);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+
+.save-status {
+  position: fixed;
+  bottom: var(--space-4);
+  left: var(--space-4);
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.save-status__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+}
+
+.save-status.is-saving .save-status__dot {
+  background: var(--color-warning);
+}
+
+.save-status.is-error {
+  color: var(--color-error);
+}
+
+.save-status.is-error .save-status__dot {
+  background: var(--color-error);
+}

@@ -1,0 +1,64 @@
+/* Sizes use container units so the test content keeps its layout at any board size. */
+.spike__content {
+  position: absolute;
+  inset: 8cqh 6cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqh;
+}
+
+.spike__eyebrow {
+  font-size: 1.4cqw;
+  font-weight: 700;
+  letter-spacing: 0.3cqw;
+  text-transform: uppercase;
+  color: var(--color-brand-primary);
+}
+
+.spike__title {
+  font-size: 5cqw;
+  font-weight: 700;
+  letter-spacing: -0.15cqw;
+  line-height: 1.1;
+}
+
+.spike__body {
+  max-width: 60cqw;
+  font-size: 1.6cqw;
+  font-weight: 300;
+  color: var(--color-text-secondary-light);
+}
+
+.spike__diagram {
+  margin-top: 4cqh;
+  width: 60cqw;
+  fill: none;
+  stroke: var(--color-text-primary-light);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.spike__diagram text {
+  fill: var(--color-text-primary-light);
+  stroke: none;
+  font-size: 18px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.spike__motion-probe {
+  position: absolute;
+  bottom: 6cqh;
+  left: 6cqw;
+  width: 1.2cqw;
+  aspect-ratio: 1;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-primary);
+  animation: probe-slide 4s var(--ease-out) infinite alternate;
+}
+
+@keyframes probe-slide {
+  to {
+    transform: translateX(85cqw);
+  }
+}

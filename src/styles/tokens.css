@@ -1,0 +1,80 @@
+/*
+ * Subset of The SurfBoard Design System tokens.
+ * The global design system file is the source of truth; copy values from it, never invent new ones here.
+ */
+:root {
+  --color-brand-primary: #005ae0;
+  --color-brand-primary-light: #3380f0;
+  --color-brand-deep: #0a4494;
+
+  --color-surface-base: #09090f;
+  --color-surface-card: #111118;
+  --color-surface-elevated: #18181f;
+  --color-surface-hover: #1e1e28;
+  --color-surface-overlay: rgba(0, 0, 0, 0.6);
+  --color-surface-card-light: #ffffff;
+
+  --color-text-primary: #eeeef5;
+  --color-text-secondary: #7878a0;
+  --color-text-muted: #3c3c58;
+  --color-text-primary-light: #0d0d1a;
+  --color-text-secondary-light: #555570;
+
+  --color-border-default: rgba(255, 255, 255, 0.06);
+  --color-border-active: rgba(0, 90, 224, 0.3);
+  --color-success: #22c55e;
+  --color-success-bg: rgba(34, 197, 94, 0.08);
+  --color-error: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.08);
+  --color-warning: #f59e0b;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --icon-sm: 16px;
+  --icon-md: 20px;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  --opacity-40: 0.4;
+  --opacity-20: 0.2;
+
+  --shadow-active:
+    0 0 0 1px rgba(0, 90, 224, 0.3), 0 0 16px rgba(0, 90, 224, 0.08);
+  --shadow-float:
+    0 0 0 1px rgba(0, 90, 224, 0.2), 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-focus: 0 0 0 3px rgba(0, 90, 224, 0.25);
+  --shadow-modal:
+    0 0 0 1px rgba(255, 255, 255, 0.06), 0 24px 64px rgba(0, 0, 0, 0.6);
+
+  --duration-instant: 80ms;
+  --duration-fast: 200ms;
+  --duration-standard: 350ms;
+  --duration-slow: 500ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-toast: 500;
+
+  --font-brand:
+    'Overused Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, Arial,
+    sans-serif;
+  --font-code:
+    'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, 'Courier New',
+    monospace;
+}

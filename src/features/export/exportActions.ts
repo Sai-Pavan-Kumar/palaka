@@ -1,0 +1,101 @@
+import type { Editor } from 'tldraw'
+import {
+  getDirectory,
+  timestampForFileName,
+  writeFile,
+} from '../../shared/fileSystem'
+import { BOARD_HEIGHT, BOARD_WIDTH } from '../board/boardCamera'
+import { EXPORTS_DIR } from '../project/projectFiles'
+import { downloadFile } from '../../shared/downloadFile'
+import { useProjectStore } from '../project/projectStore'
+import { renderPages, type RenderedPage } from './renderPages'
+
+function slug(text: string): string {
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'page'
+  )
+}
+
+function numbered(
+  page: RenderedPage,
+  index: number,
+  extension: string,
+): string {
+  return `${String(index + 1).padStart(2, '0')}-${slug(page.name)}.${extension}`
+}
+
+// Into <folder>/exports/ when a folder is open, otherwise a normal download.
+// Returns where the file went, for the confirmation toast.
+async function saveToExports(
+  name: string,
+  data: Blob | string | BufferSource,
+): Promise<string> {
+  const root = useProjectStore.getState().project?.root
+  if (!root) {
+    downloadFile(name, data)
+    return `${name} (Downloads)`
+  }
+  const exportsDir = await getDirectory(root, EXPORTS_DIR, { create: true })
+  await writeFile(exportsDir!, name, data)
+  return `${EXPORTS_DIR}/${name}`
+}
+
+const allPageIds = (editor: Editor) => editor.getPages().map((page) => page.id)
+
+export async function exportCurrentPagePng(editor: Editor): Promise<string> {
+  const [page] = await renderPages(editor, [editor.getCurrentPageId()])
+  const index = allPageIds(editor).indexOf(editor.getCurrentPageId())
+  return saveToExports(numbered(page, index, 'png'), page.png)
+}
+
+// fflate and pdf-lib load only here, so they never slow the first paint.
+export async function exportAllPagesZip(editor: Editor): Promise<string> {
+  const [{ zipSync }, pages] = await Promise.all([
+    import('fflate'),
+    renderPages(editor, allPageIds(editor)),
+  ])
+  const entries: Record<string, Uint8Array> = {}
+  for (const [index, page] of pages.entries()) {
+    entries[numbered(page, index, 'png')] = new Uint8Array(
+      await page.png.arrayBuffer(),
+    )
+  }
+  // PNGs are already compressed; level 0 just packs them, which is much faster.
+  // fflate and pdf-lib allocate plain ArrayBuffers; their typings just say "maybe shared".
+  const zip = zipSync(entries, { level: 0 }) as Uint8Array<ArrayBuffer>
+  return saveToExports(`pages-${timestampForFileName()}.zip`, zip)
+}
+
+async function buildPdf(
+  pages: RenderedPage[],
+): Promise<Uint8Array<ArrayBuffer>> {
+  const { PDFDocument } = await import('pdf-lib')
+  const pdf = await PDFDocument.create()
+  for (const page of pages) {
+    const image = await pdf.embedPng(await page.png.arrayBuffer())
+    pdf.addPage([BOARD_WIDTH, BOARD_HEIGHT]).drawImage(image, {
+      x: 0,
+      y: 0,
+      width: BOARD_WIDTH,
+      height: BOARD_HEIGHT,
+    })
+  }
+  return (await pdf.save()) as Uint8Array<ArrayBuffer>
+}
+
+export async function exportAllPagesPdf(editor: Editor): Promise<string> {
+  const pages = await renderPages(editor, allPageIds(editor))
+  return saveToExports(
+    `pages-${timestampForFileName()}.pdf`,
+    await buildPdf(pages),
+  )
+}
+
+export async function exportCurrentPagePdf(editor: Editor): Promise<string> {
+  const pages = await renderPages(editor, [editor.getCurrentPageId()])
+  const index = allPageIds(editor).indexOf(editor.getCurrentPageId())
+  return saveToExports(numbered(pages[0], index, 'pdf'), await buildPdf(pages))
+}

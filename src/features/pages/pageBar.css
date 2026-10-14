@@ -1,0 +1,33 @@
+.page-bar {
+  position: fixed;
+  bottom: var(--space-3);
+  left: 50%;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  transform: translateX(-50%);
+}
+
+.page-bar__label {
+  min-width: 112px;
+  height: 44px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.page-bar__label:hover {
+  background: var(--color-surface-hover);
+}
+
+.page-bar__index {
+  margin-left: 0;
+  min-width: 16px;
+}
