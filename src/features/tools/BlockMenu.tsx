@@ -33,7 +33,10 @@ export function BlockMenu() {
           label="Blueprint blocks"
           shortcut="B"
           isActive={isActive}
-          onClick={toggle}
+          onClick={() => {
+            if (isActive) setTool('select')
+            else toggle()
+          }}
         />
       )}
     >
@@ -41,7 +44,8 @@ export function BlockMenu() {
         <BlockPicker
           current={isActive ? blockKind : null}
           onPick={(kind) => {
-            pickBlock(kind)
+            if (isActive && kind === blockKind) setTool('select')
+            else pickBlock(kind)
             close()
           }}
         />

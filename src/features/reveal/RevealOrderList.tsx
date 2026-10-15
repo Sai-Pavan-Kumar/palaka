@@ -17,11 +17,29 @@ type OrderRow = {
 }
 
 // Always-visible objects first (they are on screen from the start), then the
+function isOrphaned(shape: Shape, page: Page): boolean {
+  if (shape.type === 'tableState') {
+    return (
+      !page.shapes[shape.tableId] || page.shapes[shape.tableId].type !== 'table'
+    )
+  }
+  if (shape.type === 'highlight') {
+    return shape.targets.some(
+      (t) => !page.shapes[t.tableId] || page.shapes[t.tableId].type !== 'table',
+    )
+  }
+  return false
+}
+
+// Always-visible objects first (they are on screen from the start), then the
 // reveal steps in the order the audience will see them. A flowing connector
 // gets a second row for "dots start moving".
 function buildRows(doc: BoardDocument, page: Page): OrderRow[] {
   return page.order
     .map((id) => page.shapes[id])
+    .filter(
+      (shape): shape is Shape => Boolean(shape) && !isOrphaned(shape, page),
+    )
     .flatMap((shape) => {
       const label = describeShape(doc, shape)
       const rows: OrderRow[] = [

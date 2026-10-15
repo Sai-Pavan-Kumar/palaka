@@ -12,7 +12,7 @@ import {
   toggleLockSelected,
 } from './boardActions'
 import { useEngineStore } from './engineStore'
-import { selectShapes, setTool, useSessionStore } from './sessionStore'
+import { selectShapes, toggleTool, useSessionStore } from './sessionStore'
 
 function handleCommandKey(event: KeyboardEvent, key: string): boolean {
   const store = useEngineStore.getState()
@@ -43,7 +43,7 @@ function handlePlainKey(event: KeyboardEvent, key: string): boolean {
     return true
   }
   const tool = toolForKey(key, event.shiftKey)
-  if (tool) setTool(tool)
+  if (tool) toggleTool(tool)
   else if (key === 'delete' || key === 'backspace') deleteSelected()
   else if (key === 'escape') selectShapes([])
   else if (key === ']') moveSelectedToEdge('front')

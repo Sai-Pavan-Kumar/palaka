@@ -13,7 +13,12 @@ import {
   type FacecamShape,
   useFacecamStore,
 } from './facecamStore'
-import { useFacecamDrag, useFacecamResize } from './useFacecamInteractions'
+import { useEngineStore } from '../engine/engineStore'
+import {
+  useFacecamBoundary,
+  useFacecamDrag,
+  useFacecamResize,
+} from './useFacecamInteractions'
 import './facecam.css'
 
 function effectTitle(effect: FacecamEffect): string {
@@ -135,13 +140,16 @@ function FacecamControls(props: FacecamControlsProps) {
 function bubbleStyle(
   sizePx: number,
   pos: { x: number; y: number } | null,
+  isPortrait: boolean,
 ): React.CSSProperties {
+  const bottomOffset = isPortrait ? '84px' : '36px'
+  const rightOffset = isPortrait ? '16px' : '36px'
   return {
     width: `${sizePx}px`,
     height: `${sizePx}px`,
     ...(pos
       ? { left: `${pos.x}px`, top: `${pos.y}px` }
-      : { right: '36px', bottom: '36px' }),
+      : { right: rightOffset, bottom: bottomOffset }),
   }
 }
 
@@ -210,8 +218,41 @@ function FacecamResizeHandle({
   )
 }
 
-export function FacecamBubble() {
+function useFacecamSetup() {
   const store = useFacecamStore()
+  const aspect = useEngineStore((s) => s.doc.aspect)
+  const isPortrait = aspect === '9:16'
+  const bubbleRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const drag = useFacecamDrag(store.pos, store.setPos)
+  const resize = useFacecamResize(
+    store.customSize,
+    store.setCustomSize,
+    store.pos,
+    store.setPos,
+  )
+
+  useEffect(() => {
+    if (videoRef.current && store.stream) {
+      videoRef.current.srcObject = store.stream
+    }
+  }, [store.stream])
+
+  useFacecamBoundary(
+    bubbleRef,
+    store.customSize,
+    store.setCustomSize,
+    store.pos,
+    store.setPos,
+    aspect,
+  )
+
+  return { store, isPortrait, bubbleRef, videoRef, drag, resize }
+}
+
+export function FacecamBubble() {
+  const { store, isPortrait, bubbleRef, videoRef, drag, resize } =
+    useFacecamSetup()
   const {
     isEnabled,
     stream,
@@ -222,26 +263,15 @@ export function FacecamBubble() {
     bannerText,
     mirrored,
   } = store
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const drag = useFacecamDrag(pos, store.setPos)
-  const resize = useFacecamResize(
-    customSize,
-    store.setCustomSize,
-    pos,
-    store.setPos,
-  )
-
-  useEffect(() => {
-    if (videoRef.current && stream) videoRef.current.srcObject = stream
-  }, [stream])
 
   if (!isEnabled || !stream) return null
   const effectClass = effect !== 'none' ? `has-${effect}` : ''
 
   return (
     <div
+      ref={bubbleRef}
       className={`facecam-bubble is-${shape} ${effectClass}`}
-      style={bubbleStyle(customSize, pos)}
+      style={bubbleStyle(customSize, pos, isPortrait)}
       {...drag}
     >
       <FacecamEffectsLayer effect={effect} bannerText={bannerText} />

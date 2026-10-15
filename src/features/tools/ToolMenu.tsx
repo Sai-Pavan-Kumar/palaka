@@ -30,7 +30,10 @@ export function ToolMenu({
           label={label}
           shortcut={shortcutHint}
           isActive={!!activeTool}
-          onClick={toggle}
+          onClick={() => {
+            if (activeTool) setTool('select')
+            else toggle()
+          }}
         />
       )}
     >
@@ -41,7 +44,8 @@ export function ToolMenu({
             type="button"
             className={`menu-item ${tool.id === toolId ? 'is-active' : ''}`}
             onClick={() => {
-              setTool(tool.id)
+              if (tool.id === toolId) setTool('select')
+              else setTool(tool.id)
               close()
             }}
           >

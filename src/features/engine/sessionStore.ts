@@ -75,6 +75,11 @@ export function setTool(tool: EngineTool): void {
   setSession({ tool, selectedIds: tool === 'select' ? selectedIds : [] })
 }
 
+export function toggleTool(tool: EngineTool): void {
+  const { tool: current } = useSessionStore.getState()
+  setTool(current === tool && tool !== 'select' ? 'select' : tool)
+}
+
 export function selectShapes(selectedIds: string[]): void {
   setSession({ selectedIds })
 }

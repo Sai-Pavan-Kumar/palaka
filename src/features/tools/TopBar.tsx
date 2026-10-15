@@ -2,7 +2,7 @@ import { Camera, CameraOff, Presentation, Undo2 } from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
 import { useFacecamStore } from '../facecam/facecamStore'
 import { useEngineStore } from '../engine/engineStore'
-import { setTool, useSessionStore } from '../engine/sessionStore'
+import { toggleTool, useSessionStore } from '../engine/sessionStore'
 import { ExportMenu } from '../export/ExportMenu'
 import { RecordControls } from '../recorder/RecordControls'
 import { useRecorderStore } from '../recorder/recorderStore'
@@ -20,7 +20,7 @@ function ToolButton({ tool }: { tool: ToolDefinition }) {
       label={tool.label}
       shortcut={tool.shortcut}
       isActive={isActive}
-      onClick={() => setTool(tool.id)}
+      onClick={() => toggleTool(tool.id)}
     />
   )
 }

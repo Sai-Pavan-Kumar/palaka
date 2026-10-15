@@ -1,5 +1,6 @@
 import { rerouteConnectors, unbindFrom } from './connectors'
 import { DEFAULT_PAPER } from './paper'
+import { pruneOrphanedShapes } from './pruneShapes'
 import type { Aspect, BoardDocument, ImageAsset, Page, Shape } from './types'
 
 // Every function returns new objects and never mutates the old ones. Undo
@@ -63,7 +64,7 @@ export function removeShapes(page: Page, ids: Iterable<string>): Page {
   if (!page.order.some((id) => doomed.has(id))) return page
   const next = { ...page.shapes }
   for (const id of doomed) delete next[id]
-  return unbindFrom(
+  const unbound = unbindFrom(
     {
       ...page,
       shapes: next,
@@ -71,6 +72,7 @@ export function removeShapes(page: Page, ids: Iterable<string>): Page {
     },
     doomed,
   )
+  return pruneOrphanedShapes(unbound, doomed)
 }
 
 // Keeps the moved shapes in their current relative order.

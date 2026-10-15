@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { MAX_FACECAM_SIZE, MIN_FACECAM_SIZE } from './facecamStore'
 
 function clampDragPos(
@@ -71,9 +71,14 @@ function calcMaxAllowed(
 ): number {
   const parent = bubble?.offsetParent as HTMLElement | null
   if (!parent) return MAX_FACECAM_SIZE
-  const availW = parent.clientWidth - currX - 16
-  const availH = parent.clientHeight - currY - 16
-  return Math.min(MAX_FACECAM_SIZE, Math.max(MIN_FACECAM_SIZE, availW, availH))
+  const availW = Math.max(16, parent.clientWidth - currX - 16)
+  const availH = Math.max(16, parent.clientHeight - currY - 16)
+  const maxFit = Math.min(availW, availH)
+  const minAllowed = Math.min(
+    MIN_FACECAM_SIZE,
+    Math.max(16, parent.clientWidth - 32),
+  )
+  return Math.min(MAX_FACECAM_SIZE, Math.max(minAllowed, maxFit))
 }
 
 export function useFacecamResize(
@@ -123,4 +128,33 @@ export function useFacecamResize(
   }
 
   return { onResizePointerDown, onResizePointerMove, onResizePointerUp }
+}
+
+export function useFacecamBoundary(
+  bubbleRef: React.RefObject<HTMLDivElement | null>,
+  customSize: number,
+  setCustomSize: (size: number) => void,
+  pos: { x: number; y: number } | null,
+  setPos: (pos: { x: number; y: number }) => void,
+  aspect: string,
+) {
+  useEffect(() => {
+    const bubble = bubbleRef.current
+    const parent = bubble?.offsetParent as HTMLElement | null
+    if (!parent) return
+    const maxW = parent.clientWidth
+    const maxH = parent.clientHeight
+    if (customSize > maxW - 32) {
+      setCustomSize(Math.max(MIN_FACECAM_SIZE, maxW - 32))
+    }
+    if (pos) {
+      const maxX = Math.max(16, maxW - customSize - 16)
+      const maxY = Math.max(16, maxH - customSize - 16)
+      const nextX = Math.min(maxX, Math.max(16, pos.x))
+      const nextY = Math.min(maxY, Math.max(16, pos.y))
+      if (nextX !== pos.x || nextY !== pos.y) {
+        setPos({ x: nextX, y: nextY })
+      }
+    }
+  }, [aspect, customSize, pos, setCustomSize, setPos, bubbleRef])
 }
