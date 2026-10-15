@@ -17,7 +17,26 @@ describe('computeSnap', () => {
 
     const result = computeSnap(moving, [target], 8)
     expect(result.dx).toBe(-4) // snaps 104 -> 100
-    expect(result.guides.some((g) => g.type === 'x' && g.x === 100)).toBe(true)
+    expect(result.guides).toContainEqual({
+      type: 'x',
+      x: 100,
+      minY: 88, // Math.min(100, 300) - 12
+      maxY: 412, // Math.max(200, 400) + 12
+    })
+  })
+
+  it('snaps top edge to target top edge and computes horizontal span', () => {
+    const moving: Bounds = { minX: 50, minY: 303, maxX: 150, maxY: 383 }
+    const target: Bounds = { minX: 300, minY: 300, maxX: 400, maxY: 380 }
+
+    const result = computeSnap(moving, [target], 8)
+    expect(result.dy).toBe(-3) // snaps 303 -> 300
+    expect(result.guides).toContainEqual({
+      type: 'y',
+      y: 300,
+      minX: 38, // Math.min(50, 300) - 12
+      maxX: 412, // Math.max(150, 400) + 12
+    })
   })
 
   it('snaps center to target center', () => {

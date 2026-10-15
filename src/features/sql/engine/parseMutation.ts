@@ -100,9 +100,10 @@ function parseValueRow(rowText: string): (string | null)[] {
 }
 
 export function parseInsertMutation(sql: string): InsertMutation {
+  const cleaned = sql.replace(/^\s*--[^\n]*\n?/gm, '').trim()
   const match =
     /^insert\s+into\s+([\w$."`[\]]+)(?:\s*\(([^)]+)\))?\s+values\s*(.*)$/is.exec(
-      sql.trim().replace(/;$/, ''),
+      cleaned.replace(/;$/, ''),
     )
   if (!match) {
     throw new Error('Expected INSERT INTO <table> [(cols)] VALUES (...)')
@@ -123,6 +124,6 @@ export function parseInsertMutation(sql: string): InsertMutation {
 }
 
 export function isMutationStatement(sql: string): boolean {
-  const s = sql.trim()
-  return /^(update|delete)\b/i.test(s)
+  const s = sql.replace(/^\s*--[^\n]*\n?/gm, '').trim()
+  return /^(update|delete|insert)\b/i.test(s)
 }

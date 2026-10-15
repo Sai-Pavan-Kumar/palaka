@@ -72,6 +72,7 @@ type PageSvgProps = {
   className?: string
   // Exports add embedded fonts here.
   children?: ReactNode
+  includeSpotlight?: boolean
 }
 
 function SpotlightLayer({
@@ -110,6 +111,7 @@ export function PageSvg({
   flowUpTo = null,
   className,
   children,
+  includeSpotlight = true,
 }: PageSvgProps) {
   const { width, height } = SLIDE_SIZE[aspect]
   const palette = getPalette(paper)
@@ -138,7 +140,9 @@ export function PageSvg({
           drawOnStep={drawOnStep}
           flowUpTo={flowUpTo}
         />
-        <SpotlightLayer page={page} width={width} height={height} />
+        {includeSpotlight && (
+          <SpotlightLayer page={page} width={width} height={height} />
+        )}
         {paper.showBrand && <BrandMark palette={palette} />}
       </svg>
     </BoardPaletteContext>

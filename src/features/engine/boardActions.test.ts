@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   copySelected,
   deleteSelected,
+  duplicateSelected,
   getCurrentPage,
   insertShape,
   pasteClipboard,
@@ -84,5 +85,39 @@ describe('boardActions - clipboard and lock', () => {
     expect(pasted.x).toBe(132)
     expect(pasted.y).toBe(132)
     expect(pasted.locked).toBe(false)
+  })
+
+  it('allocates next revealStep on duplicate when not presenting', () => {
+    const box = { ...makeBox('box-1', 100, 100), revealStep: 1 }
+    insertShape(box)
+    selectShapes(['box-1'])
+
+    useSessionStore.setState({ presenting: false })
+    duplicateSelected()
+
+    const page = getCurrentPage()
+    const dupId = useSessionStore.getState().selectedIds[0]
+    expect(page.shapes['box-1'].revealStep).toBe(1)
+    expect(page.shapes[dupId].revealStep).toBe(2)
+  })
+
+  it('clears revealStep on duplicate and paste when presenting', () => {
+    const box = { ...makeBox('box-1', 100, 100), revealStep: 3 }
+    insertShape(box)
+    selectShapes(['box-1'])
+
+    useSessionStore.setState({ presenting: true })
+    duplicateSelected()
+
+    const page = getCurrentPage()
+    const dupId = useSessionStore.getState().selectedIds[0]
+    expect(page.shapes[dupId].revealStep).toBeUndefined()
+
+    selectShapes(['box-1'])
+    copySelected()
+    pasteClipboard()
+
+    const pastedId = useSessionStore.getState().selectedIds[0]
+    expect(getCurrentPage().shapes[pastedId].revealStep).toBeUndefined()
   })
 })

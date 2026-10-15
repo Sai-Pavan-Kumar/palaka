@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useUiStore } from '../shell/uiStore'
 
 export type FacecamShape = 'circle' | 'rounded'
 export type FacecamSize = 's' | 'm' | 'l'
@@ -23,6 +24,24 @@ type FacecamState = {
   cycleShape: () => void
   cycleSize: () => void
   closeCamera: () => void
+}
+
+export function describeCameraError(error: unknown): string {
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    if (error.name === 'NotAllowedError') {
+      return 'Camera access was blocked. Allow camera in browser settings.'
+    }
+    if (
+      error.name === 'NotFoundError' ||
+      error.name === 'DevicesNotFoundError'
+    ) {
+      return 'No camera found on this device.'
+    }
+    if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+      return 'Camera is already in use by another application.'
+    }
+  }
+  return (error as Error)?.message || 'Could not start camera.'
 }
 
 export const useFacecamStore = create<FacecamState>((set, get) => ({
@@ -56,7 +75,9 @@ export const useFacecamStore = create<FacecamState>((set, get) => ({
       })
       set({ isEnabled: true, stream: media, error: null })
     } catch (err) {
-      set({ error: (err as Error).message, isEnabled: false })
+      const msg = describeCameraError(err)
+      set({ error: msg, isEnabled: false })
+      useUiStore.getState().showToast(msg, 'error')
     }
   },
 

@@ -152,24 +152,35 @@ function readStatement(
   result: SqlParseResult,
   inserts: SqlInsert[],
 ): void {
-  if (/^insert\s/i.test(statement)) {
-    if (result.queries.length > 0 || result.mutations.length > 0) {
-      result.mutations.push(statement)
+  const isAnimate = /(?:--|\/\*)\s*(?:animate|mutation)\b/i.test(statement)
+  const clean = statement
+    .replace(/(?:--|\/\*)\s*(?:animate|mutation)\b[^\n]*/gi, '')
+    .trim()
+
+  if (/^insert\s/i.test(clean)) {
+    const isMutation =
+      isAnimate ||
+      result.queries.length > 0 ||
+      result.mutations.length > 0 ||
+      result.tables.length === 0
+
+    if (isMutation) {
+      result.mutations.push(clean)
     } else {
-      const insert = parseInsert(statement)
+      const insert = parseInsert(clean)
       if (typeof insert === 'string') result.errors.push(insert)
       else inserts.push(insert)
     }
-  } else if (/^(update|delete)\s/i.test(statement)) {
-    result.mutations.push(statement)
-  } else if (/^select\s/i.test(statement)) {
-    result.queries.push(statement)
-  } else if (/^create\s+(?:\w+\s+)*?table\b/i.test(statement)) {
-    const table = parseCreateTable(statement)
+  } else if (/^(update|delete)\s/i.test(clean)) {
+    result.mutations.push(clean)
+  } else if (/^select\s/i.test(clean)) {
+    result.queries.push(clean)
+  } else if (/^create\s+(?:\w+\s+)*?table\b/i.test(clean)) {
+    const table = parseCreateTable(clean)
     if (typeof table === 'string') result.errors.push(table)
     else result.tables.push(table)
   } else {
-    result.skipped.push(describeSkipped(statement))
+    result.skipped.push(describeSkipped(clean))
   }
 }
 

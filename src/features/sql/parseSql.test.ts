@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { parseSql } from './parseSql'
+import { planQueries } from './planQueries'
+import type { Page, TableShape } from '../engine/model/types'
+import { DEFAULT_STYLE } from '../engine/model/shapeFactory'
 
 const POSTGRES = `
 -- Orders schema
@@ -172,5 +175,65 @@ describe('parseSql', () => {
     expect(mutations).toHaveLength(2)
     expect(mutations[0]).toContain("UPDATE users SET name = 'Alicia'")
     expect(mutations[1]).toContain('DELETE FROM users WHERE id = 1')
+  })
+
+  it('collects animated INSERT before queries when marked with directive', () => {
+    const { tables, mutations, errors } = parseSql(`
+      CREATE TABLE users (id INT PRIMARY KEY, name TEXT);
+      INSERT INTO users VALUES (1, 'Alice');
+      -- animate
+      INSERT INTO users VALUES (2, 'Bob');`)
+    expect(errors).toEqual([])
+    expect(tables[0].rows).toEqual([['1', 'Alice']])
+    expect(mutations).toHaveLength(1)
+    expect(mutations[0]).toContain("INSERT INTO users VALUES (2, 'Bob')")
+  })
+
+  it('treats standalone INSERT on existing board table as mutation', () => {
+    const { tables, mutations, errors } = parseSql(`
+      INSERT INTO users VALUES (3, 'Charlie');`)
+    expect(errors).toEqual([])
+    expect(tables).toHaveLength(0)
+    expect(mutations).toHaveLength(1)
+    expect(mutations[0]).toContain("INSERT INTO users VALUES (3, 'Charlie')")
+  })
+
+  it('stacks multiple query result tables vertically without collision', () => {
+    const table: TableShape = {
+      id: 'users',
+      type: 'table',
+      name: 'users',
+      x: 100,
+      y: 100,
+      scale: 1,
+      columns: [
+        { name: 'id', type: 'int', pk: true, notNull: true, unique: true },
+      ],
+      rows: [['1'], ['2']],
+      color: 'black',
+      opacity: 1,
+      size: 'm',
+      fill: 'tint',
+      dash: 'clean',
+    }
+    const page: Page = {
+      id: 'p1',
+      name: 'Page 1',
+      shapes: { users: table },
+      order: ['users'],
+    }
+    const tablesMap = new Map([['users', table]])
+    const plan = planQueries(
+      page,
+      ['SELECT * FROM users;', 'SELECT id FROM users WHERE id = 1;'],
+      tablesMap,
+      DEFAULT_STYLE,
+    )
+    const resultTables = plan.shapes.filter(
+      (s): s is TableShape => s.type === 'table' && s.name === 'result',
+    )
+    expect(resultTables).toHaveLength(2)
+    // Query 2 result table must be placed below Query 1 result table
+    expect(resultTables[1].y).toBeGreaterThan(resultTables[0].y)
   })
 })

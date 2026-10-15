@@ -16,8 +16,15 @@ if (typeof document !== 'undefined' && document.fonts) {
   })
 }
 
-function getContext(): CanvasRenderingContext2D {
-  context ??= document.createElement('canvas').getContext('2d')!
+function getContext(): CanvasRenderingContext2D | null {
+  if (context) return context
+  if (typeof document !== 'undefined') {
+    context = document.createElement('canvas').getContext('2d')
+  } else if (typeof OffscreenCanvas !== 'undefined') {
+    context = new OffscreenCanvas(1, 1).getContext(
+      '2d',
+    ) as unknown as CanvasRenderingContext2D
+  }
   return context
 }
 
@@ -26,8 +33,12 @@ function measureLine(line: string, fontCss: string): number {
   let width = widthCache.get(key)
   if (width === undefined) {
     const ctx = getContext()
-    ctx.font = fontCss
-    width = ctx.measureText(line).width
+    if (ctx) {
+      ctx.font = fontCss
+      width = ctx.measureText(line).width
+    } else {
+      width = line.length * 10
+    }
     widthCache.set(key, width)
   }
   return width
@@ -68,12 +79,16 @@ export function getBaselineOffset(
   let offset = baselineCache.get(fontCss)
   if (offset === undefined) {
     const ctx = getContext()
-    ctx.font = fontCss
-    const metrics = ctx.measureText('Hg')
-    const ascent = metrics.fontBoundingBoxAscent
-    const descent = metrics.fontBoundingBoxDescent
-    const lineBox = getFontPx(shape) * LINE_HEIGHT
-    offset = (lineBox - (ascent + descent)) / 2 + ascent
+    if (ctx) {
+      ctx.font = fontCss
+      const metrics = ctx.measureText('Hg')
+      const ascent = metrics.fontBoundingBoxAscent
+      const descent = metrics.fontBoundingBoxDescent
+      const lineBox = getFontPx(shape) * LINE_HEIGHT
+      offset = (lineBox - (ascent + descent)) / 2 + ascent
+    } else {
+      offset = getFontPx(shape) * 0.8
+    }
     baselineCache.set(fontCss, offset)
   }
   return offset

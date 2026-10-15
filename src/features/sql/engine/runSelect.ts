@@ -71,8 +71,8 @@ function project(
 ): Value[] {
   return query.items.flatMap((item) => {
     if (item.kind === 'all')
-      return table.columns.map((c) => group[0][c.toLowerCase()])
-    if (item.kind === 'column') return [group[0][item.column] ?? null]
+      return table.columns.map((c) => group[0]?.[c.toLowerCase()] ?? null)
+    if (item.kind === 'column') return [group[0]?.[item.column] ?? null]
     return [aggregate(item, group)]
   })
 }
@@ -201,9 +201,7 @@ function runGrouped(
     kept.filter((i) => keyOf(i) === key).map((i) => rows[i]),
   )
   if (query.groupBy.length === 0) groups = [kept.map((i) => rows[i])]
-  let resultRows = groups.map((group) =>
-    project(query, table, group.length ? group : [{}]),
-  )
+  let resultRows = groups.map((group) => project(query, table, group))
   const columns = resultColumns(query, table)
   if (query.orderBy.length > 0) {
     const asRows = resultRows.map((r) =>

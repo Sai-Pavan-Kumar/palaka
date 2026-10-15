@@ -159,7 +159,7 @@ function nextSampleVal(
 export function buildInsertRow(table: TableShape): string {
   const rows = table.rows ?? []
   const values = table.columns.map((c, i) => nextSampleVal(c, rows, i))
-  return `INSERT INTO ${table.name} VALUES (${values.join(', ')});`
+  return `-- animate\nINSERT INTO ${table.name} VALUES (${values.join(', ')});`
 }
 
 export function buildUpdateRow(table: TableShape): string {

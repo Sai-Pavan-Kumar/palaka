@@ -91,7 +91,13 @@ export async function renderPages(pageIds: string[]): Promise<RenderedPage[]> {
     const svg = renderToStaticMarkup(
       createElement(
         PageSvg,
-        { page, aspect: doc.aspect, paper: doc.paper, imageUrls },
+        {
+          page,
+          aspect: doc.aspect,
+          paper: doc.paper,
+          imageUrls,
+          includeSpotlight: false,
+        },
         createElement('style', null, fontCss),
       ),
     )

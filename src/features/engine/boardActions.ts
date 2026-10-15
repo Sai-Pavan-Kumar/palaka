@@ -58,19 +58,34 @@ export function deleteSelected(): void {
   selectShapes(selectedIds.filter((id) => page.shapes[id]?.locked))
 }
 
+function cloneForPlacement(shape: Shape, idMap: Map<string, string>): Shape {
+  const remapped = remapBindings(
+    translateShape(shape, DUPLICATE_OFFSET, DUPLICATE_OFFSET),
+    idMap,
+  )
+  const { revealStep: _r, ...cleanShape } = remapped
+  if (cleanShape.type === 'line' && cleanShape.flow?.step !== undefined) {
+    const { step: _f, ...cleanFlow } = cleanShape.flow
+    return {
+      ...cleanShape,
+      id: idMap.get(shape.id)!,
+      locked: false,
+      flow: cleanFlow,
+    } as Shape
+  }
+  return {
+    ...cleanShape,
+    id: idMap.get(shape.id)!,
+    locked: false,
+  } as Shape
+}
+
 export function duplicateSelected(): void {
   const { selectedIds, presenting } = useSessionStore.getState()
   const originals = getShapesInOrder(getCurrentPage(), selectedIds)
   if (originals.length === 0) return
   const idMap = new Map(originals.map((s) => [s.id, crypto.randomUUID()]))
-  const copies = originals.map((shape) => ({
-    ...remapBindings(
-      translateShape(shape, DUPLICATE_OFFSET, DUPLICATE_OFFSET),
-      idMap,
-    ),
-    id: idMap.get(shape.id)!,
-    locked: false,
-  }))
+  const copies = originals.map((shape) => cloneForPlacement(shape, idMap))
   commitCurrentPage((page) =>
     copies.reduce(
       (next, copy) => addShape(next, withRevealStep(next, copy, presenting)),
@@ -91,14 +106,7 @@ export function pasteClipboard(): void {
   if (clipboard.length === 0) return
   const { presenting } = useSessionStore.getState()
   const idMap = new Map(clipboard.map((s) => [s.id, crypto.randomUUID()]))
-  const copies = clipboard.map((shape) => ({
-    ...remapBindings(
-      translateShape(shape, DUPLICATE_OFFSET, DUPLICATE_OFFSET),
-      idMap,
-    ),
-    id: idMap.get(shape.id)!,
-    locked: false,
-  }))
+  const copies = clipboard.map((shape) => cloneForPlacement(shape, idMap))
   commitCurrentPage((page) =>
     copies.reduce(
       (next, copy) => addShape(next, withRevealStep(next, copy, presenting)),

@@ -64,19 +64,19 @@ function resultTable(
   leftTable: TableShape,
   rightTable: TableShape | undefined,
   result: { columns: string[]; rows: (string | null)[][] },
+  resultY: number,
 ): TableShape {
   const leftBox = getTableBox(leftTable)
   const rightBox = rightTable ? getTableBox(rightTable) : undefined
   const rightmostX = rightBox
     ? Math.max(leftBox.x + leftBox.w, rightBox.x + rightBox.w)
     : leftBox.x + leftBox.w
-  const topY = rightBox ? Math.min(leftBox.y, rightBox.y) : leftBox.y
   return {
     ...leftTable,
     id: crypto.randomUUID(),
     revealStep: undefined,
     x: rightmostX + RESULT_GAP,
-    y: topY,
+    y: resultY,
     name: 'result',
     columns: result.columns.map((name) => ({
       name,
@@ -129,6 +129,7 @@ function buildQuery(
   formattedText: string,
   cardX: number,
   cardY: number,
+  resultY: number,
   query: SelectQuery,
   leftTable: TableShape,
   rightTable: TableShape | undefined,
@@ -148,7 +149,7 @@ function buildQuery(
   return [
     codeCard(key, formattedText, cardX, cardY, style),
     ...buildStages(key, run, leftTable, rightTable),
-    resultTable(key, leftTable, rightTable, run.result),
+    resultTable(key, leftTable, rightTable, run.result, resultY),
   ]
 }
 
@@ -172,13 +173,19 @@ export function initialCardY(tables: Map<string, TableShape>): number {
   return maxTableBottom + CARD_GAP
 }
 
+export function initialResultY(tables: Map<string, TableShape>): number {
+  const tops = [...tables.values()].map((t) => t.y)
+  return tops.length > 0 ? Math.min(...tops) : 150
+}
+
 function planSingleQuery(
   key: string,
   sql: string,
   tables: Map<string, TableShape>,
   currentCardY: number,
+  currentResultY: number,
   style: ShapeStyle,
-): { shapes: Shape[]; nextCardY: number } {
+): { shapes: Shape[]; nextCardY: number; nextResultY: number } {
   const query = parseSelect(sql)
   const from = query.table
   const leftTable = tables.get(from)
@@ -197,15 +204,24 @@ function planSingleQuery(
     formatted,
     120,
     currentCardY,
+    currentResultY,
     query,
     leftTable,
     rightTable,
     tables,
     style,
   )
+  const resTable = built.find(
+    (s): s is TableShape =>
+      s.type === 'table' && s.fromQuery?.endsWith(':result') === true,
+  )
+  const nextResultY = resTable
+    ? currentResultY + getTableBox(resTable).h + 40
+    : currentResultY
   return {
     shapes: built,
     nextCardY: currentCardY + cardHeight(formatted) + 16,
+    nextResultY,
   }
 }
 
@@ -221,6 +237,7 @@ export function planQueries(
     if (key?.startsWith('q')) old.set(key, page.shapes[id])
   }
   let currentCardY = initialCardY(tables)
+  let currentResultY = initialResultY(tables)
   const plan: QueryPlan = {
     shapes: [],
     dropped: [],
@@ -234,9 +251,11 @@ export function planQueries(
         sql,
         tables,
         currentCardY,
+        currentResultY,
         style,
       )
       currentCardY = res.nextCardY
+      currentResultY = res.nextResultY
       for (const shape of res.shapes) {
         plan.shapes.push(keepPlace(shape, old.get(shape.fromQuery!)))
         old.delete(shape.fromQuery!)

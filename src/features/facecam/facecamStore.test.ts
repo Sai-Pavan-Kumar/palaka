@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { useFacecamStore } from './facecamStore'
+import { describe, expect, it, vi } from 'vitest'
+import { describeCameraError, useFacecamStore } from './facecamStore'
+import { useUiStore } from '../shell/uiStore'
 
 describe('facecamStore', () => {
   it('cycles through sizes', () => {
@@ -39,5 +40,59 @@ describe('facecamStore', () => {
 
     store.closeCamera()
     expect(useFacecamStore.getState().isEnabled).toBe(false)
+  })
+
+  it('translates DOMException error types correctly', () => {
+    const notAllowed = new DOMException('Permission denied', 'NotAllowedError')
+    expect(describeCameraError(notAllowed)).toBe(
+      'Camera access was blocked. Allow camera in browser settings.',
+    )
+
+    const notFound = new DOMException('No device', 'NotFoundError')
+    expect(describeCameraError(notFound)).toBe(
+      'No camera found on this device.',
+    )
+
+    const inUse = new DOMException('In use', 'NotReadableError')
+    expect(describeCameraError(inUse)).toBe(
+      'Camera is already in use by another application.',
+    )
+
+    const fallback = new Error('Generic failure')
+    expect(describeCameraError(fallback)).toBe('Generic failure')
+  })
+
+  it('triggers error toast on camera permission denial', async () => {
+    const originalMediaDevices = navigator.mediaDevices
+    const mockGetUserMedia = vi
+      .fn()
+      .mockRejectedValue(
+        new DOMException('Permission denied', 'NotAllowedError'),
+      )
+
+    Object.defineProperty(navigator, 'mediaDevices', {
+      value: { getUserMedia: mockGetUserMedia },
+      configurable: true,
+    })
+
+    try {
+      await useFacecamStore.getState().toggleCamera()
+      expect(useFacecamStore.getState().isEnabled).toBe(false)
+      expect(useFacecamStore.getState().error).toBe(
+        'Camera access was blocked. Allow camera in browser settings.',
+      )
+      expect(useUiStore.getState().toast).toEqual(
+        expect.objectContaining({
+          message:
+            'Camera access was blocked. Allow camera in browser settings.',
+          tone: 'error',
+        }),
+      )
+    } finally {
+      Object.defineProperty(navigator, 'mediaDevices', {
+        value: originalMediaDevices,
+        configurable: true,
+      })
+    }
   })
 })

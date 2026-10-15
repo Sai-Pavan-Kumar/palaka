@@ -11,16 +11,14 @@ function useFacecamDrag(
   const dragStart = useRef({ pointerX: 0, pointerY: 0, origX: 0, origY: 0 })
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    // Only drag with primary mouse button
     if (e.button !== 0) return
     e.stopPropagation()
     const target = e.currentTarget
-    const rect = target.getBoundingClientRect()
     dragStart.current = {
       pointerX: e.clientX,
       pointerY: e.clientY,
-      origX: pos ? pos.x : rect.left,
-      origY: pos ? pos.y : rect.top,
+      origX: pos ? pos.x : target.offsetLeft,
+      origY: pos ? pos.y : target.offsetTop,
     }
     setIsDragging(true)
     target.setPointerCapture(e.pointerId)
@@ -31,9 +29,17 @@ function useFacecamDrag(
     e.stopPropagation()
     const dx = e.clientX - dragStart.current.pointerX
     const dy = e.clientY - dragStart.current.pointerY
+    const target = e.currentTarget
+    const parent = target.offsetParent as HTMLElement | null
+    const maxX = parent
+      ? Math.max(16, parent.clientWidth - target.offsetWidth - 16)
+      : 2000
+    const maxY = parent
+      ? Math.max(16, parent.clientHeight - target.offsetHeight - 16)
+      : 2000
     setPos({
-      x: Math.max(16, dragStart.current.origX + dx),
-      y: Math.max(16, dragStart.current.origY + dy),
+      x: Math.min(maxX, Math.max(16, dragStart.current.origX + dx)),
+      y: Math.min(maxY, Math.max(16, dragStart.current.origY + dy)),
     })
   }
 

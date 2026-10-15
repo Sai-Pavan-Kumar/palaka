@@ -43,10 +43,23 @@ export function stripComments(sql: string): string {
       closing = QUOTES[char]
       out += char
     } else if (char === '-' && sql[i + 1] === '-') {
+      const lineEnd = sql.indexOf('\n', i)
+      const line = sql.slice(i, lineEnd === -1 ? sql.length : lineEnd)
+      if (/^--\s*(?:animate|mutation)\b/i.test(line)) {
+        out += line
+        i += line.length - 1
+        continue
+      }
       while (i < sql.length && sql[i] !== '\n') i++
       out += '\n'
     } else if (char === '/' && sql[i + 1] === '*') {
       const end = sql.indexOf('*/', i + 2)
+      const block = sql.slice(i, end === -1 ? sql.length : end + 2)
+      if (/^\/\*\s*(?:animate|mutation)\b/i.test(block)) {
+        out += block
+        i += block.length - 1
+        continue
+      }
       i = end === -1 ? sql.length : end + 1
       out += ' '
     } else {

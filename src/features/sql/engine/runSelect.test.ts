@@ -82,6 +82,14 @@ describe('runSelect', () => {
     ])
   })
 
+  it('aggregates on empty filtered set correctly without GROUP BY (COUNT = 0, SUM = null)', () => {
+    const { result } = run(
+      'SELECT COUNT(*) AS total_count, SUM(total) AS sum_total FROM orders WHERE total > 99999',
+    )
+    expect(result.columns).toEqual(['total_count', 'sum_total'])
+    expect(result.rows).toEqual([['0', null]])
+  })
+
   it('handles LIKE, IN and NOT', () => {
     expect(
       run("SELECT id FROM orders WHERE city LIKE 'H%'").result.rows,
