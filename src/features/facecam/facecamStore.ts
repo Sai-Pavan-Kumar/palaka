@@ -3,6 +3,8 @@ import { useUiStore } from '../shell/uiStore'
 
 export type FacecamShape = 'circle' | 'rounded'
 export type FacecamSize = 's' | 'm' | 'l'
+export type FacecamEffect =
+  'none' | 'spinning-border' | 'pulse' | 'subscribe-badge'
 
 export const FACECAM_SIZES: Record<FacecamSize, number> = {
   s: 180,
@@ -10,16 +12,26 @@ export const FACECAM_SIZES: Record<FacecamSize, number> = {
   l: 320,
 }
 
+export const MIN_FACECAM_SIZE = 120
+export const MAX_FACECAM_SIZE = 520
+
 type FacecamState = {
   isEnabled: boolean
   stream: MediaStream | null
   pos: { x: number; y: number } | null
   shape: FacecamShape
   size: FacecamSize
+  customSize: number
+  effect: FacecamEffect
+  bannerText: string
   mirrored: boolean
   error: string | null
   toggleCamera: () => Promise<void>
   setPos: (pos: { x: number; y: number }) => void
+  setCustomSize: (size: number) => void
+  cycleEffect: () => void
+  setEffect: (effect: FacecamEffect) => void
+  setBannerText: (text: string) => void
   toggleMirrored: () => void
   cycleShape: () => void
   cycleSize: () => void
@@ -44,12 +56,59 @@ export function describeCameraError(error: unknown): string {
   return (error as Error)?.message || 'Could not start camera.'
 }
 
+async function startMediaCamera(
+  set: (s: Partial<FacecamState>) => void,
+): Promise<void> {
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('Camera is not supported in this browser')
+    }
+    const media = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 640 },
+        height: { ideal: 640 },
+        facingMode: 'user',
+      },
+      audio: false,
+    })
+    set({ isEnabled: true, stream: media, error: null })
+  } catch (err) {
+    const msg = describeCameraError(err)
+    set({ error: msg, isEnabled: false })
+    useUiStore.getState().showToast(msg, 'error')
+  }
+}
+
+function nextEffect(current: FacecamEffect): FacecamEffect {
+  const effects: FacecamEffect[] = [
+    'none',
+    'spinning-border',
+    'pulse',
+    'subscribe-badge',
+  ]
+  const nextIdx = (effects.indexOf(current) + 1) % effects.length
+  return effects[nextIdx]
+}
+
+function nextPresetSize(current: FacecamSize): {
+  size: FacecamSize
+  customSize: number
+} {
+  const order: FacecamSize[] = ['s', 'm', 'l']
+  const nextIdx = (order.indexOf(current) + 1) % order.length
+  const sz = order[nextIdx]
+  return { size: sz, customSize: FACECAM_SIZES[sz] }
+}
+
 export const useFacecamStore = create<FacecamState>((set, get) => ({
   isEnabled: false,
   stream: null,
   pos: null,
   shape: 'circle',
   size: 'm',
+  customSize: FACECAM_SIZES.m,
+  effect: 'none',
+  bannerText: 'Subscribe',
   mirrored: true,
   error: null,
 
@@ -60,37 +119,24 @@ export const useFacecamStore = create<FacecamState>((set, get) => ({
       set({ isEnabled: false, stream: null, error: null })
       return
     }
-
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error('Camera is not supported in this browser')
-      }
-      const media = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 640 },
-          height: { ideal: 640 },
-          facingMode: 'user',
-        },
-        audio: false,
-      })
-      set({ isEnabled: true, stream: media, error: null })
-    } catch (err) {
-      const msg = describeCameraError(err)
-      set({ error: msg, isEnabled: false })
-      useUiStore.getState().showToast(msg, 'error')
-    }
+    await startMediaCamera(set)
   },
 
   setPos: (pos) => set({ pos }),
+  setCustomSize: (size) =>
+    set({
+      customSize: Math.min(
+        MAX_FACECAM_SIZE,
+        Math.max(MIN_FACECAM_SIZE, Math.round(size)),
+      ),
+    }),
+  cycleEffect: () => set((s) => ({ effect: nextEffect(s.effect) })),
+  setEffect: (effect) => set({ effect }),
+  setBannerText: (bannerText) => set({ bannerText }),
   toggleMirrored: () => set((s) => ({ mirrored: !s.mirrored })),
   cycleShape: () =>
     set((s) => ({ shape: s.shape === 'circle' ? 'rounded' : 'circle' })),
-  cycleSize: () =>
-    set((s) => {
-      const order: FacecamSize[] = ['s', 'm', 'l']
-      const nextIdx = (order.indexOf(s.size) + 1) % order.length
-      return { size: order[nextIdx] }
-    }),
+  cycleSize: () => set((s) => nextPresetSize(s.size)),
   closeCamera: () => {
     const { stream } = get()
     if (stream) stream.getTracks().forEach((track) => track.stop())

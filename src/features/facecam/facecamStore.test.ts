@@ -95,4 +95,46 @@ describe('facecamStore', () => {
       })
     }
   })
+
+  it('manages custom size with boundary clamping', () => {
+    const store = useFacecamStore.getState()
+    store.setCustomSize(200)
+    expect(useFacecamStore.getState().customSize).toBe(200)
+
+    // Clamps lower bound
+    store.setCustomSize(50)
+    expect(useFacecamStore.getState().customSize).toBe(120)
+
+    // Clamps upper bound
+    store.setCustomSize(1000)
+    expect(useFacecamStore.getState().customSize).toBe(520)
+
+    // cycleSize keeps customSize in sync
+    store.cycleSize()
+    const size = useFacecamStore.getState().size
+    expect(useFacecamStore.getState().customSize).toBe(
+      size === 's' ? 180 : size === 'm' ? 240 : 320,
+    )
+  })
+
+  it('cycles and sets streamer visual effects', () => {
+    const store = useFacecamStore.getState()
+    store.setEffect('none')
+    expect(useFacecamStore.getState().effect).toBe('none')
+
+    store.cycleEffect()
+    expect(useFacecamStore.getState().effect).toBe('spinning-border')
+
+    store.cycleEffect()
+    expect(useFacecamStore.getState().effect).toBe('pulse')
+
+    store.cycleEffect()
+    expect(useFacecamStore.getState().effect).toBe('subscribe-badge')
+
+    store.cycleEffect()
+    expect(useFacecamStore.getState().effect).toBe('none')
+
+    store.setBannerText('Follow on X')
+    expect(useFacecamStore.getState().bannerText).toBe('Follow on X')
+  })
 })
