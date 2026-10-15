@@ -223,7 +223,26 @@ export type TableStateShape = ShapeBase & {
   type: 'tableState'
   tableId: string
   label: string
-  rows: { dim: boolean; group: number | null; pos: number }[]
+  rows: {
+    dim: boolean
+    group: number | null
+    pos: number
+    values?: (string | null)[]
+    isNew?: boolean
+    error?: string
+  }[]
+  // Multi-table JOIN steps: row states for additional tables at this same step.
+  tableStates?: {
+    tableId: string
+    rows: {
+      dim: boolean
+      group: number | null
+      pos: number
+      values?: (string | null)[]
+      isNew?: boolean
+      error?: string
+    }[]
+  }[]
 }
 
 export type HighlightShape = ShapeBase & {

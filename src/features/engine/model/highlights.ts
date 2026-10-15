@@ -22,18 +22,27 @@ const isShown = (step: number | undefined, shownUpTo: number) =>
 
 // Each clause snapshot replaces the one before it on the same table.
 function latestRowStates(page: Page, shownUpTo: number) {
-  const latest = new Map<string, TableStateShape>()
+  const latest = new Map<string, { rows: RowState[]; step: number }>()
   for (const id of page.order) {
     const shape = page.shapes[id]
     if (shape.type !== 'tableState' || !isShown(shape.revealStep, shownUpTo)) {
       continue
     }
+    const step = shape.revealStep ?? 0
     const current = latest.get(shape.tableId)
-    if ((current?.revealStep ?? -1) <= (shape.revealStep ?? 0)) {
-      latest.set(shape.tableId, shape)
+    if ((current?.step ?? -1) <= step) {
+      latest.set(shape.tableId, { rows: shape.rows, step })
+    }
+    if (shape.tableStates) {
+      for (const extra of shape.tableStates) {
+        const cur = latest.get(extra.tableId)
+        if ((cur?.step ?? -1) <= step) {
+          latest.set(extra.tableId, { rows: extra.rows, step })
+        }
+      }
     }
   }
-  return new Map([...latest].map(([tableId, shape]) => [tableId, shape.rows]))
+  return new Map([...latest].map(([tableId, { rows }]) => [tableId, rows]))
 }
 
 // Highlights only exist while presenting (shownUpTo !== null) and once their

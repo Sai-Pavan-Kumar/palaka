@@ -115,6 +115,7 @@ describe('parseSql', () => {
       tables: [],
       highlights: [],
       queries: [],
+      mutations: [],
       skipped: [],
       errors: [],
     })
@@ -159,5 +160,17 @@ describe('parseSql', () => {
       ],
     ])
     expect(errors).toHaveLength(1)
+  })
+
+  it('collects UPDATE and DELETE statements as mutations', () => {
+    const { mutations, errors } = parseSql(`
+      CREATE TABLE users (id INT PRIMARY KEY, name TEXT);
+      INSERT INTO users VALUES (1, 'Alice');
+      UPDATE users SET name = 'Alicia' WHERE id = 1;
+      DELETE FROM users WHERE id = 1;`)
+    expect(errors).toEqual([])
+    expect(mutations).toHaveLength(2)
+    expect(mutations[0]).toContain("UPDATE users SET name = 'Alicia'")
+    expect(mutations[1]).toContain('DELETE FROM users WHERE id = 1')
   })
 })

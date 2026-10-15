@@ -8,6 +8,7 @@ import type { ShapeStyle } from '../engine/model/shapeFactory'
 import { setSession, useSessionStore } from '../engine/sessionStore'
 import { FlowMenu } from './FlowMenu'
 import { TableViewToggle } from './TableViewToggle'
+import { SqlActionMenu } from './SqlActionMenu'
 import { MoreStylesMenu } from './MoreStylesMenu'
 import { SelectionActions } from './SelectionActions'
 import { useShownStyle, type ShownStyle } from './styleActions'
@@ -36,6 +37,7 @@ export function StyleBar() {
       {hasMoreStyles && <MoreStylesMenu shown={shown} />}
       {hasSelection && <FlowMenu />}
       {hasSelection && <TableViewToggle />}
+      {hasSelection && <SqlActionMenu />}
       {hasSelection && <span className="floating-bar__divider" />}
       {hasSelection && <SelectionActions />}
     </div>

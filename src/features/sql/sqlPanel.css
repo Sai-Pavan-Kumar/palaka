@@ -63,3 +63,27 @@
 .sql-panel__outcome.is-error {
   color: var(--color-error);
 }
+
+.sql-panel__snippets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.sql-panel__chip {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-card);
+  color: var(--color-text-secondary);
+  font-family: var(--font-code);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.sql-panel__chip:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-active);
+}

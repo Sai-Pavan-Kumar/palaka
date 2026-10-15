@@ -1,15 +1,26 @@
 import { compareValues, evaluate, type Row } from './expr'
 import type { SelectItem, SelectQuery } from './parseSelect'
 
+import { runJoin } from './runJoin'
+
 type Value = string | null
 
 export type SourceTable = { name: string; columns: string[]; rows: Value[][] }
 
-// How one source row looks after a stage: faded out, in a group, and at
-// which position (rows slide when ORDER BY / GROUP BY moves them).
-export type RowState = { dim: boolean; group: number | null; pos: number }
+export type RowState = {
+  dim: boolean
+  group: number | null
+  pos: number
+  values?: (string | null)[]
+  isNew?: boolean
+  error?: string
+}
 
-export type QueryStage = { label: string; rows: RowState[] }
+export type QueryStage = {
+  label: string
+  rows: RowState[]
+  tableRows?: Record<string, RowState[]>
+}
 
 export type QueryRun = {
   stages: QueryStage[]
@@ -119,7 +130,17 @@ function snapshot(
 
 // Runs one SELECT on the sample rows and records what each clause did, so
 // every clause can be its own Space step on the board.
-export function runSelect(query: SelectQuery, table: SourceTable): QueryRun {
+export function runSelect(
+  query: SelectQuery,
+  table: SourceTable,
+  tables?: Map<string, SourceTable>,
+): QueryRun {
+  if (query.joins && query.joins.length > 0) {
+    if (!tables) {
+      throw new Error('JOIN requires tables map to resolve joined tables')
+    }
+    return runJoin(query, table, tables)
+  }
   checkColumns(query, table)
   const rows = table.rows.map((values) => toRow(table, values))
   const total = rows.length

@@ -33,7 +33,9 @@ export type SqlParseResult = {
   highlights: SqlColumnRef[][]
   // SELECT statements, animated clause by clause on their table.
   queries: string[]
-  // Statements we do not draw (INSERT, CREATE INDEX…): listed, not errors.
+  // UPDATE, DELETE, and animated INSERT statements.
+  mutations: string[]
+  // Statements we do not draw (CREATE INDEX…): listed, not errors.
   skipped: string[]
   errors: string[]
 }
@@ -151,9 +153,15 @@ function readStatement(
   inserts: SqlInsert[],
 ): void {
   if (/^insert\s/i.test(statement)) {
-    const insert = parseInsert(statement)
-    if (typeof insert === 'string') result.errors.push(insert)
-    else inserts.push(insert)
+    if (result.queries.length > 0 || result.mutations.length > 0) {
+      result.mutations.push(statement)
+    } else {
+      const insert = parseInsert(statement)
+      if (typeof insert === 'string') result.errors.push(insert)
+      else inserts.push(insert)
+    }
+  } else if (/^(update|delete)\s/i.test(statement)) {
+    result.mutations.push(statement)
   } else if (/^select\s/i.test(statement)) {
     result.queries.push(statement)
   } else if (/^create\s+(?:\w+\s+)*?table\b/i.test(statement)) {
@@ -171,6 +179,7 @@ export function parseSql(sql: string): SqlParseResult {
     tables: [],
     highlights,
     queries: [],
+    mutations: [],
     skipped: [],
     errors,
   }

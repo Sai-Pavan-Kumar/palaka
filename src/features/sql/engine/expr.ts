@@ -141,9 +141,9 @@ class ExprParser {
   }
 }
 
-// "o.total" and "total" both mean the total column (one table in 4b).
+// Preserves qualified names like "u.id" or "orders.total" in lowercase.
 export function columnName(token: string): string {
-  return (token.split('.').pop() ?? token).replace(/["`[\]]/g, '').toLowerCase()
+  return token.replace(/["`[\]]/g, '').toLowerCase()
 }
 
 export function parseExpr(text: string): Expr {
@@ -152,8 +152,21 @@ export function parseExpr(text: string): Expr {
 
 function valueOf(operand: Operand, row: Row): string | null {
   if ('value' in operand) return operand.value
-  if (!(operand.column in row)) throw new Error(`No column "${operand.column}"`)
-  return row[operand.column]
+  const col = operand.column
+  if (col in row) return row[col]
+  const dot = col.lastIndexOf('.')
+  if (dot !== -1) {
+    const unqualified = col.slice(dot + 1)
+    if (unqualified in row) return row[unqualified]
+  } else {
+    const suffix = `.${col}`
+    const matches = Object.keys(row).filter(
+      (k) => k === col || k.endsWith(suffix),
+    )
+    if (matches.length === 1) return row[matches[0]]
+    if (matches.length > 1) throw new Error(`Ambiguous column "${col}"`)
+  }
+  throw new Error(`No column "${col}"`)
 }
 
 export function compareValues(a: string, b: string): number {

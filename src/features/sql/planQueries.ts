@@ -7,8 +7,8 @@ import type {
   TableStateShape,
   TextShape,
 } from '../engine/model/types'
-import { parseSelect } from './engine/parseSelect'
-import { runSelect } from './engine/runSelect'
+import { parseSelect, type SelectQuery } from './engine/parseSelect'
+import { runSelect, type QueryRun, type SourceTable } from './engine/runSelect'
 
 // Card under its table, result table to the right: the eye reads query →
 // source rows changing → answer, left to right.
@@ -26,18 +26,28 @@ export type QueryPlan = {
 function codeCard(
   key: string,
   sql: string,
-  table: TableShape,
+  leftTable: TableShape,
+  rightTable: TableShape | undefined,
   style: ShapeStyle,
 ): TextShape {
-  const box = getTableBox(table)
+  const leftBox = getTableBox(leftTable)
+  const bottomY = rightTable
+    ? Math.max(
+        leftBox.y + leftBox.h,
+        getTableBox(rightTable).y + getTableBox(rightTable).h,
+      )
+    : leftBox.y + leftBox.h
   return {
     id: crypto.randomUUID(),
     type: 'text',
-    x: box.x,
-    y: box.y + box.h + CARD_GAP,
+    x: leftBox.x,
+    y: bottomY + CARD_GAP,
     text: sql
       .trim()
-      .replace(/\s+(FROM|WHERE|GROUP BY|ORDER BY|LIMIT)\b/gi, '\n$1'),
+      .replace(
+        /\s+(FROM|(?:(?:INNER|LEFT|RIGHT|FULL)(?:\s+OUTER)?\s+)?JOIN|ON|WHERE|GROUP BY|ORDER BY|LIMIT)\b/gi,
+        '\n$1',
+      ),
     font: 'code',
     size: 's',
     scale: 1,
@@ -49,15 +59,22 @@ function codeCard(
 
 function resultTable(
   key: string,
-  table: TableShape,
+  leftTable: TableShape,
+  rightTable: TableShape | undefined,
   result: { columns: string[]; rows: (string | null)[][] },
 ): TableShape {
-  const box = getTableBox(table)
+  const leftBox = getTableBox(leftTable)
+  const rightBox = rightTable ? getTableBox(rightTable) : undefined
+  const rightmostX = rightBox
+    ? Math.max(leftBox.x + leftBox.w, rightBox.x + rightBox.w)
+    : leftBox.x + leftBox.w
+  const topY = rightBox ? Math.min(leftBox.y, rightBox.y) : leftBox.y
   return {
-    ...table,
+    ...leftTable,
     id: crypto.randomUUID(),
     revealStep: undefined,
-    x: box.x + box.w + RESULT_GAP,
+    x: rightmostX + RESULT_GAP,
+    y: topY,
     name: 'result',
     columns: result.columns.map((name) => ({
       name,
@@ -72,31 +89,62 @@ function resultTable(
   }
 }
 
+function buildStages(
+  key: string,
+  run: QueryRun,
+  leftTable: TableShape,
+  rightTable?: TableShape,
+): TableStateShape[] {
+  return run.stages.map((stage, index): TableStateShape => {
+    let tableStates:
+      | {
+          tableId: string
+          rows: import('../engine/model/highlights').RowState[]
+        }[]
+      | undefined
+    if (stage.tableRows && rightTable) {
+      const rightStates = stage.tableRows[rightTable.name.toLowerCase()]
+      if (rightStates) {
+        tableStates = [{ tableId: rightTable.id, rows: rightStates }]
+      }
+    }
+    return {
+      id: crypto.randomUUID(),
+      type: 'tableState',
+      tableId: leftTable.id,
+      label: stage.label,
+      rows: stage.rows,
+      tableStates,
+      color: 'black',
+      opacity: 1,
+      fromQuery: `${key}:s${index}`,
+    }
+  })
+}
+
 function buildQuery(
   key: string,
   sql: string,
-  table: TableShape,
+  query: SelectQuery,
+  leftTable: TableShape,
+  rightTable: TableShape | undefined,
+  tables: Map<string, TableShape>,
   style: ShapeStyle,
 ): Shape[] {
-  const run = runSelect(parseSelect(sql), {
-    name: table.name,
-    columns: table.columns.map((c) => c.name),
-    rows: table.rows ?? [],
-  })
-  const stages = run.stages.map((stage, index): TableStateShape => ({
-    id: crypto.randomUUID(),
-    type: 'tableState',
-    tableId: table.id,
-    label: stage.label,
-    rows: stage.rows,
-    color: 'black',
-    opacity: 1,
-    fromQuery: `${key}:s${index}`,
-  }))
+  const sourceMap = new Map<string, SourceTable>()
+  for (const [name, t] of tables.entries()) {
+    sourceMap.set(name.toLowerCase(), {
+      name: t.name,
+      columns: t.columns.map((c) => c.name),
+      rows: t.rows ?? [],
+    })
+  }
+  const primarySource = sourceMap.get(leftTable.name.toLowerCase())!
+  const run = runSelect(query, primarySource, sourceMap)
   return [
-    codeCard(key, sql, table, style),
-    ...stages,
-    resultTable(key, table, run.result),
+    codeCard(key, sql, leftTable, rightTable, style),
+    ...buildStages(key, run, leftTable, rightTable),
+    resultTable(key, leftTable, rightTable, run.result),
   ]
 }
 
@@ -126,10 +174,28 @@ export function planQueries(
   queries.forEach((sql, index) => {
     const key = `q${index + 1}`
     try {
-      const from = parseSelect(sql).table
-      const table = tables.get(from)
-      if (!table) throw new Error(`table "${from}" is not on this page`)
-      for (const shape of buildQuery(key, sql, table, style)) {
+      const query = parseSelect(sql)
+      const from = query.table
+      const leftTable = tables.get(from)
+      if (!leftTable) throw new Error(`table "${from}" is not on this page`)
+      let rightTable: TableShape | undefined
+      if (query.joins.length > 0) {
+        const joinName = query.joins[0].table.name
+        rightTable = tables.get(joinName)
+        if (!rightTable) {
+          throw new Error(`table "${joinName}" is not on this page`)
+        }
+      }
+      const built = buildQuery(
+        key,
+        sql,
+        query,
+        leftTable,
+        rightTable,
+        tables,
+        style,
+      )
+      for (const shape of built) {
         plan.shapes.push(keepPlace(shape, old.get(shape.fromQuery!)))
         old.delete(shape.fromQuery!)
       }

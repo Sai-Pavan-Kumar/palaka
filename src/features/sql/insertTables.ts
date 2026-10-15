@@ -9,6 +9,7 @@ import type { Bounds, LineShape, Page, TableShape } from '../engine/model/types'
 import { useSessionStore } from '../engine/sessionStore'
 import type { SqlParseResult, SqlTable } from './parseSql'
 import { planHighlights } from './planHighlights'
+import { planMutations } from './planMutations'
 import { planQueries } from './planQueries'
 import { getDependencyLevels } from './tableLayoutPlan'
 
@@ -179,6 +180,7 @@ export type InsertSummary = {
   arrows: number
   highlights: number
   queries: number
+  mutations: number
   errors: string[]
 }
 
@@ -219,12 +221,18 @@ export function insertSqlTables(parsed: SqlParseResult): InsertSummary {
     const arrows = planArrows(page, [...byName.values()], style)
     const lights = planHighlights(page, parsed.highlights, byName)
     const queries = planQueries(page, parsed.queries, byName, style)
-    const dropped = [...arrows.dropped, ...lights.dropped, ...queries.dropped]
+    const mutations = planMutations(page, parsed.mutations, byName, style)
+    const dropped = [
+      ...arrows.dropped,
+      ...lights.dropped,
+      ...queries.dropped,
+      ...mutations.dropped,
+    ]
     let next = removeShapes(page, dropped)
     const updates = [...updated, ...arrows.kept, ...lights.kept]
     next = { ...next, shapes: { ...next.shapes, ...byId(updates) } }
     const added = [...fresh, ...arrows.created, ...lights.created]
-    for (const shape of [...added, ...queries.shapes]) {
+    for (const shape of [...added, ...queries.shapes, ...mutations.shapes]) {
       next = next.shapes[shape.id]
         ? { ...next, shapes: { ...next.shapes, [shape.id]: shape } }
         : addShape(next, withRevealStep(next, shape, presenting))
@@ -236,7 +244,8 @@ export function insertSqlTables(parsed: SqlParseResult): InsertSummary {
       arrows: lineIds.length,
       highlights: lights.kept.length + lights.created.length,
       queries: parsed.queries.length - queries.errors.length,
-      errors: [...lights.errors, ...queries.errors],
+      mutations: parsed.mutations.length - mutations.errors.length,
+      errors: [...lights.errors, ...queries.errors, ...mutations.errors],
     }
     // Updated tables may have changed size: hand-drawn arrows on them follow.
     return rerouteConnectors(next, [...lineIds, ...updated.map((t) => t.id)])
