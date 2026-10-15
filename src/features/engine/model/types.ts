@@ -62,6 +62,8 @@ export type Binding = {
   column?: string
 }
 
+export type LineRouting = 'straight' | 'elbow' | 'curved'
+
 // Lines and arrows are one type: an arrow is a line with a head. Bound ends
 // make it a connector that follows blocks around.
 export type LineShape = ShapeBase & {
@@ -71,6 +73,7 @@ export type LineShape = ShapeBase & {
   x2: number
   y2: number
   arrowhead: boolean
+  routing?: LineRouting
   size: SizeKey
   dash: DashStyle
   startBinding?: Binding
@@ -82,9 +85,13 @@ export type LineShape = ShapeBase & {
 }
 
 export type FlowDirection = 'forward' | 'backward' | 'both'
+export type FlowSpeed = 'slow' | 'normal' | 'fast'
+export type FlowStyle = 'dots' | 'pulse'
 
 export type Flow = {
   direction: FlowDirection
+  speed?: FlowSpeed
+  style?: FlowStyle
   // Reveal step at which the dots start moving. Missing = they move as soon
   // as the line is on screen.
   step?: number
@@ -154,6 +161,8 @@ export type BlockKind =
   | 'analytics'
   | 'maps'
 
+export type BlockEffect = 'none' | 'glow' | 'meteorite' | 'dash'
+
 export type BlockShape = ShapeBase & {
   type: 'block'
   kind: BlockKind
@@ -165,6 +174,7 @@ export type BlockShape = ShapeBase & {
   size: SizeKey
   fill: FillStyle
   dash: DashStyle
+  effect?: BlockEffect
 }
 
 export type TextAnimation = 'wipe' | 'typewriter' | 'slide-up' | 'blur-in'

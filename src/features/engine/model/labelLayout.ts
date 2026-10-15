@@ -1,4 +1,5 @@
 import { FONT_SIZE, LINE_HEIGHT } from './boardSpec'
+import { getLineMidpoint } from './lineRouting'
 import { getBaselineOffset } from './textMetrics'
 import type { BlockShape, FontKey, LineShape, SizeKey } from './types'
 
@@ -59,10 +60,11 @@ export function getBlockLabelLayout(block: BlockShape): LabelLayout {
 
 export function getLineLabelLayout(line: LineShape): LabelLayout {
   const lineBox = LINE_LABEL_PX * LINE_HEIGHT
+  const mid = getLineMidpoint(line)
   return {
     ...fontFor('code', LINE_LABEL_PX),
-    centreX: (line.x1 + line.x2) / 2,
-    top: (line.y1 + line.y2) / 2 - lineBox / 2,
+    centreX: mid.x,
+    top: mid.y - lineBox / 2,
     width: LINE_LABEL_WIDTH,
     fontPx: LINE_LABEL_PX,
   }

@@ -1,7 +1,7 @@
 import { commitCurrentPage, getCurrentPage } from './boardActions'
 import { getShapesInOrder } from './model/documentOps'
 import { getHighestStep } from './model/revealSteps'
-import type { FlowDirection, LineShape, Page } from './model/types'
+import type { FlowDirection, FlowSpeed, FlowStyle, LineShape, Page } from './model/types'
 import { useSessionStore } from './sessionStore'
 
 export function getSelectedLines(page: Page, selectedIds: string[]) {
@@ -31,6 +31,34 @@ export function setFlow(direction: FlowDirection | null): void {
         ...rest,
         flow: step === undefined ? { direction } : { direction, step },
       }
+    }
+    return { ...page, shapes }
+  })
+}
+
+export function setFlowSpeed(speed: FlowSpeed): void {
+  const { selectedIds } = useSessionStore.getState()
+  const lines = getSelectedLines(getCurrentPage(), selectedIds)
+  if (lines.length === 0) return
+  commitCurrentPage((page) => {
+    const shapes = { ...page.shapes }
+    for (const line of lines) {
+      if (!line.flow) continue
+      shapes[line.id] = { ...line, flow: { ...line.flow, speed } }
+    }
+    return { ...page, shapes }
+  })
+}
+
+export function setFlowStyle(style: FlowStyle): void {
+  const { selectedIds } = useSessionStore.getState()
+  const lines = getSelectedLines(getCurrentPage(), selectedIds)
+  if (lines.length === 0) return
+  commitCurrentPage((page) => {
+    const shapes = { ...page.shapes }
+    for (const line of lines) {
+      if (!line.flow) continue
+      shapes[line.id] = { ...line, flow: { ...line.flow, style } }
     }
     return { ...page, shapes }
   })

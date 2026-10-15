@@ -1,5 +1,6 @@
 import { getPenWidth, getStrokeWidth } from './boardSpec'
 import { getTableBox } from './tableBox'
+import { getLineSamplePoints } from './lineRouting'
 import { measureText } from './textMetrics'
 import type { Bounds, Point, Shape, StrokeShape } from './types'
 
@@ -58,10 +59,7 @@ function computeBounds(shape: Shape): Bounds {
       return strokeBounds(shape)
     case 'line':
       return pointsBounds(
-        [
-          { x: shape.x1, y: shape.y1 },
-          { x: shape.x2, y: shape.y2 },
-        ],
+        getLineSamplePoints(shape),
         getStrokeWidth(shape) / 2,
       )
     case 'geo':

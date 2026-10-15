@@ -1,0 +1,59 @@
+/* Breathing soft pulse for active live services */
+.block-effect--glow {
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 8px currentColor);
+  animation: block-glow-pulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes block-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+/* Orbiting comet beam / shooting star effect around card perimeter */
+.block-effect--meteorite {
+  stroke-width: 3.5px;
+  stroke-linecap: round;
+  stroke-dasharray: 60 280;
+  filter: drop-shadow(0 0 6px currentColor);
+  animation: block-meteorite 2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes block-meteorite {
+  to {
+    stroke-dashoffset: -340;
+  }
+}
+
+/* Marching ants / flowing dash border */
+.block-effect--dash {
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  stroke-dasharray: 10 8;
+  animation: block-dash-flow 1.5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes block-dash-flow {
+  to {
+    stroke-dashoffset: -36;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .block-effect--meteorite,
+  .block-effect--dash {
+    animation: none !important;
+  }
+  .block-effect--glow {
+    animation: none !important;
+    opacity: 0.8 !important;
+  }
+}

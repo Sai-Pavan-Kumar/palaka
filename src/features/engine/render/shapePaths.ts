@@ -2,6 +2,7 @@ import { getStroke } from 'perfect-freehand'
 import rough from 'roughjs'
 import { getPenWidth } from '../model/boardSpec'
 import { getOutline, type OutlinedShape } from '../model/geoOutline'
+import { getLineEndPointTangent } from '../model/lineRouting'
 import type { DashStyle, LineShape, Point, StrokeShape } from '../model/types'
 
 const roughGenerator = rough.generator()
@@ -98,10 +99,9 @@ export function getRoughLinePaths(
 // The two short wings of an arrowhead, sized to the line width so a thick
 // arrow gets a bold head.
 export function getArrowheadWings(shape: LineShape, strokeWidth: number) {
-  const angle = Math.atan2(shape.y2 - shape.y1, shape.x2 - shape.x1)
+  const { tip, angle } = getLineEndPointTangent(shape)
   const length = Math.max(18, strokeWidth * 4)
   const spread = Math.PI / 7
-  const tip = { x: shape.x2, y: shape.y2 }
   const wing = (offset: number): Point => ({
     x: tip.x - Math.cos(angle + offset) * length,
     y: tip.y - Math.sin(angle + offset) * length,

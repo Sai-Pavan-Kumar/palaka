@@ -195,6 +195,19 @@ function StageBoardFrame({
 }
 
 // Stage = recorded board + unrecorded overlay, stacked at the same size.
+function useStagePointerSetup(
+  stageWidth: number,
+  pointerOffsetX: number,
+  onPress?: () => void,
+) {
+  const stageRef = useRef<HTMLDivElement>(null)
+  const shownWidth = useElementWidth(stageRef)
+  const pointer = useBoardPointer(stageRef, stageWidth, pointerOffsetX, onPress)
+  const unitsPerPixel = shownWidth > 0 ? stageWidth / shownWidth : 1
+  return { stageRef, pointer, unitsPerPixel }
+}
+
+// Stage = recorded board + unrecorded overlay, stacked at the same size.
 export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
   const doc = useEngineStore((s) => s.doc)
   const session = useEngineStageSession()
@@ -202,17 +215,8 @@ export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
   const { isVisible, drawOnStep, flowUpTo } = useRevealRules(session.pageId)
   const imageUrls = useImageUrls(doc.assets)
   const page = findPage(doc, session.pageId) ?? doc.pages[0]
-  const layout = useStageLayout(
-    page,
-    doc.aspect,
-    session.presenting,
-    session.activeFrame,
-  )
-
-  const stageRef = useRef<HTMLDivElement>(null)
-  const shownWidth = useElementWidth(stageRef)
-  const pointer = useBoardPointer(
-    stageRef,
+  const layout = useStageLayout(page, doc.aspect, session.presenting, session.activeFrame)
+  const { stageRef, pointer, unitsPerPixel } = useStagePointerSetup(
     layout.stageWidth,
     layout.pointerOffsetX,
     onPress,
@@ -221,12 +225,7 @@ export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
   return (
     <div
       ref={stageRef}
-      className={stageClassName(
-        doc,
-        session.tool,
-        layout.isWide,
-        session.presenting,
-      )}
+      className={stageClassName(doc, session.tool, layout.isWide, session.presenting)}
       {...pointer}
       onDragOver={onDragOver}
       onDrop={onDrop}
@@ -245,7 +244,7 @@ export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
       <EditingOverlay
         width={layout.stageWidth}
         height={layout.height}
-        unitsPerPixel={shownWidth > 0 ? layout.stageWidth / shownWidth : 1}
+        unitsPerPixel={unitsPerPixel}
       />
     </div>
   )

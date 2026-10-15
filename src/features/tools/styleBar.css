@@ -94,6 +94,14 @@
   gap: var(--space-1);
 }
 
+.chip-row--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.chip-row--2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 .chip {
   height: 36px;
   border: none;

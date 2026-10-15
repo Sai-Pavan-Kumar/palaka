@@ -1,6 +1,7 @@
 import { getPenWidth, getStrokeWidth } from './boardSpec'
 import { getOutline } from './geoOutline'
 import { getShapeBounds, isPointInBounds } from './geometry'
+import { getLineSamplePoints } from './lineRouting'
 import type { Point, Shape } from './types'
 
 function distanceToSegment(p: Point, a: Point, b: Point): number {
@@ -68,13 +69,10 @@ export function hitTestShape(
       )
     }
     case 'line': {
-      const ends = [
-        { x: shape.x1, y: shape.y1 },
-        { x: shape.x2, y: shape.y2 },
-      ]
+      const points = getLineSamplePoints(shape)
       return isNearPolyline(
         p,
-        ends,
+        points,
         getStrokeWidth(shape) / 2 + tolerance,
         false,
       )

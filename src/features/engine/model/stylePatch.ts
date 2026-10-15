@@ -6,10 +6,10 @@ import type { Shape } from './types'
 const APPLIES: Record<Shape['type'], (keyof ShapeStyle)[]> = {
   stroke: ['color', 'size', 'opacity'],
   geo: ['color', 'size', 'fill', 'dash', 'opacity'],
-  line: ['color', 'size', 'dash', 'opacity'],
+  line: ['color', 'size', 'dash', 'opacity', 'routing'],
   text: ['color', 'size', 'font', 'opacity', 'textAnimation'],
   image: ['opacity'],
-  block: ['color', 'size', 'fill', 'dash', 'opacity'],
+  block: ['color', 'size', 'fill', 'dash', 'opacity', 'effect'],
   table: ['color', 'size', 'fill', 'dash', 'opacity'],
   highlight: [],
   tableState: [],
@@ -41,6 +41,8 @@ export function getSharedStyle(shapes: Shape[]): Partial<ShapeStyle> {
     'font',
     'opacity',
     'textAnimation',
+    'routing',
+    'effect',
   ]
   for (const key of keys) {
     const values = shapes

@@ -11,6 +11,8 @@ import { TableViewToggle } from './TableViewToggle'
 import { SqlActionMenu } from './SqlActionMenu'
 import { MoreStylesMenu } from './MoreStylesMenu'
 import { TextAnimationMenu } from './TextAnimationMenu'
+import { LineRoutingMenu } from './LineRoutingMenu'
+import { BlockEffectMenu } from './BlockEffectMenu'
 import { SelectionActions } from './SelectionActions'
 import { useShownStyle, type ShownStyle } from './styleActions'
 import './styleBar.css'
@@ -25,6 +27,14 @@ function StyleLayerRow({ shown, tool }: { shown: ShownStyle; tool: string }) {
       {fields.has('color') && <ColorRow current={shown.values.color} />}
       {fields.has('size') && <span className="floating-bar__divider" />}
       {fields.has('size') && <SizeRow current={shown.values.size} />}
+      {fields.has('routing') && <span className="floating-bar__divider" />}
+      {fields.has('routing') && (
+        <LineRoutingMenu current={shown.values.routing} />
+      )}
+      {fields.has('effect') && <span className="floating-bar__divider" />}
+      {fields.has('effect') && (
+        <BlockEffectMenu current={shown.values.effect} />
+      )}
       {fields.has('font') && <span className="floating-bar__divider" />}
       {fields.has('font') && <FontToggle font={shown.values.font} />}
       {fields.has('font') && (

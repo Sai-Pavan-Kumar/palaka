@@ -12,6 +12,7 @@ import {
   type OutlinedShape,
 } from '../model/geoOutline'
 import { getLabelBaseline, getLineLabelLayout } from '../model/labelLayout'
+import { getLinePath, getLineSamplePoints } from '../model/lineRouting'
 import type { BoardPalette } from '../model/paper'
 import { measureText } from '../model/textMetrics'
 import type { LineShape, Point } from '../model/types'
@@ -105,13 +106,14 @@ export function GeoView({
 }
 
 function getLineSegments(shape: LineShape, width: number): [Point, Point][] {
-  const body: [Point, Point] = [
-    { x: shape.x1, y: shape.y1 },
-    { x: shape.x2, y: shape.y2 },
-  ]
-  if (!shape.arrowhead) return [body]
+  const points = getLineSamplePoints(shape)
+  const segments: [Point, Point][] = []
+  for (let i = 0; i < points.length - 1; i++) {
+    segments.push([points[i], points[i + 1]])
+  }
+  if (!shape.arrowhead) return segments
   const { tip, left, right } = getArrowheadWings(shape, width)
-  return [body, [left, tip], [right, tip]]
+  return [...segments, [left, tip], [right, tip]]
 }
 
 // The arrowhead is always solid: a dotted head would read as noise.
@@ -128,20 +130,28 @@ export function LineView({ shape }: { shape: LineShape }) {
   if (shape.dash === 'hand') {
     return <InkPaths paths={roughPaths} color={ink} width={width} />
   }
-  const [body, ...head] = segments
   const toPath = ([a, b]: [Point, Point]) => `M${a.x},${a.y} L${b.x},${b.y}`
+  const bodyPath = getLinePath(shape)
+  const headWings = shape.arrowhead ? getArrowheadWings(shape, width) : null
   return (
     <>
       <path
-        d={toPath(body)}
+        d={bodyPath}
         fill="none"
         stroke={ink}
         strokeWidth={width}
         strokeLinecap="round"
         strokeDasharray={getDashArray(shape.dash, width)}
       />
-      {head.length > 0 && (
-        <InkPaths paths={head.map(toPath)} color={ink} width={width} />
+      {headWings && (
+        <InkPaths
+          paths={[
+            toPath([headWings.left, headWings.tip]),
+            toPath([headWings.right, headWings.tip]),
+          ]}
+          color={ink}
+          width={width}
+        />
       )}
     </>
   )
@@ -205,7 +215,7 @@ export function LineGlow({ shape }: { shape: LineShape }) {
   return (
     <path
       className="table-highlight"
-      d={`M${shape.x1},${shape.y1} L${shape.x2},${shape.y2}`}
+      d={getLinePath(shape)}
       stroke={palette.highlight[shape.color]}
       strokeOpacity={HIGHLIGHT_OPACITY}
       strokeWidth={getStrokeWidth(shape) * GLOW_FACTOR}

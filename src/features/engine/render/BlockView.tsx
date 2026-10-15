@@ -5,6 +5,7 @@ import {
   getLabelBaseline,
 } from '../model/labelLayout'
 import type { BlockShape } from '../model/types'
+import { BlockEffectView } from './BlockEffectView'
 import { BLOCK_ICONS } from './blockIcons'
 import { GeoView } from './GeoLineViews'
 import { useBoardPalette } from './paletteContext'
@@ -66,6 +67,7 @@ export function BlockView({
   return (
     <>
       <GeoView shape={shape} />
+      <BlockEffectView shape={shape} />
       <BlockContents shape={shape} hideLabel={hideLabel} />
     </>
   )

@@ -1,5 +1,6 @@
 import { BLOCK_NAMES } from './blockCatalog'
 import type {
+  BlockEffect,
   BlockKind,
   BlockShape,
   ColorKey,
@@ -8,6 +9,7 @@ import type {
   FontKey,
   GeoKind,
   GeoShape,
+  LineRouting,
   LineShape,
   SizeKey,
   StrokeKind,
@@ -27,6 +29,8 @@ export type ShapeStyle = {
   font: FontKey
   opacity: number
   textAnimation?: TextAnimation
+  routing?: LineRouting
+  effect?: BlockEffect
 }
 
 export const DEFAULT_STYLE: ShapeStyle = {
@@ -37,6 +41,8 @@ export const DEFAULT_STYLE: ShapeStyle = {
   font: 'brand',
   opacity: 1,
   textAnimation: 'wipe',
+  routing: 'straight',
+  effect: 'none',
 }
 
 const newId = () => crypto.randomUUID()
@@ -91,6 +97,7 @@ export function createLine(
     x2: start.x,
     y2: start.y,
     arrowhead,
+    routing: style.routing,
     color: style.color,
     size: style.size,
     dash: style.dash,
@@ -135,5 +142,6 @@ export function createBlock(
     fill: style.fill,
     dash: 'clean',
     opacity: style.opacity,
+    effect: style.effect ?? 'none',
   }
 }
