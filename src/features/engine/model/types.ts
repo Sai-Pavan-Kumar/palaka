@@ -209,6 +209,8 @@ export type TableShape = ShapeBase & {
   dash: DashStyle
   // Sample rows (from INSERT), aligned to `columns`. NULL is null.
   rows?: (string | null)[][]
+  // Maximum rows this table will reach after mutations, so its outline encloses them.
+  maxRows?: number
   // Column list (schema) or a grid of the sample rows (data).
   view?: TableView
 }

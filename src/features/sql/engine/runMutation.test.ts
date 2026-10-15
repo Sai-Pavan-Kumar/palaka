@@ -126,8 +126,10 @@ describe('runMutation', () => {
     )
     const run = runMutation(mutation, USERS, USERS.rows!, ALL_TABLES)
 
-    const lastRow = run.stages[0].rows[3]
-    expect(lastRow.error).toContain('Duplicate PK')
+    expect(run.stages[0].rows).toHaveLength(3)
+    const conflictingRow = run.stages[0].rows[0]
+    expect(conflictingRow.error).toContain('Duplicate PK (id = 1)')
+    expect(conflictingRow.group).toBe(4)
     // Rejected row is not added to nextRows
     expect(run.nextRows).toHaveLength(3)
   })
@@ -138,8 +140,9 @@ describe('runMutation', () => {
     )
     const run = runMutation(mutation, USERS, USERS.rows!, ALL_TABLES)
 
-    const lastRow = run.stages[0].rows[3]
-    expect(lastRow.error).toContain('NOT NULL failed: name')
+    expect(run.stages[0].rows).toHaveLength(3)
+    const errorRow = run.stages[0].rows[0]
+    expect(errorRow.error).toContain('NOT NULL failed: name')
     expect(run.nextRows).toHaveLength(3)
   })
 
@@ -148,7 +151,8 @@ describe('runMutation', () => {
       "INSERT INTO orders (id, user_id, total, city) VALUES (13, 99, 100, 'Pune')",
     )
     const badRun = runMutation(badFk, ORDERS, ORDERS.rows!, ALL_TABLES)
-    expect(badRun.stages[0].rows[3].error).toContain(
+    expect(badRun.stages[0].rows).toHaveLength(3)
+    expect(badRun.stages[0].rows[0].error).toContain(
       'FK error: user_id = 99 not in users',
     )
     expect(badRun.nextRows).toHaveLength(3)

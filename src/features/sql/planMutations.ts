@@ -14,6 +14,7 @@ import {
   type SqlMutation,
 } from './engine/parseMutation'
 import { runMutation } from './engine/runMutation'
+import { cardHeight } from './planQueries'
 
 const CARD_GAP = 48
 
@@ -37,18 +38,17 @@ function formatMutationText(sql: string): string {
 
 function mutationCodeCard(
   key: string,
-  sql: string,
-  table: TableShape,
-  offsetIndex: number,
+  formattedText: string,
+  cardX: number,
+  cardY: number,
   style: ShapeStyle,
 ): TextShape {
-  const box = getTableBox(table)
   return {
     id: crypto.randomUUID(),
     type: 'text',
-    x: box.x,
-    y: box.y + box.h + CARD_GAP + offsetIndex * 80,
-    text: formatMutationText(sql),
+    x: cardX,
+    y: cardY,
+    text: formattedText,
     font: 'code',
     size: 's',
     scale: 1,
@@ -67,46 +67,115 @@ function keepPlace(shape: Shape, old: Shape | undefined): Shape {
   return kept
 }
 
+function buildOtherTableStates(
+  currentTableId: string,
+  tables: Map<string, TableShape>,
+  tableRowsMap: Map<string, (string | null)[][]>,
+) {
+  const otherStates: {
+    tableId: string
+    rows: { dim: boolean; group: number | null; pos: number }[]
+  }[] = []
+  for (const otherTable of tables.values()) {
+    if (otherTable.id === currentTableId) continue
+    const rows = tableRowsMap.get(otherTable.id) ?? otherTable.rows ?? []
+    otherStates.push({
+      tableId: otherTable.id,
+      rows: rows.map((_, pos) => ({ dim: false, group: null, pos })),
+    })
+  }
+  return otherStates.length > 0 ? otherStates : undefined
+}
+
+type SingleMutationContext = {
+  key: string
+  sql: string
+  tables: Map<string, TableShape>
+  tableRowsMap: Map<string, (string | null)[][]>
+  tableMaxRows: Map<string, number>
+  currentCardY: number
+  style: ShapeStyle
+}
+
+function planSingleMutation(ctx: SingleMutationContext): {
+  shapes: Shape[]
+  nextCardY: number
+} {
+  const { key, sql, tables, tableRowsMap, tableMaxRows, currentCardY, style } =
+    ctx
+  const parsed = parseMutationStatement(sql)
+  const table = tables.get(parsed.table.toLowerCase())
+  if (!table) throw new Error(`table "${parsed.table}" is not on this page`)
+  const currentRows = tableRowsMap.get(table.id) ?? table.rows ?? []
+  const run = runMutation(parsed, table, currentRows, tables)
+  tableRowsMap.set(table.id, run.nextRows)
+
+  const maxSoFar = Math.max(
+    tableMaxRows.get(table.id) ?? table.rows?.length ?? 0,
+    run.nextRows.length,
+  )
+  tableMaxRows.set(table.id, maxSoFar)
+  table.maxRows = maxSoFar
+
+  const formatted = formatMutationText(sql)
+  const card = mutationCodeCard(key, formatted, 120, currentCardY, style)
+  const otherStates = buildOtherTableStates(table.id, tables, tableRowsMap)
+  const stages: TableStateShape[] = run.stages.map((stage, sIdx) => ({
+    id: crypto.randomUUID(),
+    type: 'tableState',
+    tableId: table.id,
+    label: stage.label,
+    rows: stage.rows,
+    tableStates: otherStates,
+    color: 'black',
+    opacity: 1,
+    fromQuery: `${key}:s${sIdx}`,
+  }))
+  return {
+    shapes: [card, ...stages],
+    nextCardY: currentCardY + cardHeight(formatted) + 16,
+  }
+}
+
 export function planMutations(
   page: Page,
   mutations: string[],
   tables: Map<string, TableShape>,
   style: ShapeStyle,
+  startCardY?: number,
 ): MutationPlan {
   const old = new Map<string, Shape>()
   for (const id of page.order) {
     const key = page.shapes[id].fromQuery
     if (key?.startsWith('m')) old.set(key, page.shapes[id])
   }
+  const tableBottoms = [...tables.values()].map(
+    (t) => getTableBox(t).y + getTableBox(t).h,
+  )
+  const maxTableBottom =
+    tableBottoms.length > 0 ? Math.max(...tableBottoms) : 300
+  let currentCardY = startCardY ?? maxTableBottom + CARD_GAP
+
   const plan: MutationPlan = { shapes: [], dropped: [], errors: [] }
   const tableRowsMap = new Map<string, (string | null)[][]>()
-  const tableOffsetMap = new Map<string, number>()
+  const tableMaxRows = new Map<string, number>()
+  for (const table of tables.values()) {
+    tableMaxRows.set(table.id, table.rows?.length ?? 0)
+  }
 
   mutations.forEach((sql, index) => {
-    const key = `m${index + 1}`
     try {
-      const parsed = parseMutationStatement(sql)
-      const table = tables.get(parsed.table.toLowerCase())
-      if (!table) throw new Error(`table "${parsed.table}" is not on this page`)
-      const currentRows = tableRowsMap.get(table.id) ?? table.rows ?? []
-      const run = runMutation(parsed, table, currentRows, tables)
-      tableRowsMap.set(table.id, run.nextRows)
-
-      const offset = tableOffsetMap.get(table.id) ?? 0
-      tableOffsetMap.set(table.id, offset + 1)
-      const card = mutationCodeCard(key, sql, table, offset, style)
-      const stages: TableStateShape[] = run.stages.map((stage, sIdx) => ({
-        id: crypto.randomUUID(),
-        type: 'tableState',
-        tableId: table.id,
-        label: stage.label,
-        rows: stage.rows,
-        color: 'black',
-        opacity: 1,
-        fromQuery: `${key}:s${sIdx}`,
-      }))
-
-      for (const shape of [card, ...stages]) {
+      const res = planSingleMutation({
+        key: `m${index + 1}`,
+        sql,
+        tables,
+        tableRowsMap,
+        tableMaxRows,
+        currentCardY,
+        style,
+      })
+      currentCardY = res.nextCardY
+      for (const shape of res.shapes) {
         plan.shapes.push(keepPlace(shape, old.get(shape.fromQuery!)))
         old.delete(shape.fromQuery!)
       }

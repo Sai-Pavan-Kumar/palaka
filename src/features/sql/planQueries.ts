@@ -21,33 +21,35 @@ export type QueryPlan = {
   // Old query shapes no SELECT produced any more.
   dropped: string[]
   errors: string[]
+  nextCardY: number
+}
+
+export function formatQueryText(sql: string): string {
+  return sql
+    .trim()
+    .replace(
+      /\s+(FROM|(?:(?:INNER|LEFT|RIGHT|FULL)(?:\s+OUTER)?\s+)?JOIN|ON|WHERE|GROUP BY|ORDER BY|LIMIT)\b/gi,
+      '\n$1',
+    )
+}
+
+export function cardHeight(text: string): number {
+  return text.split('\n').length * 24 + 14
 }
 
 function codeCard(
   key: string,
-  sql: string,
-  leftTable: TableShape,
-  rightTable: TableShape | undefined,
+  formattedText: string,
+  cardX: number,
+  cardY: number,
   style: ShapeStyle,
 ): TextShape {
-  const leftBox = getTableBox(leftTable)
-  const bottomY = rightTable
-    ? Math.max(
-        leftBox.y + leftBox.h,
-        getTableBox(rightTable).y + getTableBox(rightTable).h,
-      )
-    : leftBox.y + leftBox.h
   return {
     id: crypto.randomUUID(),
     type: 'text',
-    x: leftBox.x,
-    y: bottomY + CARD_GAP,
-    text: sql
-      .trim()
-      .replace(
-        /\s+(FROM|(?:(?:INNER|LEFT|RIGHT|FULL)(?:\s+OUTER)?\s+)?JOIN|ON|WHERE|GROUP BY|ORDER BY|LIMIT)\b/gi,
-        '\n$1',
-      ),
+    x: cardX,
+    y: cardY,
+    text: formattedText,
     font: 'code',
     size: 's',
     scale: 1,
@@ -124,7 +126,9 @@ function buildStages(
 
 function buildQuery(
   key: string,
-  sql: string,
+  formattedText: string,
+  cardX: number,
+  cardY: number,
   query: SelectQuery,
   leftTable: TableShape,
   rightTable: TableShape | undefined,
@@ -142,7 +146,7 @@ function buildQuery(
   const primarySource = sourceMap.get(leftTable.name.toLowerCase())!
   const run = runSelect(query, primarySource, sourceMap)
   return [
-    codeCard(key, sql, leftTable, rightTable, style),
+    codeCard(key, formattedText, cardX, cardY, style),
     ...buildStages(key, run, leftTable, rightTable),
     resultTable(key, leftTable, rightTable, run.result),
   ]
@@ -159,6 +163,52 @@ function keepPlace(shape: Shape, old: Shape | undefined): Shape {
   return kept
 }
 
+export function initialCardY(tables: Map<string, TableShape>): number {
+  const tableBottoms = [...tables.values()].map(
+    (t) => getTableBox(t).y + getTableBox(t).h,
+  )
+  const maxTableBottom =
+    tableBottoms.length > 0 ? Math.max(...tableBottoms) : 300
+  return maxTableBottom + CARD_GAP
+}
+
+function planSingleQuery(
+  key: string,
+  sql: string,
+  tables: Map<string, TableShape>,
+  currentCardY: number,
+  style: ShapeStyle,
+): { shapes: Shape[]; nextCardY: number } {
+  const query = parseSelect(sql)
+  const from = query.table
+  const leftTable = tables.get(from)
+  if (!leftTable) throw new Error(`table "${from}" is not on this page`)
+  let rightTable: TableShape | undefined
+  if (query.joins.length > 0) {
+    const joinName = query.joins[0].table.name
+    rightTable = tables.get(joinName)
+    if (!rightTable) {
+      throw new Error(`table "${joinName}" is not on this page`)
+    }
+  }
+  const formatted = formatQueryText(sql)
+  const built = buildQuery(
+    key,
+    formatted,
+    120,
+    currentCardY,
+    query,
+    leftTable,
+    rightTable,
+    tables,
+    style,
+  )
+  return {
+    shapes: built,
+    nextCardY: currentCardY + cardHeight(formatted) + 16,
+  }
+}
+
 export function planQueries(
   page: Page,
   queries: string[],
@@ -168,34 +218,26 @@ export function planQueries(
   const old = new Map<string, Shape>()
   for (const id of page.order) {
     const key = page.shapes[id].fromQuery
-    if (key) old.set(key, page.shapes[id])
+    if (key?.startsWith('q')) old.set(key, page.shapes[id])
   }
-  const plan: QueryPlan = { shapes: [], dropped: [], errors: [] }
+  let currentCardY = initialCardY(tables)
+  const plan: QueryPlan = {
+    shapes: [],
+    dropped: [],
+    errors: [],
+    nextCardY: currentCardY,
+  }
   queries.forEach((sql, index) => {
-    const key = `q${index + 1}`
     try {
-      const query = parseSelect(sql)
-      const from = query.table
-      const leftTable = tables.get(from)
-      if (!leftTable) throw new Error(`table "${from}" is not on this page`)
-      let rightTable: TableShape | undefined
-      if (query.joins.length > 0) {
-        const joinName = query.joins[0].table.name
-        rightTable = tables.get(joinName)
-        if (!rightTable) {
-          throw new Error(`table "${joinName}" is not on this page`)
-        }
-      }
-      const built = buildQuery(
-        key,
+      const res = planSingleQuery(
+        `q${index + 1}`,
         sql,
-        query,
-        leftTable,
-        rightTable,
         tables,
+        currentCardY,
         style,
       )
-      for (const shape of built) {
+      currentCardY = res.nextCardY
+      for (const shape of res.shapes) {
         plan.shapes.push(keepPlace(shape, old.get(shape.fromQuery!)))
         old.delete(shape.fromQuery!)
       }
@@ -203,6 +245,7 @@ export function planQueries(
       plan.errors.push(`Query ${index + 1}: ${(error as Error).message}`)
     }
   })
+  plan.nextCardY = currentCardY
   plan.dropped = [...old.values()].map((shape) => shape.id)
   return plan
 }

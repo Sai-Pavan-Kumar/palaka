@@ -221,7 +221,13 @@ export function insertSqlTables(parsed: SqlParseResult): InsertSummary {
     const arrows = planArrows(page, [...byName.values()], style)
     const lights = planHighlights(page, parsed.highlights, byName)
     const queries = planQueries(page, parsed.queries, byName, style)
-    const mutations = planMutations(page, parsed.mutations, byName, style)
+    const mutations = planMutations(
+      page,
+      parsed.mutations,
+      byName,
+      style,
+      queries.nextCardY,
+    )
     const dropped = [
       ...arrows.dropped,
       ...lights.dropped,

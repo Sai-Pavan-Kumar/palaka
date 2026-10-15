@@ -121,22 +121,40 @@ function RowHighlight({
   )
 }
 
-function RowErrorBadge({
-  x,
-  y,
+function TableErrorBadge({
+  grid,
   error,
   color,
 }: {
-  x: number
-  y: number
+  grid: TableGrid
   error?: string
   color: string
 }) {
   if (!error) return null
+  const y = grid.y + grid.h + 8
   return (
-    <text x={x} y={y} dominantBaseline="central" fill={color} fontWeight={600}>
-      {`⚠️ ${error}`}
-    </text>
+    <g className="table-error-badge">
+      <rect
+        x={grid.x}
+        y={y}
+        width={grid.w}
+        height={26}
+        rx={6}
+        fill="rgba(239, 68, 68, 0.12)"
+        stroke="#ef4444"
+        strokeWidth={1}
+      />
+      <text
+        x={grid.x + grid.padX}
+        y={y + 13}
+        dominantBaseline="central"
+        fill={color}
+        fontSize={12}
+        fontWeight={600}
+      >
+        {`⚠️ ${error}`}
+      </text>
+    </g>
   )
 }
 
@@ -172,12 +190,6 @@ function QueryRowItem({
         ink={ink}
         hasError={!!state?.error}
       />
-      <RowErrorBadge
-        x={grid.x + grid.w + grid.padX}
-        y={centreY}
-        error={state?.error}
-        color={palette.ink['red']}
-      />
       {state?.dim && (
         <StrikeLine
           x1={grid.x + grid.padX / 2}
@@ -194,6 +206,7 @@ function QueryRowItem({
 // can fade it, colour it by group, or slide it to its sorted place. Also
 // renders cell updates, deleted rows, and new rows from mutation statements.
 export function QueryRows({ grid, ink, palette, rowStates }: QueryRowsProps) {
+  const error = rowStates?.find((s) => s.error)?.error
   const base = grid.rows.map((row, rowIndex) => (
     <QueryRowItem
       key={rowIndex}
@@ -224,5 +237,13 @@ export function QueryRows({ grid, ink, palette, rowStates }: QueryRowsProps) {
       />
     )
   })
-  return [...base, ...extra]
+  return (
+    <>
+      {base}
+      {extra}
+      {error && (
+        <TableErrorBadge grid={grid} error={error} color={palette.ink['red']} />
+      )}
+    </>
+  )
 }

@@ -140,6 +140,25 @@ function runInsert(
 ): MutationRun {
   const newRow = alignInsertValues(table, mutation)
   const error = validateRowConstraints(table, newRow, rows, allTables)
+  const label = `INSERT INTO ${table.name} VALUES (${mutation.text.values})`
+
+  if (error) {
+    const conflictIdx = rows.findIndex((r) =>
+      table.columns.some((c, ci) => c.pk && r[ci] === newRow[ci]),
+    )
+    const errIdx = conflictIdx !== -1 ? conflictIdx : 0
+    const states: RowState[] = rows.map((_, i) => ({
+      dim: false,
+      group: i === conflictIdx ? 4 : null,
+      pos: i,
+      error: i === errIdx ? error : undefined,
+    }))
+    return {
+      stages: [{ label, rows: states }],
+      nextRows: rows,
+    }
+  }
+
   const states: RowState[] = rows.map((_, i) => ({
     dim: false,
     group: null,
@@ -147,16 +166,14 @@ function runInsert(
   }))
   states.push({
     dim: false,
-    group: error ? null : 1,
+    group: 1,
     pos: rows.length,
     values: newRow,
     isNew: true,
-    error,
   })
-  const label = `INSERT INTO ${table.name} VALUES (${mutation.text.values})`
   return {
     stages: [{ label, rows: states }],
-    nextRows: error ? rows : [...rows, newRow],
+    nextRows: [...rows, newRow],
   }
 }
 

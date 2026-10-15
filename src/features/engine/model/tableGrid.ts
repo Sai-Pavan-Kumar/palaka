@@ -53,8 +53,10 @@ export function getTableGrid(table: TableShape): TableGrid {
   const headerH = HEADER_H * s
   const rowH = ROW_H * s
   const all = table.rows ?? []
+  const maxRows = Math.max(all.length, table.maxRows ?? 0)
+  const shownCount = Math.min(maxRows, MAX_GRID_ROWS)
   const shown = all.slice(0, MAX_GRID_ROWS)
-  const hidden = all.length - shown.length
+  const hidden = all.length > shownCount ? all.length - shownCount : 0
   let cursor = table.x
   const columns = table.columns.map((column, index) => {
     const w = columnWidth(table, index) * s
@@ -68,7 +70,7 @@ export function getTableGrid(table: TableShape): TableGrid {
     const top = columnsTop + rowH * (index + 1)
     return { values, top, centreY: top + rowH / 2 }
   })
-  const lineCount = 1 + shown.length + (hidden > 0 ? 1 : 0)
+  const lineCount = 1 + shownCount + (hidden > 0 ? 1 : 0)
   return {
     x: table.x,
     y: table.y,
