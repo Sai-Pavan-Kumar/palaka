@@ -5,6 +5,10 @@ export const SLIDE_SIZE: Record<Aspect, { width: number; height: number }> = {
   '9:16': { width: 1080, height: 1920 },
 }
 
+export function getPageWidth(aspect: Aspect, frameCount = 1): number {
+  return SLIDE_SIZE[aspect].width * frameCount
+}
+
 export const COLOR_KEYS: ColorKey[] = [
   'black',
   'blue',

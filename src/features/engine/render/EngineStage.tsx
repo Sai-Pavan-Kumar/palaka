@@ -5,7 +5,7 @@ import { useEngineStore } from '../engineStore'
 import { SLIDE_SIZE } from '../model/boardSpec'
 import { findPage } from '../model/documentOps'
 import { getPalette } from '../model/paper'
-import type { BoardDocument, Shape } from '../model/types'
+import type { BoardDocument, Page, Shape } from '../model/types'
 import { useSessionStore, type EngineTool } from '../sessionStore'
 import { EditingOverlay } from './EditingOverlay'
 import { LaserTrail } from './LaserTrail'
@@ -45,10 +45,17 @@ function useRevealRules(pageId: string) {
   return { isVisible, drawOnStep, flowUpTo: presenting ? shownSteps : null }
 }
 
-function stageClassName(doc: BoardDocument, tool: EngineTool): string {
+function stageClassName(
+  doc: BoardDocument,
+  tool: EngineTool,
+  isWide: boolean,
+  presenting: boolean,
+): string {
   const orientation = doc.aspect === '9:16' ? 'is-portrait' : 'is-landscape'
   const paperTone = getPalette(doc.paper).tone === 'dark' ? 'is-dark-paper' : ''
-  return `board-stage ${orientation} tool-${tool} ${paperTone}`
+  const wideClass = isWide ? 'is-wide' : ''
+  const presentClass = presenting ? 'is-presenting' : ''
+  return `board-stage ${orientation} ${wideClass} ${presentClass} tool-${tool} ${paperTone}`.trim()
 }
 
 type EngineStageProps = {
@@ -57,54 +64,188 @@ type EngineStageProps = {
   onDrop?: (event: DragEvent<HTMLDivElement>) => void
 }
 
-// Stage = recorded board + unrecorded overlay, stacked at the same size.
-// The SVG viewBox is the slide itself, so the browser does all the scaling.
-export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
-  const doc = useEngineStore((s) => s.doc)
+type CameraTrackProps = {
+  page: Page
+  doc: BoardDocument
+  imageUrls: Record<string, string>
+  drawOnStep: number | null
+  flowUpTo: number | null
+  isVisible?: (shape: Shape) => boolean
+  editingTextId: string | null
+  presenting: boolean
+  isWide: boolean
+  activeFrame: number
+  totalWorldWidth: number
+  height: number
+}
+
+function BoardCameraTrack({
+  page,
+  doc,
+  imageUrls,
+  drawOnStep,
+  flowUpTo,
+  isVisible,
+  editingTextId,
+  presenting,
+  isWide,
+  activeFrame,
+  totalWorldWidth,
+  height,
+}: CameraTrackProps) {
+  const cameraStyle =
+    presenting && isWide
+      ? { transform: `translate3d(-${activeFrame * 50}%, 0, 0)` }
+      : undefined
+
+  return (
+    <div
+      className={`board__camera-track ${isWide ? 'is-wide' : ''}`}
+      style={cameraStyle}
+    >
+      <PageSvg
+        key={page.id}
+        className="board__canvas"
+        page={page}
+        aspect={doc.aspect}
+        paper={doc.paper}
+        imageUrls={imageUrls}
+        drawOnStep={drawOnStep}
+        flowUpTo={flowUpTo}
+        isVisible={isVisible}
+        hiddenShapeId={editingTextId}
+        showFrameSeam={!presenting}
+      />
+      <svg
+        className="board__canvas"
+        viewBox={`0 0 ${totalWorldWidth} ${height}`}
+      >
+        <LaserTrail />
+      </svg>
+    </div>
+  )
+}
+
+function useStageLayout(
+  page: Page,
+  aspect: import('../model/types').Aspect,
+  presenting: boolean,
+  activeFrame: number,
+) {
+  const isWide = (page.frameCount ?? 1) > 1
+  const { width: baseWidth, height } = SLIDE_SIZE[aspect]
+  const totalWorldWidth = baseWidth * (page.frameCount ?? 1)
+  const stageWidth = presenting ? baseWidth : totalWorldWidth
+  const pointerOffsetX = presenting && isWide ? activeFrame * baseWidth : 0
+  return { isWide, totalWorldWidth, stageWidth, pointerOffsetX, height }
+}
+
+function useEngineStageSession() {
   const pageId = useSessionStore((s) => s.pageId)
   const tool = useSessionStore((s) => s.tool)
   const presenting = useSessionStore((s) => s.presenting)
+  const activeFrame = useSessionStore((s) => s.activeFrame)
   const editingTextId = useSessionStore((s) => s.editingTextId)
+  return { pageId, tool, presenting, activeFrame, editingTextId }
+}
+
+type StageBoardFrameProps = {
+  setBoardElement: (el: HTMLDivElement | null) => void
+  session: ReturnType<typeof useEngineStageSession>
+  page: Page
+  doc: BoardDocument
+  imageUrls: Record<string, string>
+  drawOnStep: number | null
+  flowUpTo: number | null
+  isVisible?: (shape: Shape) => boolean
+  layout: ReturnType<typeof useStageLayout>
+}
+
+function StageBoardFrame({
+  setBoardElement,
+  session,
+  page,
+  doc,
+  imageUrls,
+  drawOnStep,
+  flowUpTo,
+  isVisible,
+  layout,
+}: StageBoardFrameProps) {
+  return (
+    <BoardFrame ref={setBoardElement} isPresenting={session.presenting}>
+      <BoardCameraTrack
+        page={page}
+        doc={doc}
+        imageUrls={imageUrls}
+        drawOnStep={drawOnStep}
+        flowUpTo={flowUpTo}
+        isVisible={isVisible}
+        editingTextId={session.editingTextId}
+        presenting={session.presenting}
+        isWide={layout.isWide}
+        activeFrame={session.activeFrame}
+        totalWorldWidth={layout.totalWorldWidth}
+        height={layout.height}
+      />
+      <TextEditor />
+      <FacecamBubble />
+    </BoardFrame>
+  )
+}
+
+// Stage = recorded board + unrecorded overlay, stacked at the same size.
+export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
+  const doc = useEngineStore((s) => s.doc)
+  const session = useEngineStageSession()
   const setBoardElement = useBoardStore((s) => s.setBoardElement)
-  const { isVisible, drawOnStep, flowUpTo } = useRevealRules(pageId)
+  const { isVisible, drawOnStep, flowUpTo } = useRevealRules(session.pageId)
   const imageUrls = useImageUrls(doc.assets)
-  const { width, height } = SLIDE_SIZE[doc.aspect]
+  const page = findPage(doc, session.pageId) ?? doc.pages[0]
+  const layout = useStageLayout(
+    page,
+    doc.aspect,
+    session.presenting,
+    session.activeFrame,
+  )
+
   const stageRef = useRef<HTMLDivElement>(null)
   const shownWidth = useElementWidth(stageRef)
-  const pointer = useBoardPointer(stageRef, width, onPress)
-  const page = findPage(doc, pageId) ?? doc.pages[0]
+  const pointer = useBoardPointer(
+    stageRef,
+    layout.stageWidth,
+    layout.pointerOffsetX,
+    onPress,
+  )
 
   return (
     <div
       ref={stageRef}
-      className={stageClassName(doc, tool)}
+      className={stageClassName(
+        doc,
+        session.tool,
+        layout.isWide,
+        session.presenting,
+      )}
       {...pointer}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
-      <BoardFrame ref={setBoardElement} isPresenting={presenting}>
-        <PageSvg
-          key={page.id}
-          className="board__canvas"
-          page={page}
-          aspect={doc.aspect}
-          paper={doc.paper}
-          imageUrls={imageUrls}
-          drawOnStep={drawOnStep}
-          flowUpTo={flowUpTo}
-          isVisible={isVisible}
-          hiddenShapeId={editingTextId}
-        />
-        <svg className="board__canvas" viewBox={`0 0 ${width} ${height}`}>
-          <LaserTrail />
-        </svg>
-        <TextEditor />
-        <FacecamBubble />
-      </BoardFrame>
+      <StageBoardFrame
+        setBoardElement={setBoardElement}
+        session={session}
+        page={page}
+        doc={doc}
+        imageUrls={imageUrls}
+        drawOnStep={drawOnStep}
+        flowUpTo={flowUpTo}
+        isVisible={isVisible}
+        layout={layout}
+      />
       <EditingOverlay
-        width={width}
-        height={height}
-        unitsPerPixel={shownWidth > 0 ? width / shownWidth : 1}
+        width={layout.stageWidth}
+        height={layout.height}
+        unitsPerPixel={shownWidth > 0 ? layout.stageWidth / shownWidth : 1}
       />
     </div>
   )

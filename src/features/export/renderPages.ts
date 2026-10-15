@@ -8,7 +8,12 @@ import {
   resolveAssetAsDataUrl,
 } from '../project/folderAssetStore'
 
-export type RenderedPage = { name: string; png: Blob }
+export type RenderedPage = {
+  name: string
+  png: Blob
+  width: number
+  height: number
+}
 
 // Same files fonts.css serves to the app. An SVG drawn into a canvas cannot
 // fetch anything, so the fonts travel inside it as data URLs.
@@ -101,7 +106,14 @@ export async function renderPages(pageIds: string[]): Promise<RenderedPage[]> {
         createElement('style', null, fontCss),
       ),
     )
-    rendered.push({ name: page.name, png: await svgToPng(svg, width, height) })
+    const frameCount = page.frameCount ?? 1
+    const pageWidth = width * frameCount
+    rendered.push({
+      name: page.name,
+      png: await svgToPng(svg, pageWidth, height),
+      width: pageWidth,
+      height,
+    })
   }
   return rendered
 }

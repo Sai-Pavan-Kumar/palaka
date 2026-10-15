@@ -51,3 +51,15 @@ export function setPaper(patch: Partial<Paper>): void {
   const { commit } = useEngineStore.getState()
   commit((current) => ({ ...current, paper: { ...current.paper, ...patch } }))
 }
+
+// Toggle between standard 1x (16:9) and wide 2x (32:9) sequence frame
+export function togglePageFrameCount(pageId?: string): void {
+  const targetId = pageId ?? useSessionStore.getState().pageId
+  const { commit } = useEngineStore.getState()
+  commit((current) => ({
+    ...current,
+    pages: current.pages.map((p) =>
+      p.id === targetId ? { ...p, frameCount: p.frameCount === 2 ? 1 : 2 } : p,
+    ),
+  }))
+}

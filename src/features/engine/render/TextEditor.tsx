@@ -107,9 +107,10 @@ export function TextEditor() {
   const editingId = useSessionStore((s) => s.editingTextId)
   const doc = useEngineStore((s) => s.doc)
   const pageId = useSessionStore((s) => s.pageId)
-  const ref = useRef<HTMLTextAreaElement>(null)
-  const shape = editingId ? findPage(doc, pageId)?.shapes[editingId] : undefined
+  const page = findPage(doc, pageId)
+  const shape = editingId ? page?.shapes[editingId] : undefined
   const isLabel = !!shape && shape.type !== 'text'
+  const ref = useRef<HTMLTextAreaElement>(null)
 
   // A label opens fully selected (typing replaces "Service"); a text box
   // opens with the caret at the end, ready to continue.
@@ -121,7 +122,12 @@ export function TextEditor() {
     area.setSelectionRange(from, area.value.length)
   }, [editingId, isLabel])
 
-  const editor = shape && editorFor(shape, doc.paper, SLIDE_SIZE[doc.aspect])
+  const frameCount = page?.frameCount ?? 1
+  const slideSize = {
+    width: SLIDE_SIZE[doc.aspect].width * frameCount,
+    height: SLIDE_SIZE[doc.aspect].height,
+  }
+  const editor = shape && editorFor(shape, doc.paper, slideSize)
   if (!shape || !editor) return null
   return (
     <textarea

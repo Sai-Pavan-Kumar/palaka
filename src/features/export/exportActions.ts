@@ -4,7 +4,6 @@ import {
   writeFile,
 } from '../../shared/fileSystem'
 import { useEngineStore } from '../engine/engineStore'
-import { SLIDE_SIZE } from '../engine/model/boardSpec'
 import { useSessionStore } from '../engine/sessionStore'
 import { EXPORTS_DIR } from '../project/projectFiles'
 import { downloadFile } from '../../shared/downloadFile'
@@ -76,15 +75,14 @@ async function buildPdf(
   pages: RenderedPage[],
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { PDFDocument } = await import('pdf-lib')
-  const { width, height } = SLIDE_SIZE[useEngineStore.getState().doc.aspect]
   const pdf = await PDFDocument.create()
   for (const page of pages) {
     const image = await pdf.embedPng(await page.png.arrayBuffer())
-    pdf.addPage([width, height]).drawImage(image, {
+    pdf.addPage([page.width, page.height]).drawImage(image, {
       x: 0,
       y: 0,
-      width,
-      height,
+      width: page.width,
+      height: page.height,
     })
   }
   return (await pdf.save()) as Uint8Array<ArrayBuffer>

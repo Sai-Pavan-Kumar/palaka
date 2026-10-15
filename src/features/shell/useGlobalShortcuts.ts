@@ -1,6 +1,10 @@
 import { useEffect } from 'react'
 import { hasModifier, isTypingTarget } from '../../shared/keyboard'
-import { useSessionStore } from '../engine/sessionStore'
+import {
+  setCameraFrame,
+  toggleCameraFrame,
+  useSessionStore,
+} from '../engine/sessionStore'
 import { goToPageOffset } from '../pages/pageActions'
 import { useRecorderStore } from '../recorder/recorderStore'
 import { setPresenting, stepReveal } from '../reveal/revealModel'
@@ -10,6 +14,18 @@ const NEXT_STEP_KEYS = new Set([' ', 'ArrowRight'])
 const PREVIOUS_STEP_KEYS = new Set(['ArrowLeft'])
 
 function handlePresentingKey(event: KeyboardEvent, isRecording: boolean) {
+  if (event.key === 'Tab') {
+    toggleCameraFrame()
+    return true
+  }
+  if (event.shiftKey && event.key === 'ArrowRight') {
+    setCameraFrame(1)
+    return true
+  }
+  if (event.shiftKey && event.key === 'ArrowLeft') {
+    setCameraFrame(0)
+    return true
+  }
   if (NEXT_STEP_KEYS.has(event.key)) stepReveal(1)
   else if (PREVIOUS_STEP_KEYS.has(event.key)) stepReveal(-1)
   else if (event.key === 'Escape' && !isRecording) setPresenting(false)

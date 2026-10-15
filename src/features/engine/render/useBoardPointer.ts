@@ -15,11 +15,12 @@ function toBoardPointer(
   sample: globalThis.PointerEvent,
   rect: DOMRect,
   slideWidth: number,
+  offsetX: number,
   { shiftKey, altKey }: { shiftKey: boolean; altKey: boolean },
 ): BoardPointer {
   const unitsPerPixel = slideWidth / rect.width
   return {
-    x: (sample.clientX - rect.left) * unitsPerPixel,
+    x: (sample.clientX - rect.left) * unitsPerPixel + offsetX,
     y: (sample.clientY - rect.top) * unitsPerPixel,
     pressure: sample.pressure,
     isPen: sample.pointerType === 'pen',
@@ -62,6 +63,7 @@ function canStartGesture(event: PointerEvent<HTMLDivElement>): boolean {
 export function useBoardPointer(
   stageRef: RefObject<HTMLDivElement | null>,
   slideWidth: number,
+  offsetX = 0,
   // Called on every press, before any tool runs (hides panels, closes drawers).
   onPress?: () => void,
 ) {
@@ -73,7 +75,7 @@ export function useBoardPointer(
   ) => {
     const rect = stageRef.current!.getBoundingClientRect()
     return samples.map((sample) =>
-      toBoardPointer(sample, rect, slideWidth, event),
+      toBoardPointer(sample, rect, slideWidth, offsetX, event),
     )
   }
 

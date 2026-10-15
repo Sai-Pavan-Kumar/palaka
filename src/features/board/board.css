@@ -18,6 +18,14 @@
   );
 }
 
+.board-stage.is-landscape.is-wide:not(.is-presenting) {
+  aspect-ratio: 32 / 9;
+  width: min(
+    100vw - var(--board-gutter) * 2,
+    (100vh - var(--board-gutter) * 2) * 32 / 9
+  );
+}
+
 .board-stage.is-portrait {
   aspect-ratio: 9 / 16;
   width: min(
@@ -31,14 +39,7 @@
   --board-gutter: var(--space-4);
 }
 
-/*
- * Shapes need a precise point, so they keep the crosshair. Pen, highlighter
- * and eraser show the same lucide icon as the toolbar, so you always see what
- * you hold. Each icon is drawn twice (white outline under ink), so it stays
- * visible on the white board and on dark ink. The hotspot is the tool's tip,
- * so ink lands exactly where the tip points. The editing stage is never
- * recorded, so cursors cannot reach the video.
- */
+/* Shapes need a precise point; tool icons show current selection. */
 .board-stage.tool-rectangle,
 .board-stage.tool-ellipse,
 .board-stage.tool-triangle,
@@ -83,12 +84,7 @@
     crosshair;
 }
 
-/*
- * The board is the Element Capture target. Chrome only captures an element that
- * forms its own stacking context (isolation: isolate) and drops alpha, so the
- * background must stay fully opaque or empty areas turn black in the video.
- * Container units let the text editor size itself in board proportions.
- */
+/* Board is the Element Capture target. Forms isolated stacking context. */
 .board {
   position: absolute;
   inset: 0;
@@ -108,11 +104,21 @@
   height: 100%;
 }
 
-/*
- * Hidden reveal steps are not rendered at all, so a shape that becomes visible
- * mounts fresh and this plays once. Only while presenting, so normal drawing
- * stays instant.
- */
+/* Camera track for multi-frame wide sequence pages. */
+.board__camera-track {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+.board.is-presenting .board__camera-track.is-wide {
+  width: 200%;
+  transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Shapes fade in on reveal step; live draw-on draws dynamically. */
 .board.is-presenting .board-shape {
   animation: reveal-fade var(--duration-slow) var(--ease-out);
 }
@@ -123,11 +129,6 @@
   }
 }
 
-/*
- * Draw-on reveal: the shape draws itself instead of fading. Only the duration
- * changes here, never the animation name, so when the draw-on class goes away
- * on the next step nothing restarts and the shape does not fade again.
- */
 .board.is-presenting .board-shape.is-drawing-on {
   animation-duration: 1ms;
 }

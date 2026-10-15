@@ -43,6 +43,8 @@ type SessionState = {
   // Reveal: how many steps of each page are showing while presenting.
   presenting: boolean
   revealedUpTo: Record<string, number>
+  // Active camera frame (0 = Frame 1, 1 = Frame 2) for multi-frame wide pages
+  activeFrame: number
   // The step Space just revealed, which draws itself in. Cleared on step
   // back, page change and leaving Present, so nothing re-animates.
   drawOnStep: { pageId: string; step: number } | null
@@ -65,13 +67,27 @@ export const useSessionStore = create<SessionState>(() => ({
   spotlightId: null,
   presenting: false,
   revealedUpTo: {},
+  activeFrame: 0,
   drawOnStep: null,
 }))
 
 export const setSession = useSessionStore.setState
 
+export function setCameraFrame(frame: number): void {
+  setSession({ activeFrame: Math.max(0, frame) })
+}
+
+export function toggleCameraFrame(maxFrames = 2): void {
+  const current = useSessionStore.getState().activeFrame
+  setSession({ activeFrame: (current + 1) % maxFrames })
+}
+
 export function setTool(tool: EngineTool): void {
   const { selectedIds } = useSessionStore.getState()
+  setToolInternal(tool, selectedIds)
+}
+
+function setToolInternal(tool: EngineTool, selectedIds: string[]): void {
   setSession({ tool, selectedIds: tool === 'select' ? selectedIds : [] })
 }
 
@@ -85,7 +101,13 @@ export function selectShapes(selectedIds: string[]): void {
 }
 
 export function goToPage(pageId: string): void {
-  setSession({ pageId, selectedIds: [], editingTextId: null, drawOnStep: null })
+  setSession({
+    pageId,
+    selectedIds: [],
+    editingTextId: null,
+    drawOnStep: null,
+    activeFrame: 0,
+  })
 }
 
 // Undo can remove the page you are on or the shapes you selected. Follow

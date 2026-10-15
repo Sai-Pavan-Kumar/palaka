@@ -285,6 +285,8 @@ export type Page = {
   shapes: Record<string, Shape>
   // Paint order: the last id is drawn on top.
   order: string[]
+  // 1 = standard 16:9 frame, 2 = wide 32:9 sequence (2 connected 16:9 frames)
+  frameCount?: 1 | 2
 }
 
 // One paper for the whole board, so a video never changes look between pages.
