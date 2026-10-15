@@ -12,6 +12,7 @@ import {
   buildInsertRow,
   buildJoinHighlight,
   buildJoinQuery,
+  buildSelectAggregate,
   buildSelectAll,
   buildSelectOrderLimit,
   buildSelectWhere,
@@ -94,6 +95,11 @@ describe('sqlTemplates', () => {
     const orderLimit = buildSelectOrderLimit(ORDERS)
     expect(orderLimit).toContain('ORDER BY total DESC LIMIT 3')
     expect(() => parseSelect(orderLimit)).not.toThrow()
+
+    const agg = buildSelectAggregate(ORDERS)
+    expect(agg).toContain('GROUP BY user_id')
+    expect(agg).toContain('COUNT(*) AS count')
+    expect(() => parseSelect(agg)).not.toThrow()
 
     const highlight = buildHighlightColumn(USERS)
     expect(highlight).toBe('-- highlight users.id;')

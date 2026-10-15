@@ -116,6 +116,25 @@ export function buildSelectOrderLimit(table: TableShape): string {
   return `SELECT * FROM ${table.name} ORDER BY ${col} DESC LIMIT 3;`
 }
 
+export function buildSelectAggregate(table: TableShape): string {
+  const groupCol =
+    table.columns.find(
+      (c) =>
+        !c.pk &&
+        /^(city|category|status|role|department|type|user_id)$/i.test(c.name),
+    ) ??
+    table.columns.find((c) => !c.pk && !c.fk) ??
+    table.columns[0]
+  const numCol = table.columns.find((c) =>
+    /^(total|amount|price|score|salary|quantity)$/i.test(c.name),
+  )
+  const gName = groupCol?.name ?? 'id'
+  if (numCol) {
+    return `SELECT ${gName}, COUNT(*) AS count, SUM(${numCol.name}) AS total FROM ${table.name} GROUP BY ${gName};`
+  }
+  return `SELECT ${gName}, COUNT(*) AS count FROM ${table.name} GROUP BY ${gName};`
+}
+
 export function buildHighlightColumn(table: TableShape): string {
   const pkCol = table.columns.find((c) => c.pk)?.name ?? table.columns[0]?.name
   return `-- highlight ${table.name}.${pkCol};`

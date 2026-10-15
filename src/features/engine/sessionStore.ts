@@ -37,6 +37,9 @@ type SessionState = {
   // Editing chrome drawn on the overlay layer, never recorded.
   marquee: Bounds | null
   eraserTrail: StrokePoint[]
+  snapGuides: import('./model/snapGuides').SnapGuide[] | null
+  // Spotlight: dims everything on board except this shape to focus viewer attention
+  spotlightId: string | null
   // Reveal: how many steps of each page are showing while presenting.
   presenting: boolean
   revealedUpTo: Record<string, number>
@@ -58,6 +61,8 @@ export const useSessionStore = create<SessionState>(() => ({
   bindTargetId: null,
   marquee: null,
   eraserTrail: [],
+  snapGuides: null,
+  spotlightId: null,
   presenting: false,
   revealedUpTo: {},
   drawOnStep: null,

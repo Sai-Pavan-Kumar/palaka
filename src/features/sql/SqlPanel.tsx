@@ -8,6 +8,7 @@ import {
   buildDeleteRow,
   buildInsertRow,
   buildJoinQuery,
+  buildSelectAggregate,
   buildSelectAll,
   buildSelectWhere,
   buildUpdateRow,
@@ -91,6 +92,13 @@ function QueryChips({
         onClick={() => onAppend(buildSelectWhere(t1))}
       >
         + WHERE
+      </button>
+      <button
+        type="button"
+        className="sql-panel__chip"
+        onClick={() => onAppend(buildSelectAggregate(t1))}
+      >
+        + GROUP BY
       </button>
       {t2 && (
         <button

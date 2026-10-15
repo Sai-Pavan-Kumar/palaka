@@ -7,14 +7,14 @@
 # - style-src unsafe-inline  React sets inline styles (board sizing, swatches)
 # - connect-src self data: blob:  export reads its own fonts and images
 # - display-capture + microphone = self  board recording (Element Capture + mic)
-# - camera off until face cam is built
+# - camera=(self) for in-board facecam bubble
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: display-capture=(self), microphone=(self), camera=(), geolocation=(), payment=(), usb=()
+  Permissions-Policy: display-capture=(self), microphone=(self), camera=(self), geolocation=(), payment=(), usb=()
   Cross-Origin-Opener-Policy: same-origin
 
 # Fonts and hashed build files never change under the same name.

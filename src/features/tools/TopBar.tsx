@@ -1,5 +1,6 @@
-import { Presentation, Undo2 } from 'lucide-react'
+import { Camera, CameraOff, Presentation, Undo2 } from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
+import { useFacecamStore } from '../facecam/facecamStore'
 import { useEngineStore } from '../engine/engineStore'
 import { setTool, useSessionStore } from '../engine/sessionStore'
 import { ExportMenu } from '../export/ExportMenu'
@@ -54,9 +55,17 @@ function ToolGroup() {
 function SessionGroup() {
   const isPresenting = useSessionStore((s) => s.presenting)
   const isRecording = useRecorderStore((s) => s.status !== 'idle')
+  const isCameraOn = useFacecamStore((s) => s.isEnabled)
+  const toggleCamera = useFacecamStore((s) => s.toggleCamera)
 
   return (
     <div className="floating-bar">
+      <IconButton
+        icon={isCameraOn ? CameraOff : Camera}
+        label={isCameraOn ? 'Turn off facecam' : 'Turn on facecam'}
+        isActive={isCameraOn}
+        onClick={toggleCamera}
+      />
       <IconButton
         icon={Presentation}
         label={isPresenting ? 'Stop presenting' : 'Present'}

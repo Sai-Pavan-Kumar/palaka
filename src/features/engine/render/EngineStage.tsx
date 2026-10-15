@@ -11,6 +11,7 @@ import { EditingOverlay } from './EditingOverlay'
 import { LaserTrail } from './LaserTrail'
 import { PageSvg } from './PageSvg'
 import { TextEditor } from './TextEditor'
+import { FacecamBubble } from '../../facecam/FacecamBubble'
 import { useBoardPointer } from './useBoardPointer'
 import { useImageUrls } from './useImageUrls'
 
@@ -98,6 +99,7 @@ export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
           <LaserTrail />
         </svg>
         <TextEditor />
+        <FacecamBubble />
       </BoardFrame>
       <EditingOverlay
         width={width}

@@ -21,6 +21,8 @@ type ShapeBase = {
   // Made by a SELECT in the SQL panel ("q1:card", "q1:result", "q1:s0"), so
   // inserting again rebuilds it in place instead of adding a copy.
   fromQuery?: string
+  // If true, the shape cannot be moved, resized, or deleted until unlocked.
+  locked?: boolean
 }
 
 export type StrokeKind = 'pen' | 'highlighter'

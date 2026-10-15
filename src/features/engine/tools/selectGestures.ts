@@ -10,9 +10,11 @@ import { scaleShape, translateShape } from '../model/transform'
 import { detachLine } from '../model/connectors'
 import type { Binding, Bounds, LineShape } from '../model/types'
 import { selectShapes, setSession, useSessionStore } from '../sessionStore'
+import { computeSnap } from '../model/snapGuides'
 import {
   getCornerPoint,
   getOppositeCorner,
+  getSelectionBounds,
   type HandleCorner,
 } from './selectionHandles'
 import type { BoardPointer, ToolGesture } from './toolTypes'
@@ -53,6 +55,32 @@ function releaseUnselectedEnds(line: LineShape, selected: Set<string>) {
   }
 }
 
+function applyMoveSnap(
+  origBounds: Bounds | null,
+  dx: number,
+  dy: number,
+  pointer: BoardPointer,
+  otherBoundsList: Bounds[],
+) {
+  if (!origBounds || pointer.altKey) {
+    setSession({ snapGuides: null })
+    return { dx, dy }
+  }
+  const candidate: Bounds = {
+    minX: origBounds.minX + dx,
+    maxX: origBounds.maxX + dx,
+    minY: origBounds.minY + dy,
+    maxY: origBounds.maxY + dy,
+  }
+  const snap = computeSnap(
+    candidate,
+    otherBoundsList,
+    8 * pointer.unitsPerPixel,
+  )
+  setSession({ snapGuides: snap.guides.length > 0 ? snap.guides : null })
+  return { dx: dx + snap.dx, dy: dy + snap.dy }
+}
+
 // Shapes are recomputed from their drag-start copies on every move, so
 // rounding never piles up during a long drag.
 export function startMoveGesture(
@@ -60,20 +88,43 @@ export function startMoveGesture(
   onClick: () => void,
 ): ToolGesture {
   const originals = selectedShapes()
+  const movable = originals.filter((shape) => !shape.locked)
+  const page = getCurrentPage()
+  const { selectedIds } = useSessionStore.getState()
+  const otherBoundsList = page.order
+    .filter((id) => !selectedIds.includes(id))
+    .map((id) => getShapeBounds(page.shapes[id]))
+  const origBounds =
+    movable.length > 0
+      ? getSelectionBounds(
+          page,
+          movable.map((s) => s.id),
+        )
+      : null
   let hasMoved = false
-  useEngineStore.getState().beginChange()
+  if (movable.length > 0) useEngineStore.getState().beginChange()
   return {
     move: (samples) => {
+      if (movable.length === 0) return
       const pointer = last(samples)
-      const dx = pointer.x - start.x
-      const dy = pointer.y - start.y
-      hasMoved ||= Math.hypot(dx, dy) > CLICK_SLOP_PX * pointer.unitsPerPixel
+      const rawDx = pointer.x - start.x
+      const rawDy = pointer.y - start.y
+      hasMoved ||=
+        Math.hypot(rawDx, rawDy) > CLICK_SLOP_PX * pointer.unitsPerPixel
       if (!hasMoved) return
-      const moved = originals.map((shape) => translateShape(shape, dx, dy))
-      editCurrentPage((page) => replaceShapes(page, moved))
+      const { dx, dy } = applyMoveSnap(
+        origBounds,
+        rawDx,
+        rawDy,
+        pointer,
+        otherBoundsList,
+      )
+      const moved = movable.map((shape) => translateShape(shape, dx, dy))
+      editCurrentPage((p) => replaceShapes(p, moved))
     },
     end: () => {
-      useEngineStore.getState().endChange()
+      setSession({ snapGuides: null })
+      if (movable.length > 0) useEngineStore.getState().endChange()
       if (!hasMoved) onClick()
     },
   }
@@ -86,6 +137,9 @@ export function startResizeGesture(
   corner: HandleCorner,
 ): ToolGesture {
   const originals = selectedShapes()
+  if (originals.some((s) => s.locked)) {
+    return { move: () => {}, end: () => {} }
+  }
   const keepsRatio = originals.some(
     (s) => s.type === 'text' || s.type === 'image' || s.type === 'table',
   )

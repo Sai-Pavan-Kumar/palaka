@@ -46,11 +46,16 @@ export function insertShape(shape: Shape): void {
   )
 }
 
+let clipboard: Shape[] = []
+
 export function deleteSelected(): void {
   const { selectedIds } = useSessionStore.getState()
   if (selectedIds.length === 0) return
-  commitCurrentPage((page) => removeShapes(page, selectedIds))
-  selectShapes([])
+  const page = getCurrentPage()
+  const deletable = selectedIds.filter((id) => !page.shapes[id]?.locked)
+  if (deletable.length === 0) return
+  commitCurrentPage((p) => removeShapes(p, deletable))
+  selectShapes(selectedIds.filter((id) => page.shapes[id]?.locked))
 }
 
 export function duplicateSelected(): void {
@@ -64,6 +69,7 @@ export function duplicateSelected(): void {
       idMap,
     ),
     id: idMap.get(shape.id)!,
+    locked: false,
   }))
   commitCurrentPage((page) =>
     copies.reduce(
@@ -72,6 +78,58 @@ export function duplicateSelected(): void {
     ),
   )
   selectShapes(copies.map((copy) => copy.id))
+}
+
+export function copySelected(): void {
+  const { selectedIds } = useSessionStore.getState()
+  const originals = getShapesInOrder(getCurrentPage(), selectedIds)
+  if (originals.length === 0) return
+  clipboard = originals.map((shape) => structuredClone(shape))
+}
+
+export function pasteClipboard(): void {
+  if (clipboard.length === 0) return
+  const { presenting } = useSessionStore.getState()
+  const idMap = new Map(clipboard.map((s) => [s.id, crypto.randomUUID()]))
+  const copies = clipboard.map((shape) => ({
+    ...remapBindings(
+      translateShape(shape, DUPLICATE_OFFSET, DUPLICATE_OFFSET),
+      idMap,
+    ),
+    id: idMap.get(shape.id)!,
+    locked: false,
+  }))
+  commitCurrentPage((page) =>
+    copies.reduce(
+      (next, copy) => addShape(next, withRevealStep(next, copy, presenting)),
+      page,
+    ),
+  )
+  selectShapes(copies.map((copy) => copy.id))
+  clipboard = copies.map((c) => structuredClone(c))
+}
+
+export function cutSelected(): void {
+  copySelected()
+  deleteSelected()
+}
+
+export function toggleLockSelected(): void {
+  const { selectedIds } = useSessionStore.getState()
+  const page = getCurrentPage()
+  const targets = getShapesInOrder(page, selectedIds)
+  if (targets.length === 0) return
+  const allLocked = targets.every((s) => s.locked)
+  const nextLocked = !allLocked
+  commitCurrentPage((p) => ({
+    ...p,
+    shapes: {
+      ...p.shapes,
+      ...Object.fromEntries(
+        targets.map((s) => [s.id, { ...s, locked: nextLocked }]),
+      ),
+    },
+  }))
 }
 
 export function moveSelectedToEdge(edge: 'front' | 'back'): void {

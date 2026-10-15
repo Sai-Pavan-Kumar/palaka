@@ -8,6 +8,9 @@ import { HatchPatterns } from './HatchPatterns'
 import { BoardPaletteContext } from './paletteContext'
 import { BrandMark, PaperBackground } from './PaperLayer'
 import { ShapeView } from './ShapeView'
+import { getShapeBounds } from '../model/geometry'
+import { setSession, useSessionStore } from '../sessionStore'
+import { SpotlightOverlay } from './SpotlightOverlay'
 
 function isFlowRunning(shape: Shape, flowUpTo: number | null): boolean {
   if (flowUpTo === null || shape.type !== 'line' || !shape.flow) return false
@@ -71,6 +74,28 @@ type PageSvgProps = {
   children?: ReactNode
 }
 
+function SpotlightLayer({
+  page,
+  width,
+  height,
+}: {
+  page: Page
+  width: number
+  height: number
+}) {
+  const spotlightId = useSessionStore((s) => s.spotlightId)
+  const target = spotlightId ? page.shapes[spotlightId] : undefined
+  if (!target) return null
+  return (
+    <SpotlightOverlay
+      bounds={getShapeBounds(target)}
+      width={width}
+      height={height}
+      onDismiss={() => setSession({ spotlightId: null })}
+    />
+  )
+}
+
 // One page as an SVG the size of the slide: paper, shapes, brand mark. The
 // live board and every export render through this, so a PNG always matches
 // what the video showed.
@@ -113,6 +138,7 @@ export function PageSvg({
           drawOnStep={drawOnStep}
           flowUpTo={flowUpTo}
         />
+        <SpotlightLayer page={page} width={width} height={height} />
         {paper.showBrand && <BrandMark palette={palette} />}
       </svg>
     </BoardPaletteContext>
