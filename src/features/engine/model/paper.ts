@@ -52,9 +52,16 @@ export type BoardPalette = {
   brand: string
   patternLine: string
   patternMajor: string
+  // The paper colour itself: behind connector labels, so a label cuts
+  // cleanly through the line under it.
+  paper: string
+  // Icon and label colour on a solid-filled block, where ink would vanish.
+  onSolid: string
 }
 
-const LIGHT_PALETTE: BoardPalette = {
+type ToneColors = Omit<BoardPalette, 'paper'>
+
+const LIGHT_PALETTE: ToneColors = {
   tone: 'light',
   ink: INK,
   tint: (color) => ({ fill: TINT[color], opacity: 1 }),
@@ -64,9 +71,10 @@ const LIGHT_PALETTE: BoardPalette = {
   // Faint on purpose (1.2–1.5:1): the paper must never compete with text.
   patternLine: 'rgba(13, 13, 26, 0.1)',
   patternMajor: 'rgba(13, 13, 26, 0.18)',
+  onSolid: '#ffffff',
 }
 
-const DARK_PALETTE: BoardPalette = {
+const DARK_PALETTE: ToneColors = {
   tone: 'dark',
   ink: DARK_INK,
   tint: (color) => ({ fill: DARK_INK[color], opacity: 0.22 }),
@@ -76,12 +84,20 @@ const DARK_PALETTE: BoardPalette = {
   brand: '#ffffff',
   patternLine: 'rgba(255, 255, 255, 0.14)',
   patternMajor: 'rgba(255, 255, 255, 0.26)',
+  onSolid: '#0d0d1a', // --color-text-primary-light
 }
 
+// Built once per paper colour, so the palette object stays the same between
+// renders and shape views do not re-render on every board edit.
+const PALETTES = Object.fromEntries(
+  Object.entries(PAPER_COLORS).map(([color, { fill, tone }]) => [
+    color,
+    { ...(tone === 'dark' ? DARK_PALETTE : LIGHT_PALETTE), paper: fill },
+  ]),
+) as Record<PaperColor, BoardPalette>
+
 export function getPalette(paper: Paper): BoardPalette {
-  return PAPER_COLORS[paper.color].tone === 'dark'
-    ? DARK_PALETTE
-    : LIGHT_PALETTE
+  return PALETTES[paper.color]
 }
 
 // Boards saved before paper existed (or with an unknown value) get the

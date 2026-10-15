@@ -45,7 +45,8 @@
 .board-stage.tool-diamond,
 .board-stage.tool-heart,
 .board-stage.tool-line,
-.board-stage.tool-arrow {
+.board-stage.tool-arrow,
+.board-stage.tool-block {
   cursor: crosshair;
 }
 
@@ -194,6 +195,7 @@
 }
 
 .board-overlay rect,
+.board-overlay circle,
 .board-overlay polyline {
   vector-effect: non-scaling-stroke;
 }
@@ -231,7 +233,25 @@
   opacity: var(--opacity-40);
 }
 
+/* Shows that a block or arrow label is being typed (never recorded). */
+.board-overlay__label-edit {
+  fill: none;
+  stroke: var(--color-brand-primary);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+/* The shape a new arrow end will stick to. */
+.board-overlay__bind-target {
+  fill: none;
+  stroke: var(--color-brand-primary);
+  stroke-width: 3;
+  stroke-dasharray: 6 4;
+}
+
 /* Brand blue vanishes on blueprint blue: editing chrome turns white there. */
+.board-stage.is-dark-paper .board-overlay__bind-target,
+.board-stage.is-dark-paper .board-overlay__label-edit,
 .board-stage.is-dark-paper .board-overlay__selection,
 .board-stage.is-dark-paper .board-overlay__marquee {
   stroke: var(--color-text-primary);
@@ -239,4 +259,35 @@
 
 .board-stage.is-dark-paper .board-overlay__handle {
   stroke: var(--color-surface-base);
+}
+
+/* Flow dots slide one gap per loop, which reads as endless travel. */
+.flow-dots.is-running {
+  animation: flow-dots var(--flow-period) linear infinite;
+}
+
+@keyframes flow-dots {
+  to {
+    stroke-dashoffset: var(--flow-shift);
+  }
+}
+
+/* The global rule shortens animations to ~0; an endless loop would then
+   flicker, so flow simply stands still. */
+@media (prefers-reduced-motion: reduce) {
+  .flow-dots.is-running {
+    animation: none !important;
+  }
+}
+
+/* Highlight steps fade in like a marker stroke laid down. */
+.table-highlight {
+  animation: reveal-fade var(--duration-standard) var(--ease-out) both;
+}
+
+/* Query clauses fade, strike and slide rows; reduced motion makes it instant. */
+.query-row {
+  transition:
+    transform var(--duration-slow) var(--ease-out),
+    opacity var(--duration-standard) var(--ease-out);
 }

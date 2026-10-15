@@ -17,6 +17,7 @@ function currentBoardText(): string {
   return serializeBoard(
     useEngineStore.getState().doc,
     useNotesStore.getState().notes,
+    useNotesStore.getState().sql,
   )
 }
 
@@ -59,9 +60,9 @@ export async function loadBrowserBoard(): Promise<void> {
     const text = await readBrowserBoard()
     if (text) {
       try {
-        const { document, notes } = parseBoard(text)
+        const { document, notes, sql } = parseBoard(text)
         useEngineStore.getState().replaceDocument(document)
-        useNotesStore.getState().replaceNotes(notes)
+        useNotesStore.getState().replaceNotes(notes, sql)
       } catch (error) {
         console.error(
           'Browser copy unreadable; parked and starting fresh',

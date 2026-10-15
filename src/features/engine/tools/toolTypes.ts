@@ -5,6 +5,8 @@ export type BoardPointer = {
   pressure: number
   isPen: boolean
   shiftKey: boolean
+  // Alt keeps a new line or arrow from sticking to shapes.
+  altKey: boolean
   // Board units per screen pixel. Lets tools think in screen pixels
   // ("grab within 8 px") whatever size the board is shown at.
   unitsPerPixel: number

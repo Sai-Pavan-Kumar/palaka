@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
+import { isEffect } from '../model/effects'
+import { getActiveHighlights } from '../model/highlights'
 import { SLIDE_SIZE } from '../model/boardSpec'
 import { getPalette } from '../model/paper'
 import type { Aspect, Page, Paper, Shape } from '../model/types'
@@ -6,6 +8,50 @@ import { HatchPatterns } from './HatchPatterns'
 import { BoardPaletteContext } from './paletteContext'
 import { BrandMark, PaperBackground } from './PaperLayer'
 import { ShapeView } from './ShapeView'
+
+function isFlowRunning(shape: Shape, flowUpTo: number | null): boolean {
+  if (flowUpTo === null || shape.type !== 'line' || !shape.flow) return false
+  const { step } = shape.flow
+  return step === undefined || step <= flowUpTo
+}
+
+type PageShapesProps = Pick<
+  PageSvgProps,
+  'page' | 'imageUrls' | 'isVisible' | 'hiddenShapeId'
+> & { drawOnStep: number | null; flowUpTo: number | null }
+
+function PageShapes({
+  page,
+  imageUrls,
+  isVisible,
+  hiddenShapeId,
+  drawOnStep,
+  flowUpTo,
+}: PageShapesProps) {
+  const lit = useMemo(
+    () => getActiveHighlights(page, flowUpTo),
+    [page, flowUpTo],
+  )
+  return page.order.map((id) => {
+    const shape = page.shapes[id]
+    // Effects have no ink of their own; tables and arrows draw them.
+    if (isEffect(shape)) return null
+    if (isVisible && !isVisible(shape)) return null
+    return (
+      <ShapeView
+        key={id}
+        shape={shape}
+        imageUrl={shape.type === 'image' ? imageUrls[shape.assetId] : undefined}
+        isHidden={id === hiddenShapeId}
+        drawOn={drawOnStep !== null && shape.revealStep === drawOnStep}
+        isFlowing={isFlowRunning(shape, flowUpTo)}
+        highlighted={lit.columns.get(id)}
+        rowStates={lit.rowStates.get(id)}
+        isGlowing={lit.lines.has(id)}
+      />
+    )
+  })
+}
 
 type PageSvgProps = {
   page: Page
@@ -17,6 +63,9 @@ type PageSvgProps = {
   hiddenShapeId?: string | null
   // The reveal step that should draw itself in (live board only).
   drawOnStep?: number | null
+  // Steps shown while presenting; flow dots up to here move. null = all
+  // flow stands still (editing, exports).
+  flowUpTo?: number | null
   className?: string
   // Exports add embedded fonts here.
   children?: ReactNode
@@ -33,6 +82,7 @@ export function PageSvg({
   isVisible,
   hiddenShapeId,
   drawOnStep = null,
+  flowUpTo = null,
   className,
   children,
 }: PageSvgProps) {
@@ -55,21 +105,14 @@ export function PageSvg({
           height={height}
         />
         <HatchPatterns />
-        {page.order.map((id) => {
-          const shape = page.shapes[id]
-          if (isVisible && !isVisible(shape)) return null
-          return (
-            <ShapeView
-              key={id}
-              shape={shape}
-              imageUrl={
-                shape.type === 'image' ? imageUrls[shape.assetId] : undefined
-              }
-              isHidden={id === hiddenShapeId}
-              drawOn={drawOnStep !== null && shape.revealStep === drawOnStep}
-            />
-          )
-        })}
+        <PageShapes
+          page={page}
+          imageUrls={imageUrls}
+          isVisible={isVisible}
+          hiddenShapeId={hiddenShapeId}
+          drawOnStep={drawOnStep}
+          flowUpTo={flowUpTo}
+        />
         {paper.showBrand && <BrandMark palette={palette} />}
       </svg>
     </BoardPaletteContext>

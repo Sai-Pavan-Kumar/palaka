@@ -7,7 +7,8 @@ import {
   isBoundsInside,
 } from '../model/geometry'
 import { scaleShape, translateShape } from '../model/transform'
-import type { Bounds } from '../model/types'
+import { detachLine } from '../model/connectors'
+import type { Binding, Bounds, LineShape } from '../model/types'
 import { selectShapes, setSession, useSessionStore } from '../sessionStore'
 import {
   getCornerPoint,
@@ -31,11 +32,25 @@ function clampScale(scale: number): number {
   return sign * Math.max(MIN_SCALE, Math.abs(scale))
 }
 
+// A connector moved or resized on its own was moved on purpose, so its ends
+// let go of shapes that stay behind. Moved together with its blocks, it
+// keeps them.
 function selectedShapes() {
-  return getShapesInOrder(
-    getCurrentPage(),
-    useSessionStore.getState().selectedIds,
+  const { selectedIds } = useSessionStore.getState()
+  const selected = new Set(selectedIds)
+  return getShapesInOrder(getCurrentPage(), selectedIds).map((shape) =>
+    shape.type === 'line' ? releaseUnselectedEnds(shape, selected) : shape,
   )
+}
+
+function releaseUnselectedEnds(line: LineShape, selected: Set<string>) {
+  const keep = (binding?: Binding) =>
+    binding && selected.has(binding.shapeId) ? binding : undefined
+  return {
+    ...detachLine(line),
+    ...(keep(line.startBinding) && { startBinding: line.startBinding }),
+    ...(keep(line.endBinding) && { endBinding: line.endBinding }),
+  }
 }
 
 // Shapes are recomputed from their drag-start copies on every move, so
@@ -72,7 +87,7 @@ export function startResizeGesture(
 ): ToolGesture {
   const originals = selectedShapes()
   const keepsRatio = originals.some(
-    (s) => s.type === 'text' || s.type === 'image',
+    (s) => s.type === 'text' || s.type === 'image' || s.type === 'table',
   )
   const anchor = getCornerPoint(bounds, getOppositeCorner(corner))
   const handle = getCornerPoint(bounds, corner)

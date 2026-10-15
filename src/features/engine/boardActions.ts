@@ -1,4 +1,6 @@
 import { useEngineStore } from './engineStore'
+import { isEffect } from './model/effects'
+import { remapBindings } from './model/connectors'
 import {
   addShape,
   findPage,
@@ -55,9 +57,13 @@ export function duplicateSelected(): void {
   const { selectedIds, presenting } = useSessionStore.getState()
   const originals = getShapesInOrder(getCurrentPage(), selectedIds)
   if (originals.length === 0) return
+  const idMap = new Map(originals.map((s) => [s.id, crypto.randomUUID()]))
   const copies = originals.map((shape) => ({
-    ...translateShape(shape, DUPLICATE_OFFSET, DUPLICATE_OFFSET),
-    id: crypto.randomUUID(),
+    ...remapBindings(
+      translateShape(shape, DUPLICATE_OFFSET, DUPLICATE_OFFSET),
+      idMap,
+    ),
+    id: idMap.get(shape.id)!,
   }))
   commitCurrentPage((page) =>
     copies.reduce(
@@ -74,9 +80,11 @@ export function moveSelectedToEdge(edge: 'front' | 'back'): void {
   commitCurrentPage((page) => moveToEdge(page, selectedIds, edge))
 }
 
+// Effects (highlight steps) have nothing to grab, so they stay out.
 export function selectAllOnPage(): void {
+  const page = getCurrentPage()
   setSession({ tool: 'select' })
-  selectShapes([...getCurrentPage().order])
+  selectShapes(page.order.filter((id) => !isEffect(page.shapes[id])))
 }
 
 // Styles apply to what is selected and to whatever is drawn next.

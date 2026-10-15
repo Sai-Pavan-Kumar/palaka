@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
-import { FolderOpen, ListOrdered } from 'lucide-react'
+import { FolderOpen, ListOrdered, Table2, type LucideIcon } from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
 import { listProjectAssets } from '../project/openProject'
 import { useProjectStore } from '../project/projectStore'
 import { RevealOrderList } from '../reveal/RevealOrderList'
-import { useUiStore } from '../shell/uiStore'
+import { SqlPanel } from '../sql/SqlPanel'
+import { useUiStore, type LeftPanelTab } from '../shell/uiStore'
 import { AssetGrid } from './AssetGrid'
 import './leftPanel.css'
 
@@ -26,30 +27,57 @@ function useRescanOnFocus() {
   }, [])
 }
 
+type TabInfo = {
+  id: LeftPanelTab
+  icon: LucideIcon
+  label: string
+  kicker: string
+}
+
+const TABS: TabInfo[] = [
+  { id: 'files', icon: FolderOpen, label: 'Folder images', kicker: 'Folder' },
+  {
+    id: 'order',
+    icon: ListOrdered,
+    label: 'Reveal order',
+    kicker: 'Reveal order',
+  },
+  { id: 'sql', icon: Table2, label: 'Tables from SQL', kicker: 'Blueprint' },
+]
+
+function TabBody({ tab }: { tab: LeftPanelTab }) {
+  if (tab === 'files') return <AssetGrid />
+  if (tab === 'order') return <RevealOrderList />
+  return <SqlPanel />
+}
+
+function tabTitle(tab: LeftPanelTab, folderName?: string): string {
+  if (tab === 'files') return folderName ?? 'No folder open'
+  if (tab === 'order') return 'This page'
+  return 'Tables from SQL'
+}
+
 export function LeftPanel() {
   const isOpen = useUiStore((s) => s.isLeftPanelOpen)
   const tab = useUiStore((s) => s.leftPanelTab)
   const toggleLeftPanel = useUiStore((s) => s.toggleLeftPanel)
   const folderName = useProjectStore((s) => s.project?.folderName)
+  const info = TABS.find((t) => t.id === tab) ?? TABS[0]
   useRescanOnFocus()
 
   return (
     <aside className={`left-panel chrome ${isOpen ? 'is-open' : ''}`}>
       <nav className="left-panel__rail floating-bar" aria-label="Panels">
-        <IconButton
-          icon={FolderOpen}
-          label="Folder images"
-          tooltipSide="right"
-          isActive={isOpen && tab === 'files'}
-          onClick={() => toggleLeftPanel('files')}
-        />
-        <IconButton
-          icon={ListOrdered}
-          label="Reveal order"
-          tooltipSide="right"
-          isActive={isOpen && tab === 'order'}
-          onClick={() => toggleLeftPanel('order')}
-        />
+        {TABS.map((item) => (
+          <IconButton
+            key={item.id}
+            icon={item.icon}
+            label={item.label}
+            tooltipSide="right"
+            isActive={isOpen && tab === item.id}
+            onClick={() => toggleLeftPanel(item.id)}
+          />
+        ))}
       </nav>
       <section
         className="left-panel__sheet"
@@ -57,14 +85,10 @@ export function LeftPanel() {
         inert={!isOpen}
       >
         <header className="left-panel__header">
-          <p className="menu-label">
-            {tab === 'files' ? 'Folder' : 'Reveal order'}
-          </p>
-          <h2 className="left-panel__title">
-            {tab === 'files' ? (folderName ?? 'No folder open') : 'This page'}
-          </h2>
+          <p className="menu-label">{info.kicker}</p>
+          <h2 className="left-panel__title">{tabTitle(tab, folderName)}</h2>
         </header>
-        {tab === 'files' ? <AssetGrid /> : <RevealOrderList />}
+        <TabBody tab={tab} />
       </section>
     </aside>
   )

@@ -1,13 +1,19 @@
 import { getCurrentPage } from '../boardActions'
 import { hitTestShape } from '../model/hitTest'
 import { selectShapes, useSessionStore } from '../sessionStore'
-import { startTextEditing } from '../textEditing'
+import { hasEditableLabel, startTextEditing } from '../textEditing'
 import {
   startMarqueeGesture,
   startMoveGesture,
   startResizeGesture,
 } from './selectGestures'
-import { findHandleAt, getSelectionBounds } from './selectionHandles'
+import { startLineEndGesture } from './lineEndGesture'
+import {
+  findHandleAt,
+  findLineEndAt,
+  getSelectionBounds,
+  getSoloLine,
+} from './selectionHandles'
 import type { BoardPointer, ToolGesture, ToolHandler } from './toolTypes'
 
 // Grab distance in screen pixels around a line.
@@ -31,12 +37,18 @@ function findTopShapeAt(pointer: BoardPointer): string | null {
 function isDoubleClickOn(id: string): boolean {
   const now = performance.now()
   const isDouble = lastClick.id === id && now - lastClick.time < DOUBLE_CLICK_MS
-  lastClick = { id, time: now }
+  // A double-click is used up: a third quick click selects again instead of
+  // reopening the editor (which then silently ate Delete and Ctrl A).
+  lastClick = isDouble ? { id: '', time: 0 } : { id, time: now }
   return isDouble
 }
 
 function startOnShape(pointer: BoardPointer, id: string): ToolGesture {
-  if (isDoubleClickOn(id) && getCurrentPage().shapes[id].type === 'text') {
+  const shape = getCurrentPage().shapes[id]
+  if (
+    isDoubleClickOn(id) &&
+    (shape.type === 'text' || hasEditableLabel(shape))
+  ) {
     startTextEditing(id)
     return IDLE_GESTURE
   }
@@ -62,7 +74,19 @@ function startOnShape(pointer: BoardPointer, id: string): ToolGesture {
 export const selectTool: ToolHandler = {
   start: (pointer) => {
     const { selectedIds } = useSessionStore.getState()
-    const bounds = getSelectionBounds(getCurrentPage(), selectedIds)
+    const soloLine = getSoloLine(getCurrentPage(), selectedIds)
+    if (soloLine) {
+      const end = findLineEndAt(
+        soloLine,
+        pointer.x,
+        pointer.y,
+        pointer.unitsPerPixel,
+      )
+      if (end) return startLineEndGesture(soloLine, end)
+    }
+    const bounds = soloLine
+      ? null
+      : getSelectionBounds(getCurrentPage(), selectedIds)
     const corner =
       bounds &&
       findHandleAt(bounds, pointer.x, pointer.y, pointer.unitsPerPixel)

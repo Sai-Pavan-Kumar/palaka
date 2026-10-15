@@ -3,14 +3,36 @@
   "plugins": ["react", "typescript", "oxc"],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }],
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ],
     "eslint/max-lines": [
       "error",
-      { "max": 350, "skipBlankLines": true, "skipComments": true }
+      {
+        "max": 350,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
     ],
     "eslint/max-lines-per-function": [
       "error",
-      { "max": 50, "skipBlankLines": true, "skipComments": true }
+      {
+        "max": 50,
+        "skipBlankLines": true,
+        "skipComments": true
+      }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts"],
+      "rules": {
+        "eslint/max-lines-per-function": "off",
+        "eslint/max-lines": "off"
+      }
+    }
+  ]
 }

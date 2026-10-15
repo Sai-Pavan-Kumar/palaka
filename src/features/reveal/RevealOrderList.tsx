@@ -4,23 +4,41 @@ import { useEngineStore } from '../engine/engineStore'
 import { findPage } from '../engine/model/documentOps'
 import type { BoardDocument, Page, Shape } from '../engine/model/types'
 import { selectShapes, setTool, useSessionStore } from '../engine/sessionStore'
+import type { StepKind } from '../engine/model/revealSteps'
 import { describeShape } from './describeShape'
 import { moveRevealStep, toggleAlwaysVisible } from './revealModel'
 import './reveal.css'
 
-type OrderRow = { shape: Shape; step: number | null; label: string }
+type OrderRow = {
+  shape: Shape
+  kind: StepKind
+  step: number | null
+  label: string
+}
 
 // Always-visible objects first (they are on screen from the start), then the
-// reveal steps in the order the audience will see them.
+// reveal steps in the order the audience will see them. A flowing connector
+// gets a second row for "dots start moving".
 function buildRows(doc: BoardDocument, page: Page): OrderRow[] {
   return page.order
     .map((id) => page.shapes[id])
-    .map((shape) => ({
-      shape,
-      step: shape.revealStep ?? null,
-      label: describeShape(doc, shape),
-    }))
+    .flatMap((shape) => {
+      const label = describeShape(doc, shape)
+      const rows: OrderRow[] = [
+        { shape, kind: 'shape', step: shape.revealStep ?? null, label },
+      ]
+      if (shape.type === 'line' && shape.flow) {
+        const step = shape.flow.step ?? null
+        rows.push({ shape, kind: 'flow', step, label: `Flow: ${label}` })
+      }
+      return rows
+    })
     .sort((a, b) => (a.step ?? 0) - (b.step ?? 0))
+}
+
+function pinLabel(kind: StepKind, step: number | null): string {
+  if (step === null) return 'Make it a step'
+  return kind === 'flow' ? 'Moves from the start' : 'Always visible'
 }
 
 function OrderRowItem({
@@ -30,7 +48,7 @@ function OrderRowItem({
   row: OrderRow
   isSelected: boolean
 }) {
-  const { shape, step, label } = row
+  const { shape, kind, step, label } = row
   return (
     <li className={`order-list__item ${isSelected ? 'is-selected' : ''}`}>
       <span className={`order-list__step ${step === null ? 'is-pinned' : ''}`}>
@@ -52,19 +70,19 @@ function OrderRowItem({
             <IconButton
               icon={ArrowUp}
               label="Earlier"
-              onClick={() => moveRevealStep(shape.id, -1)}
+              onClick={() => moveRevealStep(shape.id, kind, -1)}
             />
             <IconButton
               icon={ArrowDown}
               label="Later"
-              onClick={() => moveRevealStep(shape.id, 1)}
+              onClick={() => moveRevealStep(shape.id, kind, 1)}
             />
           </>
         )}
         <IconButton
           icon={step === null ? PinOff : Pin}
-          label={step === null ? 'Make it a step' : 'Always visible'}
-          onClick={() => toggleAlwaysVisible(shape.id)}
+          label={pinLabel(kind, step)}
+          onClick={() => toggleAlwaysVisible(shape.id, kind)}
         />
       </span>
     </li>
@@ -89,7 +107,7 @@ export function RevealOrderList() {
     <ol className="order-list">
       {rows.map((row) => (
         <OrderRowItem
-          key={row.shape.id}
+          key={`${row.shape.id}-${row.kind}`}
           row={row}
           isSelected={selectedIds.includes(row.shape.id)}
         />

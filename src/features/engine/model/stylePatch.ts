@@ -9,6 +9,10 @@ const APPLIES: Record<Shape['type'], (keyof ShapeStyle)[]> = {
   line: ['color', 'size', 'dash', 'opacity'],
   text: ['color', 'size', 'font', 'opacity'],
   image: ['opacity'],
+  block: ['color', 'size', 'fill', 'dash', 'opacity'],
+  table: ['color', 'size', 'fill', 'dash', 'opacity'],
+  highlight: [],
+  tableState: [],
 }
 
 export function applyStylePatch(

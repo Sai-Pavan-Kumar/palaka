@@ -1,5 +1,5 @@
 import { getPenWidth, getStrokeWidth } from '../model/boardSpec'
-import { getGeoOutline } from '../model/geoOutline'
+import { getOutline } from '../model/geoOutline'
 import { getShapeBounds } from '../model/geometry'
 import type { Point, Shape } from '../model/types'
 import { getArrowheadWings } from './shapePaths'
@@ -62,8 +62,10 @@ export function getDrawPlan(shape: Shape): DrawPlan | null {
         width,
       }
     }
-    case 'geo': {
-      const outline = getGeoOutline(shape)
+    case 'geo':
+    case 'block':
+    case 'table': {
+      const outline = getOutline(shape)
       const closed = polyline([...outline, outline[0]])
       return { kind: 'trace', ...closed, width: getStrokeWidth(shape) }
     }
@@ -72,6 +74,8 @@ export function getDrawPlan(shape: Shape): DrawPlan | null {
       return { kind: 'wipe', length: bounds.maxX - bounds.minX }
     }
     case 'image':
+    case 'highlight':
+    case 'tableState':
       return null
   }
 }

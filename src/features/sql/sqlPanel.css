@@ -1,0 +1,65 @@
+.sql-panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sql-panel__input {
+  min-height: 280px;
+  resize: vertical;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-code);
+  font-size: 12px;
+  line-height: 1.5;
+  tab-size: 2;
+}
+
+.sql-panel__input:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 1px;
+}
+
+.sql-panel__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sql-panel__insert,
+.sql-panel__example {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-full);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sql-panel__insert {
+  background: var(--color-brand-primary);
+  color: var(--color-surface-card-light);
+}
+
+.sql-panel__insert:disabled {
+  opacity: var(--opacity-40);
+  cursor: not-allowed;
+}
+
+.sql-panel__example {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.sql-panel__outcome {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.sql-panel__outcome.is-error {
+  color: var(--color-error);
+}

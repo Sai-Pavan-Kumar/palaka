@@ -1,7 +1,7 @@
 import { editCurrentPage, getCurrentPage } from './boardActions'
 import { useEngineStore } from './engineStore'
 import { findPage, removeShapes, replaceShapes } from './model/documentOps'
-import type { TextShape } from './model/types'
+import type { Shape } from './model/types'
 import { setSession, useSessionStore } from './sessionStore'
 
 // A whole typing session (open box → type → click away) is one undo step.
@@ -10,12 +10,23 @@ export function startTextEditing(shapeId: string): void {
   setSession({ editingTextId: shapeId, selectedIds: [] })
 }
 
+// Text boxes take many lines; block and connector labels stay on one line,
+// so a diagram never grows a paragraph inside a box.
 export function updateEditingText(text: string): void {
   const { editingTextId } = useSessionStore.getState()
   const shape = editingTextId ? getCurrentPage().shapes[editingTextId] : null
-  if (shape?.type !== 'text') return
-  const next: TextShape = { ...shape, text }
+  if (!shape) return
+  const label = text.replace(/\n/g, ' ')
+  let next: Shape
+  if (shape.type === 'text') next = { ...shape, text }
+  else if (shape.type === 'block' || shape.type === 'line') {
+    next = { ...shape, label }
+  } else return
   editCurrentPage((page) => replaceShapes(page, [next]))
+}
+
+export function hasEditableLabel(shape: Shape): boolean {
+  return shape.type === 'block' || shape.type === 'line'
 }
 
 // Safe to call twice (blur and click can both finish an edit). An empty box

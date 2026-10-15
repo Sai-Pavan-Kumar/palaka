@@ -41,7 +41,7 @@ function useRevealRules(pageId: string) {
     ? (shape: Shape) =>
         shape.revealStep === undefined || shape.revealStep <= shownSteps
     : undefined
-  return { isVisible, drawOnStep }
+  return { isVisible, drawOnStep, flowUpTo: presenting ? shownSteps : null }
 }
 
 function stageClassName(doc: BoardDocument, tool: EngineTool): string {
@@ -65,7 +65,7 @@ export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
   const presenting = useSessionStore((s) => s.presenting)
   const editingTextId = useSessionStore((s) => s.editingTextId)
   const setBoardElement = useBoardStore((s) => s.setBoardElement)
-  const { isVisible, drawOnStep } = useRevealRules(pageId)
+  const { isVisible, drawOnStep, flowUpTo } = useRevealRules(pageId)
   const imageUrls = useImageUrls(doc.assets)
   const { width, height } = SLIDE_SIZE[doc.aspect]
   const stageRef = useRef<HTMLDivElement>(null)
@@ -90,6 +90,7 @@ export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
           paper={doc.paper}
           imageUrls={imageUrls}
           drawOnStep={drawOnStep}
+          flowUpTo={flowUpTo}
           isVisible={isVisible}
           hiddenShapeId={editingTextId}
         />

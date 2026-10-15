@@ -1,0 +1,47 @@
+/* Two columns keep 23 blocks inside one screen height on a laptop. */
+.block-menu {
+  display: grid;
+  gap: var(--space-1);
+  width: 360px;
+  max-height: min(70vh, 640px);
+  overflow-y: auto;
+}
+
+.block-menu__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.block-menu__item {
+  min-height: 36px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Stays put while the list scrolls, so you can refine without scrolling up. */
+.block-menu__search {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 13px;
+}
+
+.block-menu__search:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 1px;
+}
+
+.block-menu__empty {
+  padding: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}

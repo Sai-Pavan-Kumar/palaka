@@ -1,4 +1,7 @@
+import { BLOCK_NAMES } from './blockCatalog'
 import type {
+  BlockKind,
+  BlockShape,
   ColorKey,
   DashStyle,
   FillStyle,
@@ -106,6 +109,27 @@ export function createText(
     size: style.size,
     scale: 1,
     color: style.color,
+    opacity: style.opacity,
+  }
+}
+
+// Blocks start clean even when the pen is in hand style: a diagram reads
+// sharper, and the line switch can still make any block hand-drawn.
+export function createBlock(
+  kind: BlockKind,
+  box: { x: number; y: number; w: number; h: number },
+  style: ShapeStyle,
+): BlockShape {
+  return {
+    id: newId(),
+    type: 'block',
+    kind,
+    ...box,
+    label: BLOCK_NAMES[kind],
+    color: style.color,
+    size: style.size,
+    fill: style.fill,
+    dash: 'clean',
     opacity: style.opacity,
   }
 }

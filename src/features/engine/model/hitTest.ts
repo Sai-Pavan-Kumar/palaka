@@ -1,5 +1,5 @@
 import { getPenWidth, getStrokeWidth } from './boardSpec'
-import { getGeoOutline } from './geoOutline'
+import { getOutline } from './geoOutline'
 import { getShapeBounds, isPointInBounds } from './geometry'
 import type { Point, Shape } from './types'
 
@@ -80,7 +80,7 @@ export function hitTestShape(
       )
     }
     case 'geo': {
-      const outline = getGeoOutline(shape)
+      const outline = getOutline(shape)
       if (shape.fill !== 'none' && isInsidePolygon(p, outline)) return true
       return isNearPolyline(
         p,
@@ -89,6 +89,12 @@ export function hitTestShape(
         true,
       )
     }
+    // A block carries an icon and a label, so it is grabbed like a card.
+    case 'highlight':
+    case 'tableState':
+      return false
+    case 'block':
+    case 'table':
     case 'text':
     case 'image':
       return true

@@ -6,6 +6,7 @@ import { ExportMenu } from '../export/ExportMenu'
 import { RecordControls } from '../recorder/RecordControls'
 import { useRecorderStore } from '../recorder/recorderStore'
 import { setPresenting } from '../reveal/revealModel'
+import { BlockMenu } from './BlockMenu'
 import { PenMenu, ShapesMenu } from './ShapesMenu'
 import { MAIN_TOOLS, TRAILING_TOOLS, type ToolDefinition } from './toolList'
 import './topBar.css'
@@ -34,6 +35,7 @@ function ToolGroup() {
       ))}
       <PenMenu />
       <ShapesMenu />
+      <BlockMenu />
       {TRAILING_TOOLS.map((tool) => (
         <ToolButton key={tool.id} tool={tool} />
       ))}

@@ -1,3 +1,4 @@
+import { MIN_BLOCK_SIZE } from './blockCatalog'
 import type { Shape } from './types'
 
 export type ScaleTransform = {
@@ -9,6 +10,9 @@ export type ScaleTransform = {
 
 export function translateShape(shape: Shape, dx: number, dy: number): Shape {
   switch (shape.type) {
+    case 'highlight':
+    case 'tableState':
+      return shape
     case 'stroke':
       return {
         ...shape,
@@ -74,6 +78,7 @@ export function scaleShape(shape: Shape, t: ScaleTransform): Shape {
         x2: mapX(t, shape.x2),
         y2: mapY(t, shape.y2),
       }
+    case 'table':
     case 'text':
       // Text cannot stretch, so it grows by the average and keeps its corner
       // in place relative to the selection.
@@ -83,8 +88,19 @@ export function scaleShape(shape: Shape, t: ScaleTransform): Shape {
         y: mapY(t, shape.y),
         scale: shape.scale * inkFactor,
       }
+    case 'highlight':
+    case 'tableState':
+      return shape
     case 'geo':
     case 'image':
       return scaleBox(shape, t)
+    case 'block': {
+      const box = scaleBox(shape, t)
+      return {
+        ...box,
+        w: Math.max(box.w, MIN_BLOCK_SIZE.w),
+        h: Math.max(box.h, MIN_BLOCK_SIZE.h),
+      }
+    }
   }
 }

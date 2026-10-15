@@ -15,7 +15,7 @@ function toBoardPointer(
   sample: globalThis.PointerEvent,
   rect: DOMRect,
   slideWidth: number,
-  shiftKey: boolean,
+  { shiftKey, altKey }: { shiftKey: boolean; altKey: boolean },
 ): BoardPointer {
   const unitsPerPixel = slideWidth / rect.width
   return {
@@ -24,6 +24,7 @@ function toBoardPointer(
     pressure: sample.pressure,
     isPen: sample.pointerType === 'pen',
     shiftKey,
+    altKey,
     unitsPerPixel,
   }
 }
@@ -72,7 +73,7 @@ export function useBoardPointer(
   ) => {
     const rect = stageRef.current!.getBoundingClientRect()
     return samples.map((sample) =>
-      toBoardPointer(sample, rect, slideWidth, event.shiftKey),
+      toBoardPointer(sample, rect, slideWidth, event),
     )
   }
 

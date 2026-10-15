@@ -14,9 +14,13 @@ import {
 import type { ImageShape, Shape, StrokeShape, TextShape } from '../model/types'
 import { DrawOnMask } from './DrawOnMask'
 import { drawMaskId, getDrawDuration } from './drawOnPlan'
-import { GeoView, LineView } from './GeoLineViews'
+import { BlockContents, BlockView } from './BlockView'
+import { FlowDots } from './FlowDots'
+import { GeoView, LineGlow, LineLabel, LineView } from './GeoLineViews'
 import { useBoardPalette } from './paletteContext'
+import type { RowState } from '../model/highlights'
 import { getStrokePath } from './shapePaths'
+import { TableContents, TableView } from './TableView'
 
 // The highlighter takes its mask on the path itself: a masked group would
 // cut it off from the ink below, and the marker would stop blending.
@@ -93,14 +97,52 @@ function ImageView({ shape, url }: { shape: ImageShape; url?: string }) {
   )
 }
 
-function ShapeBody({ shape, imageUrl }: { shape: Shape; imageUrl?: string }) {
+type ShapeBodyProps = {
+  shape: Shape
+  imageUrl?: string
+  // A block or line label being edited is drawn by the editor instead.
+  hideLabel?: boolean
+  isFlowing?: boolean
+  highlighted?: ReadonlySet<string>
+  isGlowing?: boolean
+  rowStates?: RowState[]
+}
+
+function ShapeBody({
+  shape,
+  imageUrl,
+  hideLabel,
+  isFlowing,
+  highlighted,
+  isGlowing,
+  rowStates,
+}: ShapeBodyProps) {
   switch (shape.type) {
     case 'stroke':
       return <StrokeView shape={shape} />
     case 'geo':
       return <GeoView shape={shape} />
+    case 'block':
+      return <BlockView shape={shape} hideLabel={hideLabel} />
+    case 'table':
+      return (
+        <TableView
+          shape={shape}
+          highlighted={highlighted}
+          rowStates={rowStates}
+        />
+      )
     case 'line':
-      return <LineView shape={shape} />
+      return (
+        <>
+          {isGlowing && <LineGlow shape={shape} />}
+          <LineView shape={shape} />
+          {shape.flow && (
+            <FlowDots shape={shape} isRunning={isFlowing ?? false} />
+          )}
+          {!hideLabel && <LineLabel shape={shape} />}
+        </>
+      )
     case 'text':
       return <TextView shape={shape} />
     case 'image':
@@ -108,8 +150,42 @@ function ShapeBody({ shape, imageUrl }: { shape: Shape; imageUrl?: string }) {
   }
 }
 
-// The shape draws itself along its own path. A geo shape's fill is kept out
-// of the mask and fades in once the outline has closed.
+// What fades in once the traced line is done: a box's fill, a block's icon
+// and label, a connector's label (the mask band is too thin for them).
+function FadeInPart({ shape }: { shape: Shape }) {
+  switch (shape.type) {
+    case 'geo':
+      return <GeoView shape={shape} part="fill" />
+    case 'block':
+      return (
+        <>
+          <GeoView shape={shape} part="fill" />
+          <BlockContents shape={shape} />
+        </>
+      )
+    case 'line':
+      return <LineLabel shape={shape} />
+    case 'table':
+      return <TableContents shape={shape} />
+    default:
+      return null
+  }
+}
+
+function TracedPart({ shape }: { shape: Shape }) {
+  if (
+    shape.type === 'geo' ||
+    shape.type === 'block' ||
+    shape.type === 'table'
+  ) {
+    return <GeoView shape={shape} part="outline" />
+  }
+  if (shape.type === 'line') return <LineView shape={shape} />
+  return <ShapeBody shape={shape} />
+}
+
+// The shape draws itself along its own path. Fills, icons and labels are
+// kept out of the mask and fade in once the line has been drawn.
 function DrawingOnBody({
   shape,
   duration,
@@ -124,19 +200,15 @@ function DrawingOnBody({
       <DrawOnMask shape={shape} />
       {shape.type === 'stroke' ? (
         <StrokeView shape={shape} mask={mask} />
-      ) : shape.type === 'geo' ? (
+      ) : (
         <>
           <g className="draw-on-fill" style={timing}>
-            <GeoView shape={shape} part="fill" />
+            <FadeInPart shape={shape} />
           </g>
           <g mask={mask}>
-            <GeoView shape={shape} part="outline" />
+            <TracedPart shape={shape} />
           </g>
         </>
-      ) : (
-        <g mask={mask}>
-          <ShapeBody shape={shape} />
-        </g>
       )}
     </>
   )
@@ -145,10 +217,18 @@ function DrawingOnBody({
 type ShapeViewProps = {
   shape: Shape
   imageUrl?: string
-  // Text being edited is drawn by the editor instead, so it never doubles.
+  // Text (or a label) being edited is drawn by the editor instead, so it
+  // never doubles.
   isHidden?: boolean
   // Just revealed while presenting: animate it being drawn.
   drawOn?: boolean
+  // Flow dots move (presenting, their step reached); otherwise they stand.
+  isFlowing?: boolean
+  // Columns lit by a highlight step (tables) / joins two lit columns (lines).
+  highlighted?: ReadonlySet<string>
+  isGlowing?: boolean
+  // Row states of the query clause shown on this table (presenting only).
+  rowStates?: RowState[]
 }
 
 // Memo by shape object: shapes are immutable, so while one stroke is being
@@ -158,18 +238,30 @@ export const ShapeView = memo(function ShapeView({
   imageUrl,
   isHidden = false,
   drawOn = false,
+  isFlowing = false,
+  highlighted,
+  isGlowing = false,
+  rowStates,
 }: ShapeViewProps) {
   const duration = drawOn ? getDrawDuration(shape) : null
   return (
     <g
       className={`board-shape ${duration !== null ? 'is-drawing-on' : ''}`}
       opacity={shape.opacity < 1 ? shape.opacity : undefined}
-      visibility={isHidden ? 'hidden' : undefined}
+      visibility={isHidden && shape.type === 'text' ? 'hidden' : undefined}
     >
       {duration !== null ? (
         <DrawingOnBody shape={shape} duration={duration} />
       ) : (
-        <ShapeBody shape={shape} imageUrl={imageUrl} />
+        <ShapeBody
+          shape={shape}
+          imageUrl={imageUrl}
+          hideLabel={isHidden}
+          isFlowing={isFlowing}
+          highlighted={highlighted}
+          isGlowing={isGlowing}
+          rowStates={rowStates}
+        />
       )}
     </g>
   )

@@ -1,10 +1,15 @@
 import { useEngineStore } from '../engineStore'
 import { findPage } from '../model/documentOps'
+import { LINE_HEIGHT } from '../model/boardSpec'
+import { getShapeBounds } from '../model/geometry'
+import { getBlockLabelLayout, getLineLabelLayout } from '../model/labelLayout'
 import { useSessionStore } from '../sessionStore'
-import type { Bounds } from '../model/types'
+import type { Bounds, LineShape, Shape } from '../model/types'
 import {
   getCornerPoint,
+  getLineEndPoint,
   getSelectionBounds,
+  getSoloLine,
   HANDLE_CORNERS,
   HANDLE_SIZE_PX,
 } from '../tools/selectionHandles'
@@ -62,6 +67,51 @@ function SelectionFrame({
   )
 }
 
+// Label editing happens in a textarea that sits exactly on the label, so
+// without this frame you cannot tell you are typing instead of selecting.
+function LabelEditFrame({ shape }: { shape: Shape | undefined }) {
+  if (shape?.type !== 'block' && shape?.type !== 'line') return null
+  const layout =
+    shape.type === 'block'
+      ? getBlockLabelLayout(shape)
+      : getLineLabelLayout(shape)
+  const pad = layout.fontPx * 0.25
+  const height = layout.fontPx * LINE_HEIGHT
+  return (
+    <BoundsRect
+      className="board-overlay__label-edit"
+      bounds={{
+        minX: layout.centreX - layout.width / 2 - pad,
+        minY: layout.top - pad,
+        maxX: layout.centreX + layout.width / 2 + pad,
+        maxY: layout.top + height + pad,
+      }}
+    />
+  )
+}
+
+function LineEndHandles({
+  line,
+  unitsPerPixel,
+}: {
+  line: LineShape
+  unitsPerPixel: number
+}) {
+  const radius = (HANDLE_SIZE_PX / 2 + 1) * unitsPerPixel
+  return (['start', 'end'] as const).map((end) => {
+    const point = getLineEndPoint(line, end)
+    return (
+      <circle
+        key={end}
+        className="board-overlay__handle"
+        cx={point.x}
+        cy={point.y}
+        r={radius}
+      />
+    )
+  })
+}
+
 // Sibling of the recorded board, same size and viewBox. Selection boxes,
 // handles, marquee and eraser trail help the teacher and never reach the video.
 export function EditingOverlay({
@@ -74,8 +124,13 @@ export function EditingOverlay({
   const selectedIds = useSessionStore((s) => s.selectedIds)
   const marquee = useSessionStore((s) => s.marquee)
   const eraserTrail = useSessionStore((s) => s.eraserTrail)
+  const bindTargetId = useSessionStore((s) => s.bindTargetId)
+  const editingId = useSessionStore((s) => s.editingTextId)
   const page = findPage(doc, pageId)
-  const selection = page && getSelectionBounds(page, selectedIds)
+  const soloLine = page && getSoloLine(page, selectedIds)
+  const selection =
+    page && !soloLine ? getSelectionBounds(page, selectedIds) : null
+  const bindTarget = bindTargetId ? page?.shapes[bindTargetId] : undefined
 
   return (
     <svg
@@ -85,6 +140,16 @@ export function EditingOverlay({
     >
       {selection && (
         <SelectionFrame bounds={selection} unitsPerPixel={unitsPerPixel} />
+      )}
+      {soloLine && (
+        <LineEndHandles line={soloLine} unitsPerPixel={unitsPerPixel} />
+      )}
+      {page && editingId && <LabelEditFrame shape={page.shapes[editingId]} />}
+      {bindTarget && (
+        <BoundsRect
+          bounds={getShapeBounds(bindTarget)}
+          className="board-overlay__bind-target"
+        />
       )}
       {marquee && (
         <BoundsRect bounds={marquee} className="board-overlay__marquee" />

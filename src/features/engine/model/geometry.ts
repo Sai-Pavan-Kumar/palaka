@@ -1,10 +1,13 @@
 import { getPenWidth, getStrokeWidth } from './boardSpec'
+import { getTableBox } from './tableBox'
 import { measureText } from './textMetrics'
 import type { Bounds, Point, Shape, StrokeShape } from './types'
 
 // Shapes are immutable, so a shape object's bounds never change. Text is the
 // exception (its width depends on when the font loaded), so it is not cached.
 const boundsCache = new WeakMap<Shape, Bounds>()
+
+const OFF_BOARD: Bounds = { minX: -1e7, minY: -1e7, maxX: -1e7, maxY: -1e7 }
 
 function pointsBounds(points: Point[], padding: number): Bounds {
   const xs = points.map((p) => p.x)
@@ -37,6 +40,18 @@ function strokeBounds(shape: StrokeShape): Bounds {
   }
 }
 
+function boxBounds(
+  box: { x: number; y: number; w: number; h: number },
+  padding: number,
+): Bounds {
+  return {
+    minX: box.x - padding,
+    minY: box.y - padding,
+    maxX: box.x + box.w + padding,
+    maxY: box.y + box.h + padding,
+  }
+}
+
 function computeBounds(shape: Shape): Bounds {
   switch (shape.type) {
     case 'stroke':
@@ -50,21 +65,16 @@ function computeBounds(shape: Shape): Bounds {
         getStrokeWidth(shape) / 2,
       )
     case 'geo':
-      return pointsBounds(
-        [
-          { x: shape.x, y: shape.y },
-          { x: shape.x + shape.w, y: shape.y + shape.h },
-        ],
-        getStrokeWidth(shape) / 2,
-      )
+    case 'block':
+      return boxBounds(shape, getStrokeWidth(shape) / 2)
     case 'image':
-      return pointsBounds(
-        [
-          { x: shape.x, y: shape.y },
-          { x: shape.x + shape.w, y: shape.y + shape.h },
-        ],
-        0,
-      )
+      return boxBounds(shape, 0)
+    case 'table':
+      return boxBounds(getTableBox(shape), getStrokeWidth(shape) / 2)
+    // Effects have no ink; far off the slide, no marquee ever contains them.
+    case 'highlight':
+    case 'tableState':
+      return OFF_BOARD
     case 'text': {
       const { w, h } = measureText(shape)
       return {
@@ -78,7 +88,10 @@ function computeBounds(shape: Shape): Bounds {
 }
 
 export function getShapeBounds(shape: Shape): Bounds {
-  if (shape.type === 'text') return computeBounds(shape)
+  // Text and tables are measured, and widths change once the fonts load.
+  if (shape.type === 'text' || shape.type === 'table') {
+    return computeBounds(shape)
+  }
   let bounds = boundsCache.get(shape)
   if (!bounds) {
     bounds = computeBounds(shape)

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { useEngineStore } from './engineStore'
 import { findPage } from './model/documentOps'
 import { DEFAULT_STYLE, type ShapeStyle } from './model/shapeFactory'
-import type { Bounds, StrokePoint } from './model/types'
+import type { BlockKind, Bounds, StrokePoint } from './model/types'
 
 export type EngineTool =
   | 'select'
@@ -18,6 +18,7 @@ export type EngineTool =
   | 'arrow'
   | 'text'
   | 'eraser'
+  | 'block'
 
 // Everything about "where am I and what am I holding". Never saved, never
 // undone: undo should take back drawing, not page flips or tool picks.
@@ -27,7 +28,12 @@ type SessionState = {
   tool: EngineTool
   style: ShapeStyle
   isShapeCleanupOn: boolean
+  // A text shape, or a block / line whose label is being typed.
   editingTextId: string | null
+  // Which block the Block tool drops next.
+  blockKind: BlockKind
+  // Shape a new arrow end would stick to (ring on the overlay).
+  bindTargetId: string | null
   // Editing chrome drawn on the overlay layer, never recorded.
   marquee: Bounds | null
   eraserTrail: StrokePoint[]
@@ -48,6 +54,8 @@ export const useSessionStore = create<SessionState>(() => ({
   style: DEFAULT_STYLE,
   isShapeCleanupOn: false,
   editingTextId: null,
+  blockKind: 'service',
+  bindTargetId: null,
   marquee: null,
   eraserTrail: [],
   presenting: false,

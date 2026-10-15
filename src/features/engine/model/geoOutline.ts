@@ -1,4 +1,6 @@
-import type { GeoShape, Point } from './types'
+import { BLOCK_CORNER_RADIUS } from './blockCatalog'
+import { getTableBox } from './tableBox'
+import type { BlockShape, GeoShape, Point, TableShape } from './types'
 
 // Enough corners that an ellipse looks round at 4K and hit tests stay exact
 // to well under a pixel.
@@ -28,6 +30,41 @@ const UNIT_HEART: Point[] = (() => {
   const spanY = Math.max(...ys) - minY
   return raw.map((p) => ({ x: (p.x - minX) / spanX, y: (p.y - minY) / spanY }))
 })()
+
+// Blocks share the geo pipeline (fill, hand style, draw-on), only their
+// outline differs.
+export type OutlinedShape = GeoShape | BlockShape | TableShape
+
+const CORNER_SEGMENTS = 6
+
+// Starts at the top-left corner's end and runs clockwise, like a rectangle.
+function roundedRectOutline(box: {
+  x: number
+  y: number
+  w: number
+  h: number
+}): Point[] {
+  const { x, y, w, h } = box
+  const r = Math.min(BLOCK_CORNER_RADIUS, w / 2, h / 2)
+  const corners = [
+    { cx: x + w - r, cy: y + r, from: -Math.PI / 2 },
+    { cx: x + w - r, cy: y + h - r, from: 0 },
+    { cx: x + r, cy: y + h - r, from: Math.PI / 2 },
+    { cx: x + r, cy: y + r, from: Math.PI },
+  ]
+  return corners.flatMap(({ cx, cy, from }) =>
+    Array.from({ length: CORNER_SEGMENTS + 1 }, (_, i) => {
+      const angle = from + (i / CORNER_SEGMENTS) * (Math.PI / 2)
+      return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r }
+    }),
+  )
+}
+
+export function getOutline(shape: OutlinedShape): Point[] {
+  if (shape.type === 'block') return roundedRectOutline(shape)
+  if (shape.type === 'table') return roundedRectOutline(getTableBox(shape))
+  return getGeoOutline(shape)
+}
 
 // The closed outline every geo shape is drawn, filled and hit-tested from.
 export function getGeoOutline(shape: GeoShape): Point[] {

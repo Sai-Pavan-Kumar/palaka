@@ -18,6 +18,9 @@ type ShapeBase = {
   opacity: number
   // Order in which the shape appears while presenting. Missing = always visible.
   revealStep?: number
+  // Made by a SELECT in the SQL panel ("q1:card", "q1:result", "q1:s0"), so
+  // inserting again rebuilds it in place instead of adding a copy.
+  fromQuery?: string
 }
 
 export type StrokeKind = 'pen' | 'highlighter'
@@ -48,7 +51,17 @@ export type GeoShape = ShapeBase & {
   dash: DashStyle
 }
 
-// Lines and arrows are one type: an arrow is a line with a head.
+// An end glued to another shape. The end's x/y is still stored (kept up to
+// date by connectors.ts), so render, export and hit tests never look the
+// target up.
+export type Binding = {
+  shapeId: string
+  // On a table: attach at this column's row instead of the centre.
+  column?: string
+}
+
+// Lines and arrows are one type: an arrow is a line with a head. Bound ends
+// make it a connector that follows blocks around.
 export type LineShape = ShapeBase & {
   type: 'line'
   x1: number
@@ -57,6 +70,98 @@ export type LineShape = ShapeBase & {
   y2: number
   arrowhead: boolean
   size: SizeKey
+  dash: DashStyle
+  startBinding?: Binding
+  endBinding?: Binding
+  // Small tag at the middle ("HTTPS", "writes"). Empty or missing = none.
+  label?: string
+  // Dots travelling along the line (requests, data). Missing = no flow.
+  flow?: Flow
+}
+
+export type FlowDirection = 'forward' | 'backward' | 'both'
+
+export type Flow = {
+  direction: FlowDirection
+  // Reveal step at which the dots start moving. Missing = they move as soon
+  // as the line is on screen.
+  step?: number
+}
+
+// System-design building blocks. Names and groups live in blockCatalog.ts.
+export type BlockKind =
+  | 'user'
+  | 'browser'
+  | 'mobile'
+  | 'dns'
+  | 'cdn'
+  | 'loadBalancer'
+  | 'gateway'
+  | 'rateLimiter'
+  | 'service'
+  | 'worker'
+  | 'function'
+  | 'cluster'
+  | 'sqlDb'
+  | 'noSqlDb'
+  | 'cache'
+  | 'storage'
+  | 'search'
+  | 'queue'
+  | 'pubSub'
+  | 'external'
+  | 'auth'
+  | 'monitoring'
+  | 'custom'
+  | 'desktop'
+  | 'iot'
+  | 'admin'
+  | 'firewall'
+  | 'reverseProxy'
+  | 'router'
+  | 'webServer'
+  | 'container'
+  | 'scheduler'
+  | 'cloud'
+  | 'warehouse'
+  | 'graphDb'
+  | 'timeSeriesDb'
+  | 'replica'
+  | 'shard'
+  | 'fileSystem'
+  | 'keyValue'
+  | 'vectorDb'
+  | 'eventBus'
+  | 'stream'
+  | 'webhook'
+  | 'notification'
+  | 'email'
+  | 'sms'
+  | 'secrets'
+  | 'certificate'
+  | 'identity'
+  | 'logging'
+  | 'alerting'
+  | 'tracing'
+  | 'ciCd'
+  | 'config'
+  | 'featureFlags'
+  | 'llm'
+  | 'mlModel'
+  | 'payment'
+  | 'analytics'
+  | 'maps'
+
+export type BlockShape = ShapeBase & {
+  type: 'block'
+  kind: BlockKind
+  x: number
+  y: number
+  w: number
+  h: number
+  label: string
+  size: SizeKey
+  fill: FillStyle
   dash: DashStyle
 }
 
@@ -80,7 +185,62 @@ export type ImageShape = ShapeBase & {
   assetId: string
 }
 
-export type Shape = StrokeShape | GeoShape | LineShape | TextShape | ImageShape
+export type TableColumn = {
+  name: string
+  type: string
+  pk: boolean
+  notNull: boolean
+  unique: boolean
+  fk?: { table: string; column: string }
+}
+
+// A database table drawn from pasted SQL. Its size comes from its content
+// (measured like text) times `scale`, so rows never squash.
+export type TableShape = ShapeBase & {
+  type: 'table'
+  x: number
+  y: number
+  scale: number
+  name: string
+  columns: TableColumn[]
+  size: SizeKey
+  // Header band fill; the body stays paper so rows read cleanly.
+  fill: FillStyle
+  dash: DashStyle
+  // Sample rows (from INSERT), aligned to `columns`. NULL is null.
+  rows?: (string | null)[][]
+  // Column list (schema) or a grid of the sample rows (data).
+  view?: TableView
+}
+
+export type TableView = 'schema' | 'data'
+
+// An effect: draws nothing itself. Once its reveal step is reached while
+// presenting, the target tables light up these columns.
+// An effect: one clause of a query (WHERE, ORDER BY…). Once its step is
+// reached while presenting, the table's rows take these states.
+export type TableStateShape = ShapeBase & {
+  type: 'tableState'
+  tableId: string
+  label: string
+  rows: { dim: boolean; group: number | null; pos: number }[]
+}
+
+export type HighlightShape = ShapeBase & {
+  type: 'highlight'
+  targets: { tableId: string; column: string }[]
+}
+
+export type Shape =
+  | StrokeShape
+  | GeoShape
+  | LineShape
+  | TextShape
+  | ImageShape
+  | BlockShape
+  | TableShape
+  | HighlightShape
+  | TableStateShape
 export type ShapeType = Shape['type']
 
 // src is a data URL (no folder) or a path inside the video folder such as

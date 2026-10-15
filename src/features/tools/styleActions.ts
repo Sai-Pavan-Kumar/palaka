@@ -18,6 +18,7 @@ const TOOL_SHAPE: Partial<Record<EngineTool, ShapeType>> = {
   line: 'line',
   arrow: 'line',
   text: 'text',
+  block: 'block',
 }
 
 export type ShownStyle = {

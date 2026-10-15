@@ -1,14 +1,8 @@
 import { getStroke } from 'perfect-freehand'
 import rough from 'roughjs'
 import { getPenWidth } from '../model/boardSpec'
-import { getGeoOutline } from '../model/geoOutline'
-import type {
-  DashStyle,
-  GeoShape,
-  LineShape,
-  Point,
-  StrokeShape,
-} from '../model/types'
+import { getOutline, type OutlinedShape } from '../model/geoOutline'
+import type { DashStyle, LineShape, Point, StrokeShape } from '../model/types'
 
 const roughGenerator = rough.generator()
 
@@ -73,18 +67,20 @@ function toPathStrings(drawable: ReturnType<typeof roughGenerator.line>) {
   return roughGenerator.toPaths(drawable).map((path) => path.d)
 }
 
-export function getRoughGeoPaths(shape: GeoShape, strokeWidth: number) {
+export function getRoughGeoPaths(shape: OutlinedShape, strokeWidth: number) {
   const options = { ...ROUGH_OPTIONS, seed: seedFromId(shape.id), strokeWidth }
-  const { x, y, w, h } = shape
-  if (shape.geo === 'ellipse') {
-    return toPathStrings(
-      roughGenerator.ellipse(x + w / 2, y + h / 2, w, h, options),
-    )
+  if (shape.type === 'geo') {
+    const { x, y, w, h } = shape
+    if (shape.geo === 'ellipse') {
+      return toPathStrings(
+        roughGenerator.ellipse(x + w / 2, y + h / 2, w, h, options),
+      )
+    }
+    if (shape.geo === 'rectangle') {
+      return toPathStrings(roughGenerator.rectangle(x, y, w, h, options))
+    }
   }
-  if (shape.geo === 'rectangle') {
-    return toPathStrings(roughGenerator.rectangle(x, y, w, h, options))
-  }
-  const points = getGeoOutline(shape).map((p): [number, number] => [p.x, p.y])
+  const points = getOutline(shape).map((p): [number, number] => [p.x, p.y])
   return toPathStrings(roughGenerator.polygon(points, options))
 }
 

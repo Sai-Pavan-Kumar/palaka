@@ -35,7 +35,7 @@ export async function openFolderIntoBoard(): Promise<boolean> {
   const engine = useEngineStore.getState()
   if (board) {
     engine.replaceDocument(board.document)
-    useNotesStore.getState().replaceNotes(board.notes)
+    useNotesStore.getState().replaceNotes(board.notes, board.sql)
   } else if (hasAnyContent() && !window.confirm(COPY_QUESTION)) {
     engine.replaceDocument(createEmptyDocument(engine.doc.aspect))
     useNotesStore.getState().replaceNotes({})

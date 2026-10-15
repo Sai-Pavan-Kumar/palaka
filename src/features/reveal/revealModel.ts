@@ -2,8 +2,11 @@ import { commitCurrentPage, getCurrentPage } from '../engine/boardActions'
 import { useEngineStore } from '../engine/engineStore'
 import {
   getHighestStep,
-  getSteppedShapes,
+  getStepItems,
+  getStepOf,
   normalizeSteps,
+  withStep,
+  type StepKind,
 } from '../engine/model/revealSteps'
 import type { Page } from '../engine/model/types'
 import { setSession, useSessionStore } from '../engine/sessionStore'
@@ -11,7 +14,7 @@ import { DRAW_ON_SAFETY_MS } from '../engine/render/drawOnPlan'
 import { finishTextEditing } from '../engine/textEditing'
 
 export function getStepCount(page: Page): number {
-  return getSteppedShapes(page).length
+  return getStepItems(page).length
 }
 
 // Renumbering on entry is housekeeping, not an edit, so it skips undo: Ctrl Z
@@ -55,34 +58,48 @@ export function stepReveal(direction: 1 | -1): void {
   }
 }
 
-export function moveRevealStep(shapeId: string, offset: 1 | -1): void {
-  const ordered = getSteppedShapes(getCurrentPage())
-  const index = ordered.findIndex((s) => s.id === shapeId)
-  const shape = ordered[index]
+// Swaps step numbers with the neighbour. Both may be steps of the same
+// connector (its arrow and its flow), so the second write reads the shape
+// the first one already changed.
+export function moveRevealStep(
+  shapeId: string,
+  kind: StepKind,
+  offset: 1 | -1,
+): void {
+  const ordered = getStepItems(getCurrentPage())
+  const index = ordered.findIndex(
+    (item) => item.shape.id === shapeId && item.kind === kind,
+  )
+  const item = ordered[index]
   const neighbour = ordered[index + offset]
-  if (!shape || !neighbour) return
-  commitCurrentPage((page) => ({
-    ...page,
-    shapes: {
-      ...page.shapes,
-      [shape.id]: { ...shape, revealStep: neighbour.revealStep },
-      [neighbour.id]: { ...neighbour, revealStep: shape.revealStep },
-    },
-  }))
+  if (!item || !neighbour) return
+  commitCurrentPage((page) => {
+    const shapes = { ...page.shapes }
+    shapes[item.shape.id] = withStep(
+      shapes[item.shape.id],
+      item.kind,
+      neighbour.step,
+    )
+    shapes[neighbour.shape.id] = withStep(
+      shapes[neighbour.shape.id],
+      neighbour.kind,
+      item.step,
+    )
+    return { ...page, shapes }
+  })
 }
 
-export function toggleAlwaysVisible(shapeId: string): void {
+export function toggleAlwaysVisible(shapeId: string, kind: StepKind): void {
   commitCurrentPage((page) => {
     const shape = page.shapes[shapeId]
     if (!shape) return page
-    const { revealStep, ...rest } = shape
-    const next =
-      revealStep === undefined
-        ? { ...rest, revealStep: getHighestStep(page) + 1 }
-        : rest
+    const step =
+      getStepOf(shape, kind) === undefined
+        ? getHighestStep(page) + 1
+        : undefined
     return {
       ...page,
-      shapes: { ...page.shapes, [shapeId]: next as typeof shape },
+      shapes: { ...page.shapes, [shapeId]: withStep(shape, kind, step) },
     }
   })
 }

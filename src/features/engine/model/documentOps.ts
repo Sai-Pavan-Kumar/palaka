@@ -1,3 +1,4 @@
+import { rerouteConnectors, unbindFrom } from './connectors'
 import { DEFAULT_PAPER } from './paper'
 import type { Aspect, BoardDocument, ImageAsset, Page, Shape } from './types'
 
@@ -45,11 +46,16 @@ export function addShape(page: Page, shape: Shape): Page {
   }
 }
 
+// Connectors are re-routed here, not by each tool, so no edit path (drag,
+// resize, label typing, undo-free live updates) can leave an arrow behind.
 export function replaceShapes(page: Page, shapes: Shape[]): Page {
   if (shapes.length === 0) return page
   const next = { ...page.shapes }
   for (const shape of shapes) next[shape.id] = shape
-  return { ...page, shapes: next }
+  return rerouteConnectors(
+    { ...page, shapes: next },
+    shapes.map((shape) => shape.id),
+  )
 }
 
 export function removeShapes(page: Page, ids: Iterable<string>): Page {
@@ -57,11 +63,14 @@ export function removeShapes(page: Page, ids: Iterable<string>): Page {
   if (!page.order.some((id) => doomed.has(id))) return page
   const next = { ...page.shapes }
   for (const id of doomed) delete next[id]
-  return {
-    ...page,
-    shapes: next,
-    order: page.order.filter((id) => !doomed.has(id)),
-  }
+  return unbindFrom(
+    {
+      ...page,
+      shapes: next,
+      order: page.order.filter((id) => !doomed.has(id)),
+    },
+    doomed,
+  )
 }
 
 // Keeps the moved shapes in their current relative order.

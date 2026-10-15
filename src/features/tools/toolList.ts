@@ -66,6 +66,7 @@ const SINGLE_KEY_TOOLS: Record<string, EngineTool> = {
   a: 'arrow',
   t: 'text',
   e: 'eraser',
+  b: 'block',
 }
 
 export function toolForKey(key: string, shiftKey: boolean): EngineTool | null {

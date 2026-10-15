@@ -2,7 +2,7 @@ import type { EngineTool } from '../sessionStore'
 import { createDrawTool } from './drawTool'
 import { eraserTool } from './eraserTool'
 import { selectTool } from './selectTool'
-import { createGeoTool, createLineTool } from './shapeTools'
+import { blockTool, createGeoTool, createLineTool } from './shapeTools'
 import { laserTool, textTool } from './textAndLaserTools'
 import type { ToolHandler } from './toolTypes'
 
@@ -20,4 +20,5 @@ export const TOOL_HANDLERS: Record<EngineTool, ToolHandler> = {
   arrow: createLineTool(true),
   text: textTool,
   eraser: eraserTool,
+  block: blockTool,
 }

@@ -1,3 +1,5 @@
+import { normalizeBlockKinds } from '../engine/model/blockCatalog'
+import { dropBrokenBindings } from '../engine/model/connectors'
 import { normalizePaper } from '../engine/model/paper'
 import type { BoardDocument, Page } from '../engine/model/types'
 
@@ -13,6 +15,8 @@ export type BoardFile = {
   version: typeof FILE_VERSION
   document: BoardDocument
   notes: Record<string, string>
+  // Optional: boards saved before SQL tables existed have none.
+  sql?: Record<string, string>
 }
 
 // Boards from the tldraw build cannot be read by this engine. The owner chose
@@ -29,12 +33,14 @@ export class LegacyBoardError extends Error {
 export function serializeBoard(
   document: BoardDocument,
   notes: Record<string, string>,
+  sql: Record<string, string> = {},
 ): string {
   const file: BoardFile = {
     app: APP_ID,
     version: FILE_VERSION,
     document,
     notes,
+    sql,
   }
   return JSON.stringify(file)
 }
@@ -63,6 +69,13 @@ function isValidDocument(value: unknown): value is BoardDocument {
   )
 }
 
+function stringRecord(value: unknown): Record<string, string> {
+  if (!isRecord(value)) return {}
+  return Object.fromEntries(
+    Object.entries(value).filter(([, text]) => typeof text === 'string'),
+  ) as Record<string, string>
+}
+
 // Throws on anything it does not fully understand, so a damaged or foreign
 // file is never loaded and then overwritten by autosave.
 export function parseBoard(text: string): BoardFile {
@@ -75,10 +88,7 @@ export function parseBoard(text: string): BoardFile {
   if (!isValidDocument(parsed.document)) {
     throw new Error(`${BOARD_FILE} is damaged, so nothing was loaded`)
   }
-  const notes = isRecord(parsed.notes) ? parsed.notes : {}
-  const safeNotes = Object.fromEntries(
-    Object.entries(notes).filter(([, text]) => typeof text === 'string'),
-  ) as Record<string, string>
+  const safeNotes = stringRecord(parsed.notes)
   return {
     app: APP_ID,
     version: FILE_VERSION,
@@ -86,7 +96,11 @@ export function parseBoard(text: string): BoardFile {
     document: {
       ...parsed.document,
       paper: normalizePaper(parsed.document.paper),
+      pages: parsed.document.pages.map((page) =>
+        dropBrokenBindings(normalizeBlockKinds(page)),
+      ),
     },
     notes: safeNotes,
+    sql: stringRecord(parsed.sql),
   }
 }
