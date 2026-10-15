@@ -10,6 +10,19 @@ import {
   MASK_WIDTH_FACTOR,
 } from './drawOnPlan'
 
+function textMaskClass(animation: string): string {
+  switch (animation) {
+    case 'typewriter':
+      return 'draw-on-typewriter'
+    case 'slide-up':
+      return 'draw-on-slide-up'
+    case 'blur-in':
+      return 'draw-on-blur-in'
+    default:
+      return 'draw-on-wipe'
+  }
+}
+
 // A white band that grows along the drawing path. Whatever it covers shows;
 // the rest of the shape stays hidden until the band reaches it.
 export function DrawOnMask({ shape }: { shape: Shape }) {
@@ -41,7 +54,7 @@ export function DrawOnMask({ shape }: { shape: Shape }) {
         />
       ) : (
         <rect
-          className="draw-on-wipe"
+          className={textMaskClass(plan.animation)}
           style={style}
           x={bounds.minX - MASK_MARGIN}
           y={bounds.minY - MASK_MARGIN}

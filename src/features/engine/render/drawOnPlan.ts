@@ -1,7 +1,7 @@
 import { getPenWidth, getStrokeWidth } from '../model/boardSpec'
 import { getOutline } from '../model/geoOutline'
 import { getShapeBounds } from '../model/geometry'
-import type { Point, Shape } from '../model/types'
+import type { Point, Shape, TextAnimation } from '../model/types'
 import { getArrowheadWings } from './shapePaths'
 
 // Slide pixels per second. Fast enough that a long arrow does not stall the
@@ -20,7 +20,7 @@ export const MASK_REGION = 30000
 
 export type DrawPlan =
   | { kind: 'trace'; d: string; length: number; width: number }
-  | { kind: 'wipe'; length: number }
+  | { kind: 'wipe'; length: number; animation: TextAnimation }
 
 function polyline(points: Point[]): { d: string; length: number } {
   let length = 0
@@ -71,7 +71,11 @@ export function getDrawPlan(shape: Shape): DrawPlan | null {
     }
     case 'text': {
       const bounds = getShapeBounds(shape)
-      return { kind: 'wipe', length: bounds.maxX - bounds.minX }
+      return {
+        kind: 'wipe',
+        length: bounds.maxX - bounds.minX,
+        animation: shape.textAnimation ?? 'wipe',
+      }
     }
     case 'image':
     case 'highlight':

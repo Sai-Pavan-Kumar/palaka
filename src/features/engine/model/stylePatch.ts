@@ -7,7 +7,7 @@ const APPLIES: Record<Shape['type'], (keyof ShapeStyle)[]> = {
   stroke: ['color', 'size', 'opacity'],
   geo: ['color', 'size', 'fill', 'dash', 'opacity'],
   line: ['color', 'size', 'dash', 'opacity'],
-  text: ['color', 'size', 'font', 'opacity'],
+  text: ['color', 'size', 'font', 'opacity', 'textAnimation'],
   image: ['opacity'],
   block: ['color', 'size', 'fill', 'dash', 'opacity'],
   table: ['color', 'size', 'fill', 'dash', 'opacity'],
@@ -40,6 +40,7 @@ export function getSharedStyle(shapes: Shape[]): Partial<ShapeStyle> {
     'dash',
     'font',
     'opacity',
+    'textAnimation',
   ]
   for (const key of keys) {
     const values = shapes

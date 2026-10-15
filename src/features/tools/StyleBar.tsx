@@ -10,36 +10,67 @@ import { FlowMenu } from './FlowMenu'
 import { TableViewToggle } from './TableViewToggle'
 import { SqlActionMenu } from './SqlActionMenu'
 import { MoreStylesMenu } from './MoreStylesMenu'
+import { TextAnimationMenu } from './TextAnimationMenu'
 import { SelectionActions } from './SelectionActions'
 import { useShownStyle, type ShownStyle } from './styleActions'
 import './styleBar.css'
 
-export function StyleBar() {
-  const shown = useShownStyle()
-  const tool = useSessionStore((s) => s.tool)
-  if (!shown) return null
+function StyleLayerRow({ shown, tool }: { shown: ShownStyle; tool: string }) {
   const { fields, hasSelection } = shown
   const hasMoreStyles =
     fields.has('fill') || fields.has('dash') || fields.has('opacity')
 
   return (
-    <div className="style-bar floating-bar chrome" aria-label="Style">
+    <div className="style-bar__row style-bar__row--style">
       {fields.has('color') && <ColorRow current={shown.values.color} />}
       {fields.has('size') && <span className="floating-bar__divider" />}
       {fields.has('size') && <SizeRow current={shown.values.size} />}
       {fields.has('font') && <span className="floating-bar__divider" />}
       {fields.has('font') && <FontToggle font={shown.values.font} />}
+      {fields.has('font') && (
+        <TextAnimationMenu current={shown.values.textAnimation} />
+      )}
       {tool === 'pen' && !hasSelection && (
         <span className="floating-bar__divider" />
       )}
       {tool === 'pen' && !hasSelection && <CleanupToggle />}
       {hasMoreStyles && <span className="floating-bar__divider" />}
       {hasMoreStyles && <MoreStylesMenu shown={shown} />}
-      {hasSelection && <FlowMenu />}
-      {hasSelection && <TableViewToggle />}
-      {hasSelection && <SqlActionMenu />}
-      {hasSelection && <span className="floating-bar__divider" />}
-      {hasSelection && <SelectionActions />}
+    </div>
+  )
+}
+
+function ActionsLayerRow() {
+  return (
+    <div className="style-bar__row style-bar__row--actions">
+      <FlowMenu />
+      <TableViewToggle />
+      <SqlActionMenu />
+      <SelectionActions />
+    </div>
+  )
+}
+
+export function StyleBar() {
+  const shown = useShownStyle()
+  const tool = useSessionStore((s) => s.tool)
+  if (!shown) return null
+
+  if (shown.hasSelection) {
+    return (
+      <div
+        className="style-bar style-bar--dual floating-bar chrome"
+        aria-label="Style and Actions"
+      >
+        <StyleLayerRow shown={shown} tool={tool} />
+        <ActionsLayerRow />
+      </div>
+    )
+  }
+
+  return (
+    <div className="style-bar floating-bar chrome" aria-label="Style">
+      <StyleLayerRow shown={shown} tool={tool} />
     </div>
   )
 }

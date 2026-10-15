@@ -158,6 +158,54 @@
   }
 }
 
+/* Typewriter: character-by-character stepped reveal */
+.draw-on-typewriter {
+  transform-box: fill-box;
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation: draw-on-wipe var(--draw-duration) steps(28, end) forwards;
+}
+
+/* Slide & Rise: smooth upward glide into position */
+.draw-on-slide-up {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: draw-on-slide-up var(--draw-duration) cubic-bezier(0.16, 1, 0.3, 1)
+    forwards;
+}
+
+@keyframes draw-on-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Optics Blur: modern Apple-style focus reveal */
+.draw-on-blur-in {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: draw-on-blur-in var(--draw-duration) cubic-bezier(0.16, 1, 0.3, 1)
+    forwards;
+}
+
+@keyframes draw-on-blur-in {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
 /* A shape's fill arrives once its outline has closed. */
 .draw-on-fill {
   opacity: 0;

@@ -13,13 +13,22 @@ export function RecordingReadyCard() {
   return (
     <aside className="take-card chrome" aria-label="Recording ready">
       <header className="take-card__header">
-        <div>
-          <p className="menu-label">Recording ready</p>
-          <p className="take-card__where">
-            {take.savedPath
-              ? `Saved in ${take.savedPath}`
-              : 'Not saved yet. Download it below.'}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img
+            src="/palaka_logo.webp"
+            alt="Palaka"
+            width={28}
+            height={28}
+            style={{ borderRadius: '6px' }}
+          />
+          <div>
+            <p className="menu-label">Recording ready</p>
+            <p className="take-card__where">
+              {take.savedPath
+                ? `Saved in ${take.savedPath}`
+                : 'Not saved yet. Download it below.'}
+            </p>
+          </div>
         </div>
         <IconButton icon={X} label="Close" onClick={closeTake} />
       </header>

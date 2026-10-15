@@ -167,6 +167,8 @@ export type BlockShape = ShapeBase & {
   dash: DashStyle
 }
 
+export type TextAnimation = 'wipe' | 'typewriter' | 'slide-up' | 'blur-in'
+
 export type TextShape = ShapeBase & {
   type: 'text'
   // Top-left corner of the first line.
@@ -176,6 +178,7 @@ export type TextShape = ShapeBase & {
   font: FontKey
   size: SizeKey
   scale: number
+  textAnimation?: TextAnimation
 }
 
 export type ImageShape = ShapeBase & {

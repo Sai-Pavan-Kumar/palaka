@@ -13,6 +13,7 @@ import { Countdown } from '../recorder/Countdown'
 import { RecordingReadyCard } from '../recorder/RecordingReadyCard'
 import { StyleBar } from '../tools/StyleBar'
 import { TopBar } from '../tools/TopBar'
+import { BrandBadge } from './BrandBadge'
 import { SaveStatus } from './SaveStatus'
 import { Toast } from './Toast'
 import { useGlobalShortcuts } from './useGlobalShortcuts'
@@ -80,6 +81,7 @@ function BoardChrome() {
   usePasteImages()
   return (
     <>
+      <BrandBadge />
       <SaveStatus />
       <TopBar />
       <StyleBar />

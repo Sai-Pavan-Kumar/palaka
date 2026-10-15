@@ -13,6 +13,7 @@ import type {
   StrokeKind,
   StrokePoint,
   StrokeShape,
+  TextAnimation,
   TextShape,
 } from './types'
 
@@ -25,6 +26,7 @@ export type ShapeStyle = {
   dash: DashStyle
   font: FontKey
   opacity: number
+  textAnimation?: TextAnimation
 }
 
 export const DEFAULT_STYLE: ShapeStyle = {
@@ -34,6 +36,7 @@ export const DEFAULT_STYLE: ShapeStyle = {
   dash: 'hand',
   font: 'brand',
   opacity: 1,
+  textAnimation: 'wipe',
 }
 
 const newId = () => crypto.randomUUID()
@@ -110,6 +113,7 @@ export function createText(
     scale: 1,
     color: style.color,
     opacity: style.opacity,
+    textAnimation: style.textAnimation ?? 'wipe',
   }
 }
 
