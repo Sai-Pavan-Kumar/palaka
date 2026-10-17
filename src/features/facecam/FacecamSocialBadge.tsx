@@ -1,8 +1,8 @@
-import { Bell, Sparkles } from 'lucide-react'
+import { Bell } from 'lucide-react'
 import type { BadgePlatform } from './facecamStore'
 import './FacecamSocialBadge.css'
 
-export function YoutubeIcon({ size = 13 }: { size?: number }) {
+export function YoutubeIcon({ size = 14 }: { size?: number }) {
   return (
     <svg
       width={size}
@@ -16,7 +16,7 @@ export function YoutubeIcon({ size = 13 }: { size?: number }) {
   )
 }
 
-export function InstagramIcon({ size = 12 }: { size?: number }) {
+export function InstagramIcon({ size = 13 }: { size?: number }) {
   return (
     <svg
       width={size}
@@ -69,17 +69,15 @@ export function FacecamSocialBadge({
       }}
     >
       <span className="facecam-badge-sheen" aria-hidden="true" />
-      <span className="facecam-badge-icon">
-        {isYt ? <YoutubeIcon size={14} /> : <InstagramIcon size={13} />}
+      <span className="facecam-badge-icon-slot">
+        <span className="facecam-badge-icon is-primary">
+          {isYt ? <YoutubeIcon size={14} /> : <InstagramIcon size={13} />}
+        </span>
+        <span className="facecam-badge-icon is-secondary">
+          <Bell size={13} className="facecam-badge-bell" />
+        </span>
       </span>
       <span className="facecam-badge-text">{displayText}</span>
-      <span className="facecam-badge-action">
-        {isYt ? (
-          <Bell size={11} className="facecam-badge-bell" />
-        ) : (
-          <Sparkles size={11} className="facecam-badge-spark" />
-        )}
-      </span>
     </button>
   )
 }

@@ -6,8 +6,8 @@
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 13px;
+  gap: 7px;
+  padding: 5px 14px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.35);
   color: #ffffff;
@@ -20,7 +20,7 @@
   z-index: 30;
   user-select: none;
   overflow: hidden;
-  animation: facecam-badge-cycle 15s ease-in-out infinite;
+  animation: facecam-badge-cycle 6.5s ease-in-out infinite;
   transition:
     transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.25s ease,
@@ -41,60 +41,121 @@
     transparent 100%
   );
   transform: skewX(-25deg);
-  animation: facecam-sheen 4.5s ease-in-out infinite;
+  animation: facecam-sheen 6.5s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes facecam-sheen {
   0%,
-  60% {
+  15% {
     left: -120%;
   }
-  80%,
+  30%,
   100% {
     left: 180%;
   }
 }
 
-.facecam-badge-icon,
-.facecam-badge-action {
+/* Icon slot: holds primary platform icon and secondary bell in identical spot */
+.facecam-badge-icon-slot {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.facecam-badge-icon {
+  grid-area: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  will-change: transform, opacity;
 }
 
-/* Bell ring animation for YouTube */
+/* Primary icon (YT / IG): visible first 2.5s, then swaps out */
+.facecam-badge-icon.is-primary {
+  animation: facecam-icon-primary-swap 6.5s cubic-bezier(0.16, 1, 0.3, 1)
+    infinite;
+}
+
+@keyframes facecam-icon-primary-swap {
+  0%,
+  34% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  38%,
+  95% {
+    opacity: 0;
+    transform: scale(0.4) translateY(-3px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Secondary icon (Bell): hidden first 2.5s, pops in at 2.5s with chime ring */
+.facecam-badge-icon.is-secondary {
+  animation: facecam-icon-secondary-swap 6.5s cubic-bezier(0.16, 1, 0.3, 1)
+    infinite;
+}
+
+@keyframes facecam-icon-secondary-swap {
+  0%,
+  35% {
+    opacity: 0;
+    transform: scale(0.4) translateY(3px);
+  }
+  39%,
+  74% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  78%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4) translateY(-3px);
+  }
+}
+
+/* Bell ring animation for secondary bell */
 .facecam-badge-bell {
   transform-origin: top center;
-  animation: facecam-bell-ring 3.5s ease-in-out infinite;
-  opacity: 0.9;
+  animation: facecam-bell-ring 6.5s ease-in-out infinite;
+  display: block;
 }
 
 @keyframes facecam-bell-ring {
   0%,
-  75%,
-  100% {
+  40% {
     transform: rotate(0deg);
   }
-  78% {
+  44% {
+    transform: rotate(18deg);
+  }
+  48% {
+    transform: rotate(-18deg);
+  }
+  52% {
     transform: rotate(14deg);
   }
-  82% {
-    transform: rotate(-14deg);
+  56% {
+    transform: rotate(-10deg);
   }
-  86% {
-    transform: rotate(10deg);
+  60% {
+    transform: rotate(0deg);
   }
-  90% {
-    transform: rotate(-6deg);
-  }
-  94% {
+  100% {
     transform: rotate(0deg);
   }
 }
 
-.facecam-badge-spark {
-  opacity: 0.9;
+.facecam-badge-text {
+  display: inline-block;
+  line-height: 1;
 }
 
 /* YouTube theme */
@@ -151,24 +212,37 @@
   transform: translateX(-50%) translateY(0) scale(1) !important;
 }
 
-/* Periodic loop animation: visible for ~8s, dips away for ~2s, loops */
+.facecam-badge:hover .facecam-badge-icon,
+.facecam-badge:hover .facecam-badge-bell,
+.facecam-badge:hover .facecam-badge-sheen {
+  animation-play-state: paused !important;
+}
+
+/* Periodic loop animation: visible for ~5s, dips away for ~1.5s, loops */
 @keyframes facecam-badge-cycle {
-  0%,
-  65% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-    pointer-events: auto;
-  }
-  72%,
-  90% {
+  0% {
     opacity: 0;
-    transform: translateX(-50%) translateY(8px) scale(0.9);
+    transform: translateX(-50%) translateY(6px) scale(0.92);
     pointer-events: none;
   }
-  96%,
-  100% {
+  6% {
     opacity: 1;
     transform: translateX(-50%) translateY(0) scale(1);
     pointer-events: auto;
+  }
+  72% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  78% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.92);
+    pointer-events: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px) scale(0.92);
+    pointer-events: none;
   }
 }
