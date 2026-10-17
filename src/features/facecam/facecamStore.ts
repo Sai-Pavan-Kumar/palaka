@@ -89,12 +89,7 @@ async function startMediaCamera(
 }
 
 function nextEffect(current: FacecamEffect): FacecamEffect {
-  const effects: FacecamEffect[] = [
-    'none',
-    'studio-rim',
-    'pulse',
-    'subscribe-badge',
-  ]
+  const effects: FacecamEffect[] = ['none', 'studio-rim', 'pulse']
   const currentNormalized =
     current === 'spinning-border' ? 'studio-rim' : current
   const nextIdx = (effects.indexOf(currentNormalized) + 1) % effects.length

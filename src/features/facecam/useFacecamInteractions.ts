@@ -64,21 +64,70 @@ export function useFacecamDrag(
   return { onPointerDown, onPointerMove, onPointerUp }
 }
 
-function calcMaxAllowed(
+function calcMaxTopRightGrowth(
   bubble: HTMLElement | null,
-  currX: number,
-  currY: number,
+  startX: number,
+  startY: number,
+  startSize: number,
 ): number {
   const parent = bubble?.offsetParent as HTMLElement | null
   if (!parent) return MAX_FACECAM_SIZE
-  const availW = Math.max(16, parent.clientWidth - currX - 16)
-  const availH = Math.max(16, parent.clientHeight - currY - 16)
-  const maxFit = Math.min(availW, availH)
-  const minAllowed = Math.min(
-    MIN_FACECAM_SIZE,
-    Math.max(16, parent.clientWidth - 32),
+  const maxW = parent.clientWidth - 16
+  const startBottom = startY + startSize
+  const maxUp = Math.max(0, startBottom - 16)
+  const maxRight = Math.max(0, maxW - startX)
+  const maxFit = Math.min(maxUp, maxRight)
+  return Math.min(MAX_FACECAM_SIZE, Math.max(MIN_FACECAM_SIZE, maxFit))
+}
+
+function computeNextTopRightResize(
+  bubble: HTMLElement | null,
+  clientX: number,
+  clientY: number,
+  start: {
+    pointerX: number
+    pointerY: number
+    startSize: number
+    startX: number
+    startY: number
+  },
+): { nextSize: number; nextY: number } {
+  const deltaX = clientX - start.pointerX
+  const deltaY = start.pointerY - clientY
+  const delta = Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY
+  const maxAllowed = calcMaxTopRightGrowth(
+    bubble,
+    start.startX,
+    start.startY,
+    start.startSize,
   )
-  return Math.min(MAX_FACECAM_SIZE, Math.max(minAllowed, maxFit))
+  const nextSize = Math.max(
+    MIN_FACECAM_SIZE,
+    Math.min(maxAllowed, Math.round(start.startSize + delta)),
+  )
+  const nextY = Math.max(16, start.startY + start.startSize - nextSize)
+  return { nextSize, nextY }
+}
+
+function initResizeStart(
+  e: PointerEvent<HTMLDivElement>,
+  customSize: number,
+  pos: { x: number; y: number } | null,
+  setPos: (pos: { x: number; y: number }) => void,
+) {
+  const bubble = e.currentTarget.closest(
+    '.facecam-bubble',
+  ) as HTMLElement | null
+  const curX = pos ? pos.x : (bubble?.offsetLeft ?? 0)
+  const curY = pos ? pos.y : (bubble?.offsetTop ?? 0)
+  if (!pos && bubble) setPos({ x: curX, y: curY })
+  return {
+    pointerX: e.clientX,
+    pointerY: e.clientY,
+    startSize: customSize,
+    startX: curX,
+    startY: curY,
+  }
 }
 
 export function useFacecamResize(
@@ -88,18 +137,18 @@ export function useFacecamResize(
   setPos: (pos: { x: number; y: number }) => void,
 ) {
   const [isResizing, setIsResizing] = useState(false)
-  const resizeStart = useRef({ pointerX: 0, startSize: 0 })
+  const resizeStart = useRef({
+    pointerX: 0,
+    pointerY: 0,
+    startSize: 0,
+    startX: 0,
+    startY: 0,
+  })
 
   const onResizePointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
     e.stopPropagation()
-    const bubble = e.currentTarget.closest(
-      '.facecam-bubble',
-    ) as HTMLElement | null
-    if (!pos && bubble) {
-      setPos({ x: bubble.offsetLeft, y: bubble.offsetTop })
-    }
-    resizeStart.current = { pointerX: e.clientX, startSize: customSize }
+    resizeStart.current = initResizeStart(e, customSize, pos, setPos)
     setIsResizing(true)
     e.currentTarget.setPointerCapture(e.pointerId)
   }
@@ -107,18 +156,17 @@ export function useFacecamResize(
   const onResizePointerMove = (e: PointerEvent<HTMLDivElement>) => {
     if (!isResizing) return
     e.stopPropagation()
-    const delta = e.clientX - resizeStart.current.pointerX
     const bubble = e.currentTarget.closest(
       '.facecam-bubble',
     ) as HTMLElement | null
-    const currX = pos?.x ?? bubble?.offsetLeft ?? 0
-    const currY = pos?.y ?? bubble?.offsetTop ?? 0
-    const maxAllowed = calcMaxAllowed(bubble, currX, currY)
-    const next = Math.max(
-      MIN_FACECAM_SIZE,
-      Math.min(maxAllowed, resizeStart.current.startSize + delta),
+    const { nextSize, nextY } = computeNextTopRightResize(
+      bubble,
+      e.clientX,
+      e.clientY,
+      resizeStart.current,
     )
-    setCustomSize(next)
+    setCustomSize(nextSize)
+    setPos({ x: resizeStart.current.startX, y: nextY })
   }
 
   const onResizePointerUp = (e: PointerEvent<HTMLDivElement>) => {

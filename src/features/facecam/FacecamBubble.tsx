@@ -121,7 +121,7 @@ function CameraActionButtons({
   )
 }
 
-type TopRightControlsProps = {
+type FacecamControlsProps = {
   shape: FacecamShape
   cycleShape: () => void
   cycleSize: () => void
@@ -129,10 +129,10 @@ type TopRightControlsProps = {
   closeCamera: () => void
 }
 
-function TopRightControls(props: TopRightControlsProps) {
+function FacecamControls(props: FacecamControlsProps) {
   return (
     <div
-      className="facecam-corner-right"
+      className="facecam-controls"
       onPointerDown={(e) => e.stopPropagation()}
     >
       <ShapeSizeButtons
@@ -164,32 +164,12 @@ function bubbleStyle(
   }
 }
 
-function FacecamEffectsLayer({
-  effect,
-  platform,
-  bannerText,
-  onTogglePlatform,
-}: {
-  effect: FacecamEffect
-  platform: 'youtube' | 'instagram'
-  bannerText: string
-  onTogglePlatform: () => void
-}) {
+function FacecamEffectsLayer({ effect }: { effect: FacecamEffect }) {
+  if (effect !== 'studio-rim' && effect !== 'spinning-border') return null
   return (
-    <>
-      {effect === 'subscribe-badge' && (
-        <FacecamSocialBadge
-          platform={platform}
-          bannerText={bannerText}
-          onToggle={onTogglePlatform}
-        />
-      )}
-      {(effect === 'studio-rim' || effect === 'spinning-border') && (
-        <div className="facecam-border-track">
-          <div className="facecam-studio-rim" />
-        </div>
-      )}
-    </>
+    <div className="facecam-border-track">
+      <div className="facecam-studio-rim" />
+    </div>
   )
 }
 
@@ -291,25 +271,25 @@ export function FacecamBubble() {
       style={bubbleStyle(customSize, pos, isPortrait)}
       {...drag}
     >
-      <FacecamEffectsLayer
-        effect={effect}
+      <FacecamSocialBadge
         platform={badgePlatform}
         bannerText={bannerText}
-        onTogglePlatform={store.toggleBadgePlatform}
+        onToggle={store.toggleBadgePlatform}
       />
+      <FacecamEffectsLayer effect={effect} />
       <FacecamVideo videoRef={videoRef} mirrored={mirrored} />
       <TopLeftControls
         effect={effect}
         cycleEffect={store.cycleEffect}
       />
-      <TopRightControls
+      <FacecamResizeHandle {...resize} />
+      <FacecamControls
         shape={shape}
         cycleShape={store.cycleShape}
         cycleSize={store.cycleSize}
         toggleMirrored={store.toggleMirrored}
         closeCamera={store.closeCamera}
       />
-      <FacecamResizeHandle {...resize} />
     </div>
   )
 }

@@ -160,41 +160,35 @@
   transform: translateX(-50%) scale(0.93) !important;
 }
 
-/* Pause and stay visible while hovering the bubble or badge */
+/* Pause and stay 100% visible while hovering the bubble or badge */
 .facecam-bubble:hover .facecam-badge,
-.facecam-badge:hover {
-  animation-play-state: paused;
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0) scale(1);
+.facecam-badge:hover,
+.facecam-badge:focus {
+  animation-play-state: paused !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
 }
 
-/* Periodic loop animation: visible for ~5.5s, hidden for ~9.5s, smooth slide */
+/* Periodic loop animation: visible for ~8s, dips away for ~2.5s, loops */
 @keyframes facecam-badge-cycle {
-  0% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(10px) scale(0.88);
-    pointer-events: none;
-  }
-  4% {
+  0%,
+  65% {
     opacity: 1;
     transform: translateX(-50%) translateY(0) scale(1);
     pointer-events: auto;
   }
-  36% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-    pointer-events: auto;
-  }
-  40% {
+  72%,
+  90% {
     opacity: 0;
-    transform: translateX(-50%) translateY(10px) scale(0.88);
+    transform: translateX(-50%) translateY(8px) scale(0.9);
     pointer-events: none;
   }
+  96%,
   100% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(10px) scale(0.88);
-    pointer-events: none;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    pointer-events: auto;
   }
 }
 
@@ -216,14 +210,14 @@
   pointer-events: none;
 }
 
-/* Corner Controls HUD: Top-Left (Effects) and Top-Right (Window & Cam Actions) */
-.facecam-corner-left,
-.facecam-corner-right {
+/* Top-Left Corner: Sparkles Effect Button */
+.facecam-corner-left {
   position: absolute;
+  top: 8px;
+  left: 8px;
   z-index: 25;
   display: flex;
   align-items: center;
-  gap: 2px;
   background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(10px);
   padding: 2.5px 4.5px;
@@ -235,38 +229,50 @@
   transition:
     opacity 0.2s ease,
     transform 0.2s ease;
-}
-
-.facecam-corner-left {
-  top: 8px;
-  left: 8px;
   transform: translateY(-4px);
 }
 
-.facecam-corner-right {
-  top: 8px;
-  right: 8px;
-  transform: translateY(-4px);
-}
-
-.facecam-bubble:hover .facecam-corner-left,
-.facecam-bubble:hover .facecam-corner-right,
-.facecam-corner-left:focus-within,
-.facecam-corner-right:focus-within {
-  opacity: 1;
-  pointer-events: all;
-  transform: translateY(0);
-}
-
-/* Inset slightly for circular webcam bubbles to align with circle curve */
 .facecam-bubble.is-circle .facecam-corner-left {
   top: 10px;
   left: 10px;
 }
 
-.facecam-bubble.is-circle .facecam-corner-right {
-  top: 10px;
-  right: 10px;
+.facecam-bubble:hover .facecam-corner-left,
+.facecam-corner-left:focus-within {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateY(0);
+}
+
+/* Bottom-Middle: Options Controls Pill (Shape, Size preset, Mirror, Close) */
+.facecam-controls {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(10px);
+  padding: 3px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  max-width: calc(100% - 16px);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  z-index: 25;
+}
+
+.facecam-bubble:hover .facecam-controls,
+.facecam-controls:focus-within {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(-50%) translateY(0);
 }
 
 .facecam-btn {
@@ -305,14 +311,14 @@
   background-color: rgba(239, 68, 68, 0.25);
 }
 
-/* Resize handle at bottom-right corner */
+/* Resize handle at Top-Right Corner */
 .facecam-resize-handle {
   position: absolute;
-  bottom: 3px;
-  right: 3px;
-  width: 20px;
-  height: 20px;
-  cursor: nwse-resize;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  cursor: nesw-resize;
   z-index: 30;
   display: flex;
   align-items: center;
@@ -326,11 +332,16 @@
   opacity: 1;
 }
 
+.facecam-bubble.is-circle .facecam-resize-handle {
+  top: 8px;
+  right: 8px;
+}
+
 .facecam-resize-handle::after {
   content: '';
   width: 7px;
   height: 7px;
+  border-top: 2.5px solid rgba(255, 255, 255, 0.95);
   border-right: 2.5px solid rgba(255, 255, 255, 0.95);
-  border-bottom: 2.5px solid rgba(255, 255, 255, 0.95);
   border-radius: 1px;
 }
