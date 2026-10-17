@@ -1,7 +1,9 @@
 /*
- * "chrome" = every piece of tool UI around the board. It hides completely while
- * the mouse is pressed on the board (half-faded panels over a drawing were
- * distracting) and returns on release. Focus mode hides it until F/Esc.
+ * "chrome" = tool UI around the board.
+ * Drawers (.left-panel, .notes-panel) fade out while drawing on the board,
+ * but core writing toolbars (.top-bar, .style-bar, .page-bar, .brand-badge, .save-status)
+ * remain rock solid to eliminate strobe flickering on rapid handwriting pen lifts.
+ * Focus mode ('F') hides all chrome until toggled off.
  */
 .chrome {
   transition: opacity var(--duration-fast) var(--ease-out);
@@ -10,6 +12,15 @@
 .shell.is-drawing .chrome {
   opacity: 0;
   pointer-events: none;
+}
+
+.shell.is-drawing .top-bar,
+.shell.is-drawing .style-bar,
+.shell.is-drawing .page-bar,
+.shell.is-drawing .brand-badge,
+.shell.is-drawing .save-status {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .shell.is-focus .chrome {

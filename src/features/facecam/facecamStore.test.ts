@@ -123,7 +123,7 @@ describe('facecamStore', () => {
     expect(useFacecamStore.getState().effect).toBe('none')
 
     store.cycleEffect()
-    expect(useFacecamStore.getState().effect).toBe('spinning-border')
+    expect(useFacecamStore.getState().effect).toBe('studio-rim')
 
     store.cycleEffect()
     expect(useFacecamStore.getState().effect).toBe('pulse')
@@ -136,5 +136,20 @@ describe('facecamStore', () => {
 
     store.setBannerText('Follow on X')
     expect(useFacecamStore.getState().bannerText).toBe('Follow on X')
+  })
+
+  it('toggles and manages social badge platform', () => {
+    const store = useFacecamStore.getState()
+    store.setBadgePlatform('youtube')
+    expect(useFacecamStore.getState().badgePlatform).toBe('youtube')
+
+    store.toggleBadgePlatform()
+    expect(useFacecamStore.getState().badgePlatform).toBe('instagram')
+
+    store.toggleBadgePlatform()
+    expect(useFacecamStore.getState().badgePlatform).toBe('youtube')
+
+    store.setBadgePlatform('instagram')
+    expect(useFacecamStore.getState().badgePlatform).toBe('instagram')
   })
 })

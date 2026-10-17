@@ -1,6 +1,5 @@
 import { useEffect, useRef, type PointerEvent } from 'react'
 import {
-  Bell,
   Circle,
   FlipHorizontal,
   Maximize2,
@@ -19,30 +18,58 @@ import {
   useFacecamDrag,
   useFacecamResize,
 } from './useFacecamInteractions'
+import { FacecamSocialBadge } from './FacecamSocialBadge'
 import './facecam.css'
 
 function effectTitle(effect: FacecamEffect): string {
   switch (effect) {
+    case 'studio-rim':
     case 'spinning-border':
-      return 'Effect: Spinning Neon Border (Click to switch)'
+      return 'Effect: Studio Rim Light (Click to switch)'
     case 'pulse':
-      return 'Effect: Pulse Glow (Click to switch)'
+      return 'Effect: Breathing Aura (Click to switch)'
     case 'subscribe-badge':
-      return 'Effect: Subscribe Banner (Click to switch)'
+      return 'Effect: Social Badge (Click to switch)'
     default:
       return 'Effect: None (Click to enable effects)'
   }
+}
+
+function TopLeftControls({
+  effect,
+  cycleEffect,
+}: {
+  effect: FacecamEffect
+  cycleEffect: () => void
+}) {
+  return (
+    <div
+      className="facecam-corner-left"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className={`facecam-btn ${effect !== 'none' ? 'is-active' : ''}`}
+        title={effectTitle(effect)}
+        onClick={cycleEffect}
+      >
+        <Sparkles size={12} />
+      </button>
+    </div>
+  )
+}
+
+type ShapeSizeButtonsProps = {
+  shape: FacecamShape
+  cycleShape: () => void
+  cycleSize: () => void
 }
 
 function ShapeSizeButtons({
   shape,
   cycleShape,
   cycleSize,
-}: {
-  shape: FacecamShape
-  cycleShape: () => void
-  cycleSize: () => void
-}) {
+}: ShapeSizeButtonsProps) {
   return (
     <>
       <button
@@ -51,7 +78,7 @@ function ShapeSizeButtons({
         title="Toggle shape (Circle/Square)"
         onClick={cycleShape}
       >
-        {shape === 'circle' ? <Square size={13} /> : <Circle size={13} />}
+        {shape === 'circle' ? <Square size={12} /> : <Circle size={12} />}
       </button>
       <button
         type="button"
@@ -59,20 +86,16 @@ function ShapeSizeButtons({
         title="Cycle preset size (S/M/L)"
         onClick={cycleSize}
       >
-        <Maximize2 size={13} />
+        <Maximize2 size={12} />
       </button>
     </>
   )
 }
 
-function ActionButtons({
-  effect,
-  cycleEffect,
+function CameraActionButtons({
   toggleMirrored,
   closeCamera,
 }: {
-  effect: FacecamEffect
-  cycleEffect: () => void
   toggleMirrored: () => void
   closeCamera: () => void
 }) {
@@ -80,46 +103,36 @@ function ActionButtons({
     <>
       <button
         type="button"
-        className={`facecam-btn ${effect !== 'none' ? 'is-active' : ''}`}
-        title={effectTitle(effect)}
-        onClick={cycleEffect}
-      >
-        <Sparkles size={13} />
-      </button>
-      <button
-        type="button"
         className="facecam-btn"
         title="Mirror camera"
         onClick={toggleMirrored}
       >
-        <FlipHorizontal size={13} />
+        <FlipHorizontal size={12} />
       </button>
       <button
         type="button"
-        className="facecam-btn"
+        className="facecam-btn facecam-btn--close"
         title="Close camera"
         onClick={closeCamera}
       >
-        <X size={13} />
+        <X size={12} />
       </button>
     </>
   )
 }
 
-type FacecamControlsProps = {
+type TopRightControlsProps = {
   shape: FacecamShape
-  effect: FacecamEffect
   cycleShape: () => void
   cycleSize: () => void
-  cycleEffect: () => void
   toggleMirrored: () => void
   closeCamera: () => void
 }
 
-function FacecamControls(props: FacecamControlsProps) {
+function TopRightControls(props: TopRightControlsProps) {
   return (
     <div
-      className="facecam-controls"
+      className="facecam-corner-right"
       onPointerDown={(e) => e.stopPropagation()}
     >
       <ShapeSizeButtons
@@ -127,9 +140,7 @@ function FacecamControls(props: FacecamControlsProps) {
         cycleShape={props.cycleShape}
         cycleSize={props.cycleSize}
       />
-      <ActionButtons
-        effect={props.effect}
-        cycleEffect={props.cycleEffect}
+      <CameraActionButtons
         toggleMirrored={props.toggleMirrored}
         closeCamera={props.closeCamera}
       />
@@ -155,22 +166,27 @@ function bubbleStyle(
 
 function FacecamEffectsLayer({
   effect,
+  platform,
   bannerText,
+  onTogglePlatform,
 }: {
   effect: FacecamEffect
+  platform: 'youtube' | 'instagram'
   bannerText: string
+  onTogglePlatform: () => void
 }) {
   return (
     <>
       {effect === 'subscribe-badge' && (
-        <div className="facecam-badge">
-          <Bell size={11} className="facecam-badge-icon" />
-          <span>{bannerText}</span>
-        </div>
+        <FacecamSocialBadge
+          platform={platform}
+          bannerText={bannerText}
+          onToggle={onTogglePlatform}
+        />
       )}
-      {effect === 'spinning-border' && (
+      {(effect === 'studio-rim' || effect === 'spinning-border') && (
         <div className="facecam-border-track">
-          <div className="facecam-spin-border" />
+          <div className="facecam-studio-rim" />
         </div>
       )}
     </>
@@ -261,6 +277,7 @@ export function FacecamBubble() {
     customSize,
     effect,
     bannerText,
+    badgePlatform,
     mirrored,
   } = store
 
@@ -274,14 +291,21 @@ export function FacecamBubble() {
       style={bubbleStyle(customSize, pos, isPortrait)}
       {...drag}
     >
-      <FacecamEffectsLayer effect={effect} bannerText={bannerText} />
-      <FacecamVideo videoRef={videoRef} mirrored={mirrored} />
-      <FacecamControls
-        shape={shape}
+      <FacecamEffectsLayer
         effect={effect}
+        platform={badgePlatform}
+        bannerText={bannerText}
+        onTogglePlatform={store.toggleBadgePlatform}
+      />
+      <FacecamVideo videoRef={videoRef} mirrored={mirrored} />
+      <TopLeftControls
+        effect={effect}
+        cycleEffect={store.cycleEffect}
+      />
+      <TopRightControls
+        shape={shape}
         cycleShape={store.cycleShape}
         cycleSize={store.cycleSize}
-        cycleEffect={store.cycleEffect}
         toggleMirrored={store.toggleMirrored}
         closeCamera={store.closeCamera}
       />

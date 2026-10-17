@@ -4,7 +4,13 @@ import { useUiStore } from '../shell/uiStore'
 export type FacecamShape = 'circle' | 'rounded'
 export type FacecamSize = 's' | 'm' | 'l'
 export type FacecamEffect =
-  'none' | 'spinning-border' | 'pulse' | 'subscribe-badge'
+  | 'none'
+  | 'studio-rim'
+  | 'pulse'
+  | 'subscribe-badge'
+  | 'spinning-border'
+
+export type BadgePlatform = 'youtube' | 'instagram'
 
 export const FACECAM_SIZES: Record<FacecamSize, number> = {
   s: 180,
@@ -24,6 +30,7 @@ type FacecamState = {
   customSize: number
   effect: FacecamEffect
   bannerText: string
+  badgePlatform: BadgePlatform
   mirrored: boolean
   error: string | null
   toggleCamera: () => Promise<void>
@@ -32,6 +39,8 @@ type FacecamState = {
   cycleEffect: () => void
   setEffect: (effect: FacecamEffect) => void
   setBannerText: (text: string) => void
+  toggleBadgePlatform: () => void
+  setBadgePlatform: (platform: BadgePlatform) => void
   toggleMirrored: () => void
   cycleShape: () => void
   cycleSize: () => void
@@ -82,11 +91,13 @@ async function startMediaCamera(
 function nextEffect(current: FacecamEffect): FacecamEffect {
   const effects: FacecamEffect[] = [
     'none',
-    'spinning-border',
+    'studio-rim',
     'pulse',
     'subscribe-badge',
   ]
-  const nextIdx = (effects.indexOf(current) + 1) % effects.length
+  const currentNormalized =
+    current === 'spinning-border' ? 'studio-rim' : current
+  const nextIdx = (effects.indexOf(currentNormalized) + 1) % effects.length
   return effects[nextIdx]
 }
 
@@ -109,6 +120,7 @@ export const useFacecamStore = create<FacecamState>((set, get) => ({
   customSize: FACECAM_SIZES.m,
   effect: 'none',
   bannerText: 'Subscribe',
+  badgePlatform: 'youtube',
   mirrored: true,
   error: null,
 
@@ -133,6 +145,11 @@ export const useFacecamStore = create<FacecamState>((set, get) => ({
   cycleEffect: () => set((s) => ({ effect: nextEffect(s.effect) })),
   setEffect: (effect) => set({ effect }),
   setBannerText: (bannerText) => set({ bannerText }),
+  toggleBadgePlatform: () =>
+    set((s) => ({
+      badgePlatform: s.badgePlatform === 'youtube' ? 'instagram' : 'youtube',
+    })),
+  setBadgePlatform: (badgePlatform) => set({ badgePlatform }),
   toggleMirrored: () => set((s) => ({ mirrored: !s.mirrored })),
   cycleShape: () =>
     set((s) => ({ shape: s.shape === 'circle' ? 'rounded' : 'circle' })),
