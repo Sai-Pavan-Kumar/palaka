@@ -16,7 +16,12 @@ import {
   setFlowStyle,
 } from '../engine/flowActions'
 import { findPage } from '../engine/model/documentOps'
-import type { FlowDirection, FlowSpeed, FlowStyle, LineShape } from '../engine/model/types'
+import type {
+  FlowDirection,
+  FlowSpeed,
+  FlowStyle,
+  LineShape,
+} from '../engine/model/types'
 import { useSessionStore } from '../engine/sessionStore'
 
 type FlowChoice = {

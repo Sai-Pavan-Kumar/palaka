@@ -129,6 +129,9 @@ describe('facecamStore', () => {
     expect(useFacecamStore.getState().effect).toBe('pulse')
 
     store.cycleEffect()
+    expect(useFacecamStore.getState().effect).toBe('subscribe-badge')
+
+    store.cycleEffect()
     expect(useFacecamStore.getState().effect).toBe('none')
 
     store.setBannerText('Follow on X')

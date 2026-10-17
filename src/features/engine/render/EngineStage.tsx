@@ -215,7 +215,12 @@ export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
   const { isVisible, drawOnStep, flowUpTo } = useRevealRules(session.pageId)
   const imageUrls = useImageUrls(doc.assets)
   const page = findPage(doc, session.pageId) ?? doc.pages[0]
-  const layout = useStageLayout(page, doc.aspect, session.presenting, session.activeFrame)
+  const layout = useStageLayout(
+    page,
+    doc.aspect,
+    session.presenting,
+    session.activeFrame,
+  )
   const { stageRef, pointer, unitsPerPixel } = useStagePointerSetup(
     layout.stageWidth,
     layout.pointerOffsetX,
@@ -225,7 +230,12 @@ export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
   return (
     <div
       ref={stageRef}
-      className={stageClassName(doc, session.tool, layout.isWide, session.presenting)}
+      className={stageClassName(
+        doc,
+        session.tool,
+        layout.isWide,
+        session.presenting,
+      )}
       {...pointer}
       onDragOver={onDragOver}
       onDrop={onDrop}

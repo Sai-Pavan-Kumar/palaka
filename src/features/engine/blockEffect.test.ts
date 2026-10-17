@@ -14,26 +14,34 @@ describe('blockEffect', () => {
   })
 
   it('creates block with default effect none', () => {
-    const block = createBlock('server' as any, { x: 100, y: 100, w: 120, h: 80 }, {
-      color: 'black',
-      size: 'm',
-      fill: 'none',
-      dash: 'clean',
-      font: 'brand',
-      opacity: 1,
-    })
+    const block = createBlock(
+      'server' as any,
+      { x: 100, y: 100, w: 120, h: 80 },
+      {
+        color: 'black',
+        size: 'm',
+        fill: 'none',
+        dash: 'clean',
+        font: 'brand',
+        opacity: 1,
+      },
+    )
     expect(block.effect).toBe('none')
   })
 
   it('patches block effect via applyStyle', () => {
-    const block = createBlock('service', { x: 100, y: 100, w: 120, h: 80 }, {
-      color: 'black',
-      size: 'm',
-      fill: 'none',
-      dash: 'clean',
-      font: 'brand',
-      opacity: 1,
-    })
+    const block = createBlock(
+      'service',
+      { x: 100, y: 100, w: 120, h: 80 },
+      {
+        color: 'black',
+        size: 'm',
+        fill: 'none',
+        dash: 'clean',
+        font: 'brand',
+        opacity: 1,
+      },
+    )
     insertShape(block)
     selectShapes([block.id])
 

@@ -58,10 +58,7 @@ function computeBounds(shape: Shape): Bounds {
     case 'stroke':
       return strokeBounds(shape)
     case 'line':
-      return pointsBounds(
-        getLineSamplePoints(shape),
-        getStrokeWidth(shape) / 2,
-      )
+      return pointsBounds(getLineSamplePoints(shape), getStrokeWidth(shape) / 2)
     case 'geo':
     case 'block':
       return boxBounds(shape, getStrokeWidth(shape) / 2)

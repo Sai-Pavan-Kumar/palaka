@@ -1,7 +1,13 @@
 import { commitCurrentPage, getCurrentPage } from './boardActions'
 import { getShapesInOrder } from './model/documentOps'
 import { getHighestStep } from './model/revealSteps'
-import type { FlowDirection, FlowSpeed, FlowStyle, LineShape, Page } from './model/types'
+import type {
+  FlowDirection,
+  FlowSpeed,
+  FlowStyle,
+  LineShape,
+  Page,
+} from './model/types'
 import { useSessionStore } from './sessionStore'
 
 export function getSelectedLines(page: Page, selectedIds: string[]) {

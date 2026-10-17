@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { getCurrentPage, insertShape } from './boardActions'
 import { useEngineStore } from './engineStore'
-import { getSelectedLines, setFlow, setFlowSpeed, setFlowStyle } from './flowActions'
+import {
+  getSelectedLines,
+  setFlow,
+  setFlowSpeed,
+  setFlowStyle,
+} from './flowActions'
 import { createEmptyDocument } from './model/documentOps'
 import type { LineShape } from './model/types'
 import { selectShapes, setSession } from './sessionStore'

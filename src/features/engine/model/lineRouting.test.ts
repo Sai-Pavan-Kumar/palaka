@@ -8,7 +8,11 @@ import {
 } from './lineRouting'
 import type { LineShape } from './types'
 
-function makeLine(routing?: 'straight' | 'elbow' | 'curved', x2 = 200, y2 = 100): LineShape {
+function makeLine(
+  routing?: 'straight' | 'elbow' | 'curved',
+  x2 = 200,
+  y2 = 100,
+): LineShape {
   return {
     id: 'test-line',
     type: 'line',

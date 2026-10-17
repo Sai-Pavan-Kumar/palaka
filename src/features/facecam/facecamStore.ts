@@ -4,11 +4,7 @@ import { useUiStore } from '../shell/uiStore'
 export type FacecamShape = 'circle' | 'rounded'
 export type FacecamSize = 's' | 'm' | 'l'
 export type FacecamEffect =
-  | 'none'
-  | 'studio-rim'
-  | 'pulse'
-  | 'subscribe-badge'
-  | 'spinning-border'
+  'none' | 'studio-rim' | 'pulse' | 'subscribe-badge' | 'spinning-border'
 
 export type BadgePlatform = 'youtube' | 'instagram'
 
@@ -89,7 +85,12 @@ async function startMediaCamera(
 }
 
 function nextEffect(current: FacecamEffect): FacecamEffect {
-  const effects: FacecamEffect[] = ['none', 'studio-rim', 'pulse']
+  const effects: FacecamEffect[] = [
+    'none',
+    'studio-rim',
+    'pulse',
+    'subscribe-badge',
+  ]
   const currentNormalized =
     current === 'spinning-border' ? 'studio-rim' : current
   const nextIdx = (effects.indexOf(currentNormalized) + 1) % effects.length

@@ -22,7 +22,11 @@ const ROUTING_ICONS: Record<LineRouting, LucideIcon> = {
   curved: Spline,
 }
 
-export function LineRoutingMenu({ current = 'straight' }: { current?: LineRouting }) {
+export function LineRoutingMenu({
+  current = 'straight',
+}: {
+  current?: LineRouting
+}) {
   const Icon = ROUTING_ICONS[current] ?? Minus
 
   return (

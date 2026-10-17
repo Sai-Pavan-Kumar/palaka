@@ -1,4 +1,10 @@
-import { Activity, CircleOff, Flame, Sparkles, type LucideIcon } from 'lucide-react'
+import {
+  Activity,
+  CircleOff,
+  Flame,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
 import { Popover } from '../../shared/ui/Popover'
 import { applyStyle } from '../engine/boardActions'
@@ -24,7 +30,11 @@ const EFFECT_ICONS: Record<BlockEffect, LucideIcon> = {
   dash: Activity,
 }
 
-export function BlockEffectMenu({ current = 'none' }: { current?: BlockEffect }) {
+export function BlockEffectMenu({
+  current = 'none',
+}: {
+  current?: BlockEffect
+}) {
   const Icon = EFFECT_ICONS[current] ?? Sparkles
   const isActive = current !== 'none'
 

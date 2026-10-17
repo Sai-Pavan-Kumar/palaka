@@ -1,0 +1,174 @@
+/* Floating periodic YouTube / Instagram social badge */
+.facecam-badge {
+  position: absolute;
+  top: -38px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.35px;
+  white-space: nowrap;
+  cursor: pointer;
+  z-index: 30;
+  user-select: none;
+  overflow: hidden;
+  animation: facecam-badge-cycle 15s ease-in-out infinite;
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s ease,
+    background 0.3s ease;
+}
+
+/* Diagonal glass sheen reflection sweep */
+.facecam-badge-sheen {
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 80%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 100%
+  );
+  transform: skewX(-25deg);
+  animation: facecam-sheen 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes facecam-sheen {
+  0%,
+  60% {
+    left: -120%;
+  }
+  80%,
+  100% {
+    left: 180%;
+  }
+}
+
+.facecam-badge-icon,
+.facecam-badge-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Bell ring animation for YouTube */
+.facecam-badge-bell {
+  transform-origin: top center;
+  animation: facecam-bell-ring 3.5s ease-in-out infinite;
+  opacity: 0.9;
+}
+
+@keyframes facecam-bell-ring {
+  0%,
+  75%,
+  100% {
+    transform: rotate(0deg);
+  }
+  78% {
+    transform: rotate(14deg);
+  }
+  82% {
+    transform: rotate(-14deg);
+  }
+  86% {
+    transform: rotate(10deg);
+  }
+  90% {
+    transform: rotate(-6deg);
+  }
+  94% {
+    transform: rotate(0deg);
+  }
+}
+
+.facecam-badge-spark {
+  opacity: 0.9;
+}
+
+/* YouTube theme */
+.facecam-badge.is-youtube {
+  background: linear-gradient(135deg, #ff0033 0%, #c40026 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 4px 16px rgba(255, 0, 51, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.facecam-badge.is-youtube:hover {
+  background: linear-gradient(135deg, #ff1a44 0%, #db002b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 6px 22px rgba(255, 0, 51, 0.65),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Instagram theme */
+.facecam-badge.is-instagram {
+  background: linear-gradient(
+    45deg,
+    #f09433 0%,
+    #e6683c 25%,
+    #dc2743 50%,
+    #cc2366 75%,
+    #bc1888 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 4px 16px rgba(204, 35, 102, 0.45),
+    0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.facecam-badge.is-instagram:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 6px 22px rgba(204, 35, 102, 0.65),
+    0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.facecam-badge:active {
+  transform: translateX(-50%) scale(0.93) !important;
+}
+
+/* Pause and stay 100% visible while hovering the bubble or badge */
+.facecam-bubble:hover .facecam-badge,
+.facecam-badge:hover,
+.facecam-badge:focus {
+  animation-play-state: paused !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+/* Periodic loop animation: visible for ~8s, dips away for ~2s, loops */
+@keyframes facecam-badge-cycle {
+  0%,
+  65% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  72%,
+  90% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.9);
+    pointer-events: none;
+  }
+  96%,
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    pointer-events: auto;
+  }
+}

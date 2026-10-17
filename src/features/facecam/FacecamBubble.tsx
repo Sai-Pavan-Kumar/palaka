@@ -35,7 +35,7 @@ function effectTitle(effect: FacecamEffect): string {
   }
 }
 
-function TopLeftControls({
+function SparkleEffectButton({
   effect,
   cycleEffect,
 }: {
@@ -43,19 +43,14 @@ function TopLeftControls({
   cycleEffect: () => void
 }) {
   return (
-    <div
-      className="facecam-corner-left"
-      onPointerDown={(e) => e.stopPropagation()}
+    <button
+      type="button"
+      className={`facecam-btn ${effect !== 'none' ? 'is-active' : ''}`}
+      title={effectTitle(effect)}
+      onClick={cycleEffect}
     >
-      <button
-        type="button"
-        className={`facecam-btn ${effect !== 'none' ? 'is-active' : ''}`}
-        title={effectTitle(effect)}
-        onClick={cycleEffect}
-      >
-        <Sparkles size={12} />
-      </button>
-    </div>
+      <Sparkles size={12} />
+    </button>
   )
 }
 
@@ -123,8 +118,10 @@ function CameraActionButtons({
 
 type FacecamControlsProps = {
   shape: FacecamShape
+  effect: FacecamEffect
   cycleShape: () => void
   cycleSize: () => void
+  cycleEffect: () => void
   toggleMirrored: () => void
   closeCamera: () => void
 }
@@ -135,6 +132,10 @@ function FacecamControls(props: FacecamControlsProps) {
       className="facecam-controls"
       onPointerDown={(e) => e.stopPropagation()}
     >
+      <SparkleEffectButton
+        effect={props.effect}
+        cycleEffect={props.cycleEffect}
+      />
       <ShapeSizeButtons
         shape={props.shape}
         cycleShape={props.cycleShape}
@@ -271,22 +272,22 @@ export function FacecamBubble() {
       style={bubbleStyle(customSize, pos, isPortrait)}
       {...drag}
     >
-      <FacecamSocialBadge
-        platform={badgePlatform}
-        bannerText={bannerText}
-        onToggle={store.toggleBadgePlatform}
-      />
+      {effect === 'subscribe-badge' && (
+        <FacecamSocialBadge
+          platform={badgePlatform}
+          bannerText={bannerText}
+          onToggle={store.toggleBadgePlatform}
+        />
+      )}
       <FacecamEffectsLayer effect={effect} />
       <FacecamVideo videoRef={videoRef} mirrored={mirrored} />
-      <TopLeftControls
-        effect={effect}
-        cycleEffect={store.cycleEffect}
-      />
       <FacecamResizeHandle {...resize} />
       <FacecamControls
         shape={shape}
+        effect={effect}
         cycleShape={store.cycleShape}
         cycleSize={store.cycleSize}
+        cycleEffect={store.cycleEffect}
         toggleMirrored={store.toggleMirrored}
         closeCamera={store.closeCamera}
       />

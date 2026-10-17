@@ -99,7 +99,12 @@ export function getLineEndPointTangent(line: LineShape): LineTangent {
   }
 
   if (routing === 'elbow') {
-    const { isHorizontalFirst } = getElbowParams(line.x1, line.y1, line.x2, line.y2)
+    const { isHorizontalFirst } = getElbowParams(
+      line.x1,
+      line.y1,
+      line.x2,
+      line.y2,
+    )
     if (isHorizontalFirst) {
       const midX = (line.x1 + line.x2) / 2
       return { tip, angle: Math.atan2(0, line.x2 - midX) }
@@ -123,7 +128,8 @@ export function getLineMidpoint(line: LineShape): Point {
   }
 
   if (routing === 'elbow') {
-    const isHorizontalFirst = Math.abs(line.x2 - line.x1) >= Math.abs(line.y2 - line.y1)
+    const isHorizontalFirst =
+      Math.abs(line.x2 - line.x1) >= Math.abs(line.y2 - line.y1)
     return isHorizontalFirst
       ? { x: (line.x1 + line.x2) / 2, y: (line.y1 + line.y2) / 2 }
       : { x: (line.x1 + line.x2) / 2, y: (line.y1 + line.y2) / 2 }
@@ -146,7 +152,8 @@ export function getLineSamplePoints(line: LineShape): Point[] {
   }
 
   if (routing === 'elbow') {
-    const isHorizontalFirst = Math.abs(line.x2 - line.x1) >= Math.abs(line.y2 - line.y1)
+    const isHorizontalFirst =
+      Math.abs(line.x2 - line.x1) >= Math.abs(line.y2 - line.y1)
     if (isHorizontalFirst) {
       const midX = (line.x1 + line.x2) / 2
       return [p0, { x: midX, y: line.y1 }, { x: midX, y: line.y2 }, p3]

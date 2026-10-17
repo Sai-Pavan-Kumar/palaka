@@ -63,7 +63,9 @@ export function FlowDots({
         className={`flow-dots ${isRunning ? 'is-running' : ''}`}
         style={{
           ...timing,
-          filter: isPulse ? `drop-shadow(0 0 ${Math.max(2, dot * 0.7)}px ${color})` : undefined,
+          filter: isPulse
+            ? `drop-shadow(0 0 ${Math.max(2, dot * 0.7)}px ${color})`
+            : undefined,
         }}
         d={getLinePath(shape, lane)}
         fill="none"
