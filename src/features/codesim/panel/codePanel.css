@@ -1,0 +1,62 @@
+/* Builds on .sql-panel: same field, chip and button language, so the two
+   "paste text, get a board" tabs feel like one tool. */
+.code-panel__input {
+  min-height: 240px;
+  tab-size: 4;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.code-panel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.code-panel__call {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.code-panel__call input {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-code);
+  font-size: 12px;
+}
+
+.code-panel__call input:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 1px;
+}
+
+.code-panel__note,
+.code-panel__error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.code-panel__error {
+  color: var(--color-error);
+  white-space: pre-wrap;
+}
+
+.code-panel__steps {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.code-panel__count {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}

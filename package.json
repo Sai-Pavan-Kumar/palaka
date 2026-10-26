@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/copy-pyodide.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/copy-pyodide.mjs",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
@@ -12,7 +14,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "check": "tsc -b && oxlint && prettier --check . && vitest run",
-    "icons": "node scripts/build-icons.mjs"
+    "icons": "node scripts/build-icons.mjs",
+    "pyodide": "node scripts/copy-pyodide.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.3",
@@ -31,6 +34,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
     "prettier": "^3.9.10",
+    "pyodide": "314.0.7",
     "simple-icons": "^16.36.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",

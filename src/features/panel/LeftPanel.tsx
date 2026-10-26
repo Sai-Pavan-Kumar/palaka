@@ -1,6 +1,13 @@
 import { useEffect } from 'react'
-import { FolderOpen, ListOrdered, Table2, type LucideIcon } from 'lucide-react'
+import {
+  CodeXml,
+  FolderOpen,
+  ListOrdered,
+  Table2,
+  type LucideIcon,
+} from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
+import { CodePanel } from '../codesim/panel/CodePanel'
 import { listProjectAssets } from '../project/openProject'
 import { useProjectStore } from '../project/projectStore'
 import { RevealOrderList } from '../reveal/RevealOrderList'
@@ -43,17 +50,20 @@ const TABS: TabInfo[] = [
     kicker: 'Reveal order',
   },
   { id: 'sql', icon: Table2, label: 'Tables from SQL', kicker: 'Blueprint' },
+  { id: 'code', icon: CodeXml, label: 'Code simulation', kicker: 'Code' },
 ]
 
 function TabBody({ tab }: { tab: LeftPanelTab }) {
   if (tab === 'files') return <AssetGrid />
   if (tab === 'order') return <RevealOrderList />
+  if (tab === 'code') return <CodePanel />
   return <SqlPanel />
 }
 
 function tabTitle(tab: LeftPanelTab, folderName?: string): string {
   if (tab === 'files') return folderName ?? 'No folder open'
   if (tab === 'order') return 'This page'
+  if (tab === 'code') return 'Step through Python'
   return 'Tables from SQL'
 }
 

@@ -8,8 +8,11 @@
 # - connect-src self data: blob:  export reads its own fonts and images
 # - display-capture + microphone = self  board recording (Element Capture + mic)
 # - camera=(self) for in-board facecam bubble
+# - script-src 'wasm-unsafe-eval'  code simulation runs Python (Pyodide,
+#   self-hosted in /pyodide/) as WebAssembly. Allows compiling WASM only;
+#   JS eval and new Function stay blocked.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
@@ -22,3 +25,6 @@
   Cache-Control: public, max-age=31536000, immutable
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
+# Pyodide files are pinned to one version but not hashed: cache for a day.
+/pyodide/*
+  Cache-Control: public, max-age=86400

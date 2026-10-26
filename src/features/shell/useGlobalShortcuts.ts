@@ -1,4 +1,9 @@
 import { useEffect } from 'react'
+import {
+  isCodeSimActive,
+  stepCodeSim,
+  stopCodeSim,
+} from '../codesim/codeSimStore'
 import { nextStep, stopSimulation, useSimStore } from '../simulate/simStore'
 import { hasModifier, isTypingTarget } from '../../shared/keyboard'
 import {
@@ -34,12 +39,31 @@ function handlePresentingKey(event: KeyboardEvent, isRecording: boolean) {
   return true
 }
 
+// While a code run is open, Space walks its lines, even when presenting:
+// stepping the code is the slide's whole job at that moment. Arrows join in
+// only while presenting, so they still nudge shapes while editing.
+function handleCodeSimKey(event: KeyboardEvent, presenting: boolean): boolean {
+  if (!isCodeSimActive()) return false
+  const back =
+    (presenting && event.key === 'ArrowLeft') ||
+    (event.key === ' ' && event.shiftKey)
+  const next =
+    (presenting && event.key === 'ArrowRight') ||
+    (event.key === ' ' && !event.shiftKey)
+  if (back) stepCodeSim(-1)
+  else if (next) stepCodeSim(1)
+  else if (event.key === 'Escape') stopCodeSim()
+  else return false
+  return true
+}
+
 // Returns true when the key was ours.
 function handleKey(event: KeyboardEvent): boolean {
   const ui = useUiStore.getState()
   const isRecording = useRecorderStore.getState().status !== 'idle'
   const { presenting } = useSessionStore.getState()
   const key = event.key.toLowerCase()
+  if (handleCodeSimKey(event, presenting)) return true
 
   // Esc leaves the simulation first, then presenting on the next press.
   const sim = useSimStore.getState()
@@ -69,7 +93,9 @@ export function useGlobalShortcuts(): void {
     // step, so its release must never press Present, Pause or Stop.
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key !== ' ' || isTypingTarget(event.target)) return
-      if (useSessionStore.getState().presenting) event.preventDefault()
+      if (useSessionStore.getState().presenting || isCodeSimActive()) {
+        event.preventDefault()
+      }
     }
     window.addEventListener('keydown', onKeyDown, { capture: true })
     window.addEventListener('keyup', onKeyUp, { capture: true })

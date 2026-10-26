@@ -225,6 +225,9 @@ export type TextShape = ShapeBase & {
   size: SizeKey
   scale: number
   textAnimation?: TextAnimation
+  // Present only on a code-simulation card: the "Run with" line
+  // (e.g. "Solution().search([1, 3], 3)") that runs after the code.
+  codeCall?: string
 }
 
 export type ImageShape = ShapeBase & {

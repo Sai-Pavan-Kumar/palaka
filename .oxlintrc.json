@@ -41,5 +41,5 @@
       }
     }
   ],
-  "ignorePatterns": ["src/features/icons/generated/**"]
+  "ignorePatterns": ["src/features/icons/generated/**", "public/pyodide/**"]
 }

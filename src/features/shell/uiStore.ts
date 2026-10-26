@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 export type ToastTone = 'info' | 'success' | 'error'
 export type Toast = { id: number; message: string; tone: ToastTone }
-export type LeftPanelTab = 'files' | 'order' | 'sql'
+export type LeftPanelTab = 'files' | 'order' | 'sql' | 'code'
 
 type UiState = {
   isFocusMode: boolean
