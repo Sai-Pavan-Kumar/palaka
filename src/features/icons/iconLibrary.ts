@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AwsIcon, LibraryIcon } from './iconTypes'
+import type { AwsIcon, LibraryIcon, RealWorldIcon } from './iconTypes'
 
 type IconLibraryState = {
   // null until the packs arrive; blocks show their kind's icon meanwhile.
@@ -14,14 +14,19 @@ export const useIconLibrary = create<IconLibraryState>(() => ({
 
 let loading: Promise<void> | null = null
 
-// ~1 MB of SVG the board does not need to open, so it is fetched only when
+// ~1 MB of icons the board does not need to open, so it is fetched only when
 // the block menu opens or a block on the board uses a library icon.
 export function loadIconLibrary(): Promise<void> {
   loading ??= Promise.all([
+    import('./generated/realWorldIcons'),
     import('./generated/brandIcons'),
     import('./generated/awsIcons'),
-  ]).then(([brands, aws]) => {
-    const list: LibraryIcon[] = [...brands.BRAND_ICONS, ...aws.AWS_ICONS]
+  ]).then(([realWorld, brands, aws]) => {
+    const list: LibraryIcon[] = [
+      ...realWorld.REAL_WORLD_ICONS,
+      ...brands.BRAND_ICONS,
+      ...aws.AWS_ICONS,
+    ]
     useIconLibrary.setState({ list, byId: new Map(list.map((i) => [i.id, i])) })
   })
   return loading
@@ -29,6 +34,10 @@ export function loadIconLibrary(): Promise<void> {
 
 export function isAwsIcon(icon: LibraryIcon): icon is AwsIcon {
   return 'svg' in icon
+}
+
+export function isRealWorldIcon(icon: LibraryIcon): icon is RealWorldIcon {
+  return 'Icon' in icon
 }
 
 const dataUrls = new Map<string, string>()

@@ -33,6 +33,12 @@
         "eslint/max-lines-per-function": "off",
         "eslint/max-lines": "off"
       }
+    },
+    {
+      "files": ["scripts/realWorldIcons.mjs"],
+      "rules": {
+        "eslint/max-lines": "off"
+      }
     }
   ],
   "ignorePatterns": ["src/features/icons/generated/**"]

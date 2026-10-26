@@ -64,7 +64,7 @@ function BlockIcon({
 }) {
   const libraryIcon = useLibraryIcon(shape.icon)
   if (libraryIcon && shape.icon) {
-    return <LibraryIconView id={shape.icon} box={box} />
+    return <LibraryIconView id={shape.icon} box={box} color={color} />
   }
   const Icon = BLOCK_ICONS[shape.kind]
   return (

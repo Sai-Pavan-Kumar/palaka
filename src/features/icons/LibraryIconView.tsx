@@ -1,14 +1,42 @@
 import { useBoardPalette } from '../engine/render/paletteContext'
-import { awsIconUrl, brandFill, isAwsIcon } from './iconLibrary'
+import {
+  awsIconUrl,
+  brandFill,
+  isAwsIcon,
+  isRealWorldIcon,
+} from './iconLibrary'
 import { useLibraryIcon } from './useLibraryIcon'
 
 type Box = { x: number; y: number; size: number }
 
-export function LibraryIconView({ id, box }: { id: string; box: Box }) {
+// Line icons match the block's ink (and its solid-fill contrast colour),
+// so a "Chef" block looks like the built-in "Service" block beside it.
+export function LibraryIconView({
+  id,
+  box,
+  color,
+}: {
+  id: string
+  box: Box
+  color: string
+}) {
   const palette = useBoardPalette()
   const icon = useLibraryIcon(id)
   if (!icon) return null
   const { x, y, size } = box
+  if (isRealWorldIcon(icon)) {
+    const { Icon } = icon
+    return (
+      <Icon
+        x={x}
+        y={y}
+        size={size}
+        color={color}
+        strokeWidth={1.75}
+        aria-hidden
+      />
+    )
+  }
   if (isAwsIcon(icon)) {
     return (
       <image
