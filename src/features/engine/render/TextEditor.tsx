@@ -1,4 +1,5 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
+import { isBuildingBlock } from '../model/buildings'
 import { findPage } from '../model/documentOps'
 import { useEngineStore } from '../engineStore'
 import {
@@ -82,9 +83,19 @@ function editorFor(shape: Shape, paper: Paper, slide: Slide) {
     case 'text':
       return { value: shape.text, style: textStyle(paper, shape, slide) }
     case 'block': {
+      const layout = getBlockLabelLayout(shape)
+      // A building's sign is ink with paper lettering, so typing on it
+      // must be paper-on-ink too, or the letters vanish into the board.
+      if (isBuildingBlock(shape)) {
+        const ink = palette.ink[shape.color]
+        const style = labelStyle(layout, palette.paper, slide)
+        return {
+          value: shape.label,
+          style: { ...style, background: ink, caretColor: palette.paper },
+        }
+      }
       const color =
         shape.fill === 'solid' ? palette.onSolid : palette.ink[shape.color]
-      const layout = getBlockLabelLayout(shape)
       return { value: shape.label, style: labelStyle(layout, color, slide) }
     }
     case 'line': {
