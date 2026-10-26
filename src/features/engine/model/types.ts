@@ -125,6 +125,7 @@ export type BlockKind =
   | 'loadBalancer'
   | 'gateway'
   | 'rateLimiter'
+  | 'circuitBreaker'
   | 'service'
   | 'worker'
   | 'function'
@@ -205,6 +206,11 @@ export type SimSettings = {
   hitRate?: number
   capacity?: number
   size?: number
+  retries?: number
+  failRate?: number
+  writes?: number
+  // 1 = undo finished steps when a later one fails (saga).
+  compensate?: number
 }
 
 export type TextAnimation = 'wipe' | 'typewriter' | 'slide-up' | 'blur-in'

@@ -49,6 +49,21 @@ function findSources(nodes: Map<string, SimNode>, hops: Map<string, Hop[]>) {
   return withOut.filter((n) => !reached.has(n.id)).map((n) => n.id)
 }
 
+// A replica copies the data node that points at it. Clients and read
+// routers also point at replicas, but only to read, so they never count.
+function findPrimaries(nodes: Map<string, SimNode>, hops: Map<string, Hop[]>) {
+  const primaryOf = new Map<string, string>()
+  for (const [from, list] of hops) {
+    if (!nodes.get(from)?.config.stores) continue
+    for (const hop of list) {
+      if (nodes.get(hop.to)?.config.behaviour === 'replica') {
+        primaryOf.set(hop.to, from)
+      }
+    }
+  }
+  return primaryOf
+}
+
 export function buildSimGraph(
   page: Page,
   isVisible: (shape: Shape) => boolean = () => true,
@@ -82,6 +97,7 @@ export function buildSimGraph(
     nodes,
     hops,
     sources: findSources(nodes, hops),
+    primaryOf: findPrimaries(nodes, hops),
     signature: parts.join('|'),
   }
 }

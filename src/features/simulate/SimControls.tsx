@@ -1,10 +1,13 @@
 import { GripVertical, Pause, Play, RotateCcw, X } from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
 import {
-  MAX_TRAFFIC,
-  MIN_TRAFFIC,
+  DownButton,
+  ModeSwitch,
+  StepButtons,
+  TrafficSlider,
+} from './SimControlParts'
+import {
   resetSimulation,
-  setTraffic,
   stopSimulation,
   togglePlaying,
   useSimStore,
@@ -12,21 +15,16 @@ import {
 import './simulate.css'
 import { useDraggableBar } from './useDraggableBar'
 
-function TrafficSlider({ traffic }: { traffic: number }) {
+function Grip(props: ReturnType<typeof useDraggableBar>['handleProps']) {
   return (
-    <label className="sim-controls__traffic">
-      <span className="sim-controls__label">Traffic</span>
-      <input
-        type="range"
-        min={MIN_TRAFFIC}
-        max={MAX_TRAFFIC}
-        step={1}
-        value={traffic}
-        onChange={(event) => setTraffic(Number(event.target.value))}
-        aria-valuetext={`${traffic} times normal traffic`}
-      />
-      <span className="sim-controls__value">{traffic}×</span>
-    </label>
+    <span
+      className="sim-controls__grip"
+      title="Drag to move"
+      aria-hidden
+      {...props}
+    >
+      <GripVertical size={18} />
+    </span>
   )
 }
 
@@ -36,6 +34,7 @@ export function SimControls() {
   const active = useSimStore((s) => s.active)
   const playing = useSimStore((s) => s.playing)
   const traffic = useSimStore((s) => s.traffic)
+  const stepMode = useSimStore((s) => s.stepMode)
   const { style, handleProps } = useDraggableBar()
   if (!active) return null
   return (
@@ -45,21 +44,16 @@ export function SimControls() {
       aria-label="Simulation"
       style={style}
     >
-      <span
-        className="sim-controls__grip"
-        title="Drag to move"
-        aria-hidden
-        {...handleProps}
-      >
-        <GripVertical size={18} />
-      </span>
+      <Grip {...handleProps} />
+      <ModeSwitch stepMode={stepMode} />
       <IconButton
         icon={playing ? Pause : Play}
-        label={playing ? 'Pause traffic' : 'Play traffic'}
+        label={playing ? 'Pause' : 'Play'}
         isActive={playing}
         onClick={togglePlaying}
       />
-      <TrafficSlider traffic={traffic} />
+      {stepMode ? <StepButtons /> : <TrafficSlider traffic={traffic} />}
+      <DownButton />
       <IconButton
         icon={RotateCcw}
         label="Restart run"

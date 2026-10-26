@@ -12,6 +12,14 @@ const CLIENTS = new Set<BlockKind>([
 
 const BEHAVIOUR_BY_KIND: Partial<Record<BlockKind, BehaviourKind>> = {
   rateLimiter: 'limiter',
+  circuitBreaker: 'breaker',
+  replica: 'replica',
+  // Telemetry is fire-and-forget: nobody waits for a log line to land.
+  logging: 'sink',
+  monitoring: 'sink',
+  tracing: 'sink',
+  alerting: 'sink',
+  analytics: 'sink',
   loadBalancer: 'balancer',
   reverseProxy: 'balancer',
   cache: 'cache',
@@ -37,7 +45,6 @@ const BEHAVIOUR_BY_KIND: Partial<Record<BlockKind, BehaviourKind>> = {
   timeSeriesDb: 'service',
   vectorDb: 'service',
   warehouse: 'service',
-  replica: 'service',
   search: 'service',
   storage: 'service',
   fileSystem: 'service',
@@ -68,6 +75,11 @@ const DEFAULTS: Omit<NodeConfig, 'behaviour'> = {
   capacity: 4,
   size: 12,
   serviceTime: 0.4,
+  retries: 0,
+  failRate: 0,
+  writes: 0,
+  compensate: false,
+  stores: false,
 }
 
 function behaviourOf(shape: Shape): BehaviourKind {
@@ -83,7 +95,7 @@ function slowOverrides(shape: Shape): Partial<NodeConfig> {
   const isSlow =
     shape.type === 'table' ||
     (shape.type === 'block' && SLOW_KINDS.has(shape.kind))
-  return isSlow ? { capacity: 3, serviceTime: 0.6 } : {}
+  return isSlow ? { capacity: 3, serviceTime: 0.6, stores: true } : {}
 }
 
 export function getNodeConfig(shape: Shape): NodeConfig {
@@ -98,6 +110,10 @@ export function getNodeConfig(shape: Shape): NodeConfig {
     ...(sim?.hitRate !== undefined && { hitRate: sim.hitRate }),
     ...(sim?.capacity !== undefined && { capacity: sim.capacity }),
     ...(sim?.size !== undefined && { size: sim.size }),
+    ...(sim?.retries !== undefined && { retries: sim.retries }),
+    ...(sim?.failRate !== undefined && { failRate: sim.failRate }),
+    ...(sim?.writes !== undefined && { writes: sim.writes }),
+    ...(sim?.compensate !== undefined && { compensate: sim.compensate > 0 }),
     behaviour,
   }
 }

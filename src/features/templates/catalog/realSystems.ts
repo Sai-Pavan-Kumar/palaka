@@ -47,8 +47,8 @@ export const REAL_SYSTEMS = [
   t(
     C,
     'chat',
-    'Chat app',
-    'A message is published once, delivered to every member',
+    'Chat app (WhatsApp)',
+    'WebSocket in, one publish, pushed to every member in real time',
     [
       ['user', 'mobile', 0, 1, { label: 'Sender' }],
       ['ws', 'gateway', 1, 1, { label: 'WebSocket gateway' }],
@@ -76,7 +76,7 @@ export const REAL_SYSTEMS = [
   t(
     C,
     'video-streaming',
-    'Video streaming',
+    'Video streaming (YouTube)',
     'Watching hits the CDN; uploads are transcoded in the background',
     [
       ['viewer', 'browser', 0, 0, { label: 'Viewer' }],
@@ -125,7 +125,7 @@ export const REAL_SYSTEMS = [
   t(
     C,
     'ride-hailing',
-    'Ride hailing',
+    'Ride hailing (Uber)',
     'Driver locations live in a fast cache for matching',
     [
       ['rider', 'mobile', 0, 0, { label: 'Rider' }],

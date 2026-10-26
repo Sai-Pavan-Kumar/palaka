@@ -11,11 +11,19 @@ export type SimContext = {
   // A fire-and-forget copy that starts at `node` (queue, pub/sub).
   makeAsync(node: string): Packet
   remove(packet: Packet): void
+  // Taken down by the teacher: refuses everything, balancers skip it.
+  isDown(node: string): boolean
+  // Writes the primary of this replica has applied; null without one.
+  primaryVersion(replica: string): number | null
+  // A floating label over a node (UNDO, STALE…).
+  tag(node: string, text: string, mode: PacketMode): void
 }
 
 export type Behaviour = {
   arrive(ctx: SimContext, node: SimNode, state: NodeState, p: Packet): void
   tick?(ctx: SimContext, node: SimNode, state: NodeState, dt: number): void
+  // A response passing back through this node (circuit breaker counts it).
+  onReturn?(node: SimNode, state: NodeState, p: Packet): void
 }
 
 export function pickRoundRobin(state: NodeState, outs: Hop[]): Hop {

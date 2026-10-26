@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getPalette } from '../engine/model/paper'
 import type { Page, Paper, Shape } from '../engine/model/types'
 import { buildSimGraph } from './simGraph'
@@ -6,6 +6,7 @@ import { SimEngine } from './simEngine'
 import { useSimStore } from './simStore'
 import { Meters, Packets, Tags } from './SimVisuals'
 import './simulate.css'
+import { useEngineSync } from './useEngineSync'
 
 const ALL = () => true
 
@@ -40,19 +41,11 @@ function SimRunner({
   isVisible: (shape: Shape) => boolean
 }) {
   const playing = useSimStore((s) => s.playing)
-  const traffic = useSimStore((s) => s.traffic)
-  const runId = useSimStore((s) => s.runId)
   const graph = useMemo(() => buildSimGraph(page, isVisible), [page, isVisible])
   const [engine] = useState(() => new SimEngine(graph))
-  const firstRun = useRef(runId)
 
   useEffect(() => engine.setGraph(graph), [engine, graph])
-  useEffect(() => {
-    if (runId !== firstRun.current) engine.reset()
-  }, [engine, runId])
-  useEffect(() => {
-    engine.setTraffic(traffic)
-  }, [engine, traffic])
+  useEngineSync(engine)
   useSimClock(engine, playing)
 
   const palette = getPalette(paper)

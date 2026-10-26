@@ -1,30 +1,17 @@
-import type { Behaviour, SimContext } from './behaviours/behaviour'
-import { cache } from './behaviours/cache'
-import { loadBalancer } from './behaviours/loadBalancer'
-import { pubSub, queue } from './behaviours/queue'
-import { rateLimiter } from './behaviours/rateLimiter'
-import { passThrough, service } from './behaviours/service'
+import type { SimContext } from './behaviours/behaviour'
+import { BEHAVIOURS } from './behaviours'
+import { planCalls } from './simCalls'
+import { backAt, unwind } from './simReturn'
+import { newState } from './simState'
 import type {
-  BehaviourKind,
   Hop,
   NodeState,
   Packet,
   PacketMode,
+  PacketOp,
   SimGraph,
-  SimNode,
   Tag,
 } from './simTypes'
-
-const BEHAVIOURS: Record<BehaviourKind, Behaviour> = {
-  source: passThrough,
-  pass: passThrough,
-  limiter: rateLimiter,
-  balancer: loadBalancer,
-  cache,
-  queue,
-  pubsub: pubSub,
-  service,
-}
 
 // Fixed steps keep a run identical on a fast and a slow laptop.
 const STEP_S = 1 / 60
@@ -36,31 +23,9 @@ const BASE_RATE = 1.5
 const MAX_HOPS = 12
 // Beyond this the board becomes noise, and old laptops drop frames.
 export const MAX_PACKETS = 160
-const TAG_LIFE_S = 1.1
+export const TAG_LIFE_S = 1.1
 // A repeat tag restarts only once the old one has risen out of the way.
 const TAG_REFRESH_S = 0.5
-
-function newState(rate: number): NodeState {
-  return {
-    tokens: rate,
-    roundRobin: 0,
-    hitCredit: 0,
-    drainCredit: 0,
-    busy: [],
-    backlog: [],
-    stats: {
-      sent: 0,
-      ok: 0,
-      failed: 0,
-      allowed: 0,
-      rejected: 0,
-      hits: 0,
-      misses: 0,
-      handled: 0,
-      routed: {},
-    },
-  }
-}
 
 export class SimEngine implements SimContext {
   graph: SimGraph
@@ -68,6 +33,13 @@ export class SimEngine implements SimContext {
   tags: Tag[] = []
   states = new Map<string, NodeState>()
   traffic = 1
+  // Blocks the teacher took down (failover, CAP, chaos demos).
+  down = new Set<string>()
+  // Step mode: no automatic traffic, and the run freezes at every block.
+  stepMode = false
+  paused = false
+  // The block the step froze at, ringed on the board.
+  focus: string | null = null
   private nextId = 1
   private spawnCredit = 0
   private sourceTurn = 0
@@ -82,6 +54,8 @@ export class SimEngine implements SimContext {
     this.packets = []
     this.tags = []
     this.spawnCredit = 0
+    this.paused = false
+    this.focus = null
     this.states = new Map(
       [...this.graph.nodes.values()].map((n) => [
         n.id,
@@ -117,23 +91,47 @@ export class SimEngine implements SimContext {
     this.traffic = traffic
   }
 
+  setDown(ids: ReadonlySet<string>): void {
+    this.down = new Set(ids)
+  }
+
+  setStepMode(on: boolean): void {
+    this.stepMode = on
+    this.next()
+  }
+
+  next(): void {
+    this.paused = false
+    this.focus = null
+  }
+
+  // Step mode's "send one": exactly one request from the next client.
+  sendOne(): void {
+    const { sources } = this.graph
+    if (sources.length > 0)
+      this.launch(sources[this.sourceTurn++ % sources.length])
+  }
+
   advance(seconds: number): void {
     this.leftover += Math.min(seconds, 0.25)
-    while (this.leftover >= STEP_S) {
+    while (this.leftover >= STEP_S && !this.paused) {
       this.leftover -= STEP_S
       this.step(STEP_S)
     }
+    if (this.paused) this.leftover = 0
+  }
+
+  pauseAt(node: string): void {
+    if (!this.stepMode) return
+    this.paused = true
+    this.focus = node
   }
 
   private step(dt: number): void {
-    this.spawn(dt)
+    if (!this.stepMode) this.spawn(dt)
     for (const node of this.graph.nodes.values()) {
-      BEHAVIOURS[node.config.behaviour].tick?.(
-        this,
-        node,
-        this.states.get(node.id)!,
-        dt,
-      )
+      const state = this.states.get(node.id)!
+      BEHAVIOURS[node.config.behaviour].tick?.(this, node, state, dt)
     }
     for (const packet of [...this.packets]) this.move(packet, dt)
     for (const tag of this.tags) tag.age += dt
@@ -146,24 +144,47 @@ export class SimEngine implements SimContext {
     this.spawnCredit += BASE_RATE * this.traffic * dt
     while (this.spawnCredit >= 1) {
       this.spawnCredit -= 1
-      if (this.packets.length >= MAX_PACKETS) continue
-      const source = sources[this.sourceTurn++ % sources.length]
-      const packet = this.create(source, 'request', false)
-      this.states.get(source)!.stats.sent++
-      this.arrive(packet, source)
+      this.launch(sources[this.sourceTurn++ % sources.length])
     }
   }
 
-  private create(node: string, mode: PacketMode, oneWay: boolean): Packet {
+  // Writes follow the client's write share exactly (an accumulator), so a
+  // 30% writer sends 3 writes in every 10 requests, on every take.
+  private launch(source: string): void {
+    if (this.packets.length >= MAX_PACKETS) return
+    const state = this.states.get(source)!
+    state.writeCredit += this.graph.nodes.get(source)?.config.writes ?? 0
+    const isWrite = state.writeCredit >= 1
+    if (isWrite) state.writeCredit -= 1
+    const packet = this.create(
+      source,
+      'request',
+      false,
+      isWrite ? 'write' : 'read',
+    )
+    state.stats.sent++
+    this.arrive(packet, source)
+  }
+
+  private create(
+    node: string,
+    mode: PacketMode,
+    oneWay: boolean,
+    op: PacketOp,
+  ): Packet {
     const packet: Packet = {
       id: this.nextId++,
       mode,
-      stack: [{ node, via: null, pending: [] }],
+      stack: [
+        { node, via: null, pending: [], last: null, attempts: 0, done: [] },
+      ],
       hop: null,
       returning: false,
       distance: 0,
       oneWay,
       hit: false,
+      op,
+      compensate: false,
     }
     this.packets.push(packet)
     return packet
@@ -171,26 +192,34 @@ export class SimEngine implements SimContext {
 
   private move(packet: Packet, dt: number): void {
     const { hop } = packet
-    if (!hop) return
+    if (!hop || this.paused) return
     packet.distance += PACKET_SPEED * dt
     if (packet.distance < hop.edge.length) return
     packet.hop = null
-    if (packet.returning) this.backAt(packet)
+    if (packet.returning) backAt(this, packet)
     else this.forwardAt(packet, hop)
   }
 
-  private ride(packet: Packet, hop: Hop, returning: boolean): void {
+  ride(packet: Packet, hop: Hop, returning: boolean): void {
     packet.hop = hop
     packet.returning = returning
     packet.distance = 0
   }
 
   private forwardAt(packet: Packet, hop: Hop): void {
-    packet.stack.push({ node: hop.to, via: hop, pending: [] })
+    packet.stack.push({
+      node: hop.to,
+      via: hop,
+      pending: [],
+      last: null,
+      attempts: 0,
+      done: [],
+    })
     if (packet.stack.length > MAX_HOPS) {
       this.respond(packet, 'error', 'Loop')
       return
     }
+    this.pauseAt(hop.to)
     this.arrive(packet, hop.to)
   }
 
@@ -198,50 +227,21 @@ export class SimEngine implements SimContext {
     const node = this.graph.nodes.get(nodeId)
     const state = this.states.get(nodeId)
     if (!node || !state) return this.remove(packet)
+    if (packet.compensate) {
+      this.tag(nodeId, 'UNDO', 'async')
+      return this.remove(packet)
+    }
+    if (this.down.has(nodeId)) return this.respond(packet, 'error', 'DOWN')
     BEHAVIOURS[node.config.behaviour].arrive(this, node, state, packet)
   }
 
-  // A response reached the caller. A cache hit answers for the database,
-  // so the caller skips it; an error ends the whole request.
-  private backAt(packet: Packet): void {
-    const frame = packet.stack[packet.stack.length - 1]
-    if (packet.mode === 'error') return this.unwind(packet)
-    if (packet.hit) {
-      frame.pending = []
-      packet.hit = false
-    }
-    if (frame.pending.length > 0) {
-      packet.mode = packet.oneWay ? 'async' : 'request'
-      this.callNext(packet)
-      return
-    }
-    packet.mode = 'ok'
-    this.unwind(packet)
-  }
-
-  private unwind(packet: Packet): void {
-    const frame = packet.stack.pop()!
-    if (packet.stack.length === 0 || !frame.via) {
-      this.finish(packet, frame.node)
-      return
-    }
-    this.ride(packet, frame.via, true)
-  }
-
-  private finish(packet: Packet, node: string): void {
-    const stats = this.states.get(node)?.stats
-    if (stats) {
-      if (packet.mode === 'error') stats.failed++
-      else stats.ok++
-    }
-    this.remove(packet)
-  }
-
-  private callNext(packet: Packet): void {
+  callNext(packet: Packet): void {
     const frame = packet.stack[packet.stack.length - 1]
     const hop = frame.pending.shift()
-    if (hop) this.ride(packet, hop, false)
-    else this.respond(packet, 'ok')
+    if (!hop) return this.respond(packet, 'ok')
+    frame.last = hop
+    frame.attempts = 0
+    this.ride(packet, hop, false)
   }
 
   outs(packet: Packet, nodeId: string): Hop[] {
@@ -252,33 +252,31 @@ export class SimEngine implements SimContext {
     )
   }
 
-  // Default call order puts caches first: check the cache, then the
-  // database, which is how a service is usually written.
   proceed(packet: Packet, nodeId: string, calls?: Hop[]): void {
-    const isCache = (hop: Hop) =>
-      this.graph.nodes.get(hop.to)?.config.behaviour === 'cache'
-    const ordered =
-      calls ??
-      [...this.outs(packet, nodeId)].sort(
-        (a, b) => Number(isCache(b)) - Number(isCache(a)),
-      )
-    packet.stack[packet.stack.length - 1].pending = ordered
+    packet.stack[packet.stack.length - 1].pending =
+      calls ?? planCalls(this, packet, nodeId)
     this.callNext(packet)
   }
 
+  sendCopy(nodeId: string, hop: Hop, op: PacketOp): void {
+    const copy = this.makeAsync(nodeId)
+    copy.op = op
+    this.proceed(copy, nodeId, [hop])
+  }
+
   respond(packet: Packet, mode: PacketMode, tag?: string): void {
-    const node = this.graph.nodes.get(
-      packet.stack[packet.stack.length - 1].node,
-    )
-    if (tag && node) this.showTag(node.box, tag, mode)
+    const frame = packet.stack[packet.stack.length - 1]
+    if (tag) this.tag(frame.node, tag, mode)
     if (packet.oneWay) return this.remove(packet)
     packet.mode = mode
-    this.unwind(packet)
+    unwind(this, packet)
   }
 
   // Under a flood the same "429" would stack into an unreadable smear, so
   // a repeat only lifts the label that is already floating.
-  private showTag(box: SimNode['box'], text: string, mode: PacketMode): void {
+  tag(nodeId: string, text: string, mode: PacketMode): void {
+    const box = this.graph.nodes.get(nodeId)?.box
+    if (!box) return
     const x = box.x + box.w / 2
     const live = this.tags.find((t) => t.x === x && t.text === text)
     if (live && live.age > TAG_REFRESH_S) live.age = 0
@@ -286,10 +284,23 @@ export class SimEngine implements SimContext {
   }
 
   makeAsync(node: string): Packet {
-    return this.create(node, 'async', true)
+    return this.create(node, 'async', true, 'read')
   }
 
   remove(packet: Packet): void {
     this.packets = this.packets.filter((p) => p !== packet)
+  }
+
+  isDown(node: string): boolean {
+    return this.down.has(node)
+  }
+
+  isPrimary(node: string): boolean {
+    return [...this.graph.primaryOf.values()].includes(node)
+  }
+
+  primaryVersion(replica: string): number | null {
+    const primary = this.graph.primaryOf.get(replica)
+    return primary ? (this.states.get(primary)?.version ?? 0) : null
   }
 }

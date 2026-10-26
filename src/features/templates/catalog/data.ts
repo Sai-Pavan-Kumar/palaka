@@ -7,6 +7,44 @@ const C = 'Data'
 export const DATA = [
   t(
     C,
+    'replication-lag',
+    'Replication lag (eventual consistency)',
+    'Reads that beat the copy come back STALE',
+    [
+      ['writer', 'user', 0, 0, { label: 'Writer', sim: { writes: 1 } }],
+      ['reader', 'user', 0, 2, { label: 'Reader' }],
+      ['primary', 'sqlDb', 1, 0, { label: 'Primary', icon: 'si:postgresql' }],
+      ['replica', 'replica', 1, 2, { label: 'Replica' }],
+    ],
+    [
+      ['writer', 'primary'],
+      ['primary', 'replica'],
+      ['reader', 'replica'],
+    ],
+  ),
+  t(
+    C,
+    'read-write-split',
+    'Read/write split',
+    'Writes go to the primary, reads spread over replicas',
+    [
+      ['user', 'user', 0, 1, { sim: { writes: 0.3 } }],
+      ['api', 'service', 1, 1, { label: 'API' }],
+      ['primary', 'sqlDb', 2, 1, PG],
+      ['r1', 'replica', 3, 0, { label: 'Replica 1' }],
+      ['r2', 'replica', 3, 2, { label: 'Replica 2' }],
+    ],
+    [
+      ['user', 'api'],
+      ['api', 'primary'],
+      ['api', 'r1'],
+      ['api', 'r2'],
+      ['primary', 'r1'],
+      ['primary', 'r2'],
+    ],
+  ),
+  t(
+    C,
     'cache-aside',
     'Cache-aside',
     'Hits return fast, misses go to the database',

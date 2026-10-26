@@ -74,3 +74,19 @@
     animation: none;
   }
 }
+
+.sim-controls__modes {
+  display: flex;
+  gap: 2px;
+  padding-inline: var(--space-1);
+}
+
+.sim-controls__modes .chip {
+  min-width: 52px;
+  min-height: 36px;
+}
+
+/* Step mode: the block the request is at breathes, inviting the next step. */
+.sim-focus {
+  animation: sim-glow 0.8s ease-in-out infinite alternate;
+}

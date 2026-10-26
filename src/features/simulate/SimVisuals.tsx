@@ -167,6 +167,48 @@ function MeterPill({
   )
 }
 
+// Taken down: greyed out and crossed, so it reads as "off" from a distance.
+function DownMark({ box, palette }: { box: Box; palette: BoardPalette }) {
+  const { x, y, w, h } = box
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        rx={12}
+        fill={palette.paper}
+        opacity={0.7}
+      />
+      <path
+        d={`M${x + 12},${y + 12} L${x + w - 12},${y + h - 12} M${x + w - 12},${y + 12} L${x + 12},${y + h - 12}`}
+        stroke={palette.ink.red}
+        strokeWidth={5}
+        strokeLinecap="round"
+      />
+    </g>
+  )
+}
+
+// Step mode stopped here: the "you are here" of the explanation.
+function FocusRing({ box, palette }: { box: Box; palette: BoardPalette }) {
+  const { x, y, w, h } = box
+  return (
+    <rect
+      className="sim-focus"
+      x={x - 10}
+      y={y - 10}
+      width={w + 20}
+      height={h + 20}
+      rx={16}
+      fill="none"
+      stroke={palette.ink.blue}
+      strokeWidth={4}
+    />
+  )
+}
+
 export function Meters({
   engine,
   palette,
@@ -177,10 +219,17 @@ export function Meters({
   return [...engine.graph.nodes.values()].map((node) => {
     const state = engine.states.get(node.id)
     if (!state) return null
-    const text = meterText(node, state)
-    const load = loadOf(node, state)
+    const isDown = engine.down.has(node.id)
+    const text = isDown
+      ? 'DOWN'
+      : meterText(node, state, engine.primaryVersion(node.id))
+    const load = isDown ? null : loadOf(node, state)
     return (
       <g key={node.id}>
+        {isDown && <DownMark box={node.box} palette={palette} />}
+        {engine.focus === node.id && (
+          <FocusRing box={node.box} palette={palette} />
+        )}
         {load !== null && (
           <LoadMarks box={node.box} load={load} palette={palette} />
         )}

@@ -4,39 +4,10 @@ import { Popover } from '../../shared/ui/Popover'
 import { commitCurrentPage } from '../engine/boardActions'
 import { useEngineStore } from '../engine/engineStore'
 import { findPage } from '../engine/model/documentOps'
-import type { BlockShape, SimSettings } from '../engine/model/types'
+import type { BlockShape } from '../engine/model/types'
 import { useSessionStore } from '../engine/sessionStore'
 import { getNodeConfig } from './behaviours/nodeConfig'
-import type { BehaviourKind, NodeConfig } from './simTypes'
-
-type Field = {
-  key: keyof SimSettings & keyof NodeConfig
-  label: string
-  choices: number[]
-  format?: (value: number) => string
-}
-
-// Few, round numbers: picking "10/s" on camera beats typing into a field.
-const FIELDS: Partial<Record<BehaviourKind, Field[]>> = {
-  limiter: [
-    { key: 'rate', label: 'Allowed per second', choices: [2, 5, 10, 20] },
-  ],
-  cache: [
-    {
-      key: 'hitRate',
-      label: 'Hit rate',
-      choices: [0.5, 0.7, 0.9, 0.99],
-      format: (v) => `${Math.round(v * 100)}%`,
-    },
-  ],
-  queue: [
-    { key: 'size', label: 'Holds', choices: [5, 12, 25, 50] },
-    { key: 'rate', label: 'Drains per second', choices: [1, 2, 5, 10] },
-  ],
-  service: [
-    { key: 'capacity', label: 'Works on at once', choices: [1, 2, 4, 8] },
-  ],
-}
+import { FIELDS, type Field } from './simFields'
 
 function setSim(ids: string[], key: Field['key'], value: number): void {
   commitCurrentPage((page) => {
@@ -50,7 +21,7 @@ function setSim(ids: string[], key: Field['key'], value: number): void {
 }
 
 function FieldChips({ field, blocks }: { field: Field; blocks: BlockShape[] }) {
-  const values = new Set(blocks.map((b) => getNodeConfig(b)[field.key]))
+  const values = new Set(blocks.map((b) => Number(getNodeConfig(b)[field.key])))
   const current = values.size === 1 ? [...values][0] : undefined
   return (
     <>
