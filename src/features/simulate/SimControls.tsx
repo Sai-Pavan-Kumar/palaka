@@ -1,4 +1,4 @@
-import { Pause, Play, RotateCcw, X } from 'lucide-react'
+import { GripVertical, Pause, Play, RotateCcw, X } from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
 import {
   MAX_TRAFFIC,
@@ -10,6 +10,25 @@ import {
   useSimStore,
 } from './simStore'
 import './simulate.css'
+import { useDraggableBar } from './useDraggableBar'
+
+function TrafficSlider({ traffic }: { traffic: number }) {
+  return (
+    <label className="sim-controls__traffic">
+      <span className="sim-controls__label">Traffic</span>
+      <input
+        type="range"
+        min={MIN_TRAFFIC}
+        max={MAX_TRAFFIC}
+        step={1}
+        value={traffic}
+        onChange={(event) => setTraffic(Number(event.target.value))}
+        aria-valuetext={`${traffic} times normal traffic`}
+      />
+      <span className="sim-controls__value">{traffic}×</span>
+    </label>
+  )
+}
 
 // Sits outside the recorded board: the audience sees traffic rise, not
 // the slider that raised it.
@@ -17,32 +36,30 @@ export function SimControls() {
   const active = useSimStore((s) => s.active)
   const playing = useSimStore((s) => s.playing)
   const traffic = useSimStore((s) => s.traffic)
+  const { style, handleProps } = useDraggableBar()
   if (!active) return null
   return (
     <div
       className="sim-controls floating-bar chrome"
       role="toolbar"
       aria-label="Simulation"
+      style={style}
     >
+      <span
+        className="sim-controls__grip"
+        title="Drag to move"
+        aria-hidden
+        {...handleProps}
+      >
+        <GripVertical size={18} />
+      </span>
       <IconButton
         icon={playing ? Pause : Play}
         label={playing ? 'Pause traffic' : 'Play traffic'}
         isActive={playing}
         onClick={togglePlaying}
       />
-      <label className="sim-controls__traffic">
-        <span className="sim-controls__label">Traffic</span>
-        <input
-          type="range"
-          min={MIN_TRAFFIC}
-          max={MAX_TRAFFIC}
-          step={1}
-          value={traffic}
-          onChange={(event) => setTraffic(Number(event.target.value))}
-          aria-valuetext={`${traffic} times normal traffic`}
-        />
-        <span className="sim-controls__value">{traffic}×</span>
-      </label>
+      <TrafficSlider traffic={traffic} />
       <IconButton
         icon={RotateCcw}
         label="Restart run"

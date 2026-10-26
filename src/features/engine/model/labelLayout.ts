@@ -1,6 +1,11 @@
 import { FONT_SIZE, LINE_HEIGHT } from './boardSpec'
 import { getLineMidpoint } from './lineRouting'
-import { getBaselineOffset } from './textMetrics'
+import {
+  getBaselineOffset,
+  getFontCss,
+  getTextLines,
+  measureLine,
+} from './textMetrics'
 import type { BlockShape, FontKey, LineShape, SizeKey } from './types'
 
 // Labels reuse the text metrics, so the SVG label and the textarea that
@@ -19,6 +24,11 @@ export type LabelLayout = LabelFont & {
 const BLOCK_LABEL_MIN_PX = 20
 const BLOCK_LABEL_MAX_PX = 34
 const BLOCK_LABEL_SHARE = 0.16
+// A long name ("EC2 Image Builder") shrinks to fit the block instead of
+// spilling over its outline, down to this size; past it, the teacher
+// widens the block.
+const BLOCK_LABEL_FIT_MIN_PX = 13
+const BLOCK_LABEL_PAD = 10
 const BLOCK_ICON_SHARE = 0.4
 const BLOCK_ICON_MAX = 64
 // Icon centre and label line, as a share of the block height.
@@ -43,10 +53,25 @@ export function getBlockIconBox(block: BlockShape) {
   }
 }
 
+function fitLabelPx(label: string, width: number, fontPx: number): number {
+  const room = width - BLOCK_LABEL_PAD * 2
+  const widest = Math.max(
+    ...getTextLines(label).map((line) =>
+      measureLine(line, getFontCss(fontFor('brand', fontPx))),
+    ),
+  )
+  if (widest <= room || widest === 0) return fontPx
+  return Math.max(BLOCK_LABEL_FIT_MIN_PX, (fontPx * room) / widest)
+}
+
 export function getBlockLabelLayout(block: BlockShape): LabelLayout {
-  const fontPx = Math.min(
-    BLOCK_LABEL_MAX_PX,
-    Math.max(BLOCK_LABEL_MIN_PX, block.h * BLOCK_LABEL_SHARE),
+  const fontPx = fitLabelPx(
+    block.label,
+    block.w,
+    Math.min(
+      BLOCK_LABEL_MAX_PX,
+      Math.max(BLOCK_LABEL_MIN_PX, block.h * BLOCK_LABEL_SHARE),
+    ),
   )
   const lineBox = fontPx * LINE_HEIGHT
   return {

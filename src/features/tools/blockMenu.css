@@ -81,3 +81,44 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* Fold header reads like the other group labels, but is a 44px button. */
+.block-menu__fold {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.block-menu__fold svg {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.block-menu__fold svg.is-open {
+  transform: rotate(90deg);
+}
+
+.block-menu__count {
+  margin-left: auto;
+  color: var(--color-text-secondary);
+  letter-spacing: 0;
+}
+
+.block-menu__subhead {
+  padding: var(--space-2) var(--space-3) 0;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}

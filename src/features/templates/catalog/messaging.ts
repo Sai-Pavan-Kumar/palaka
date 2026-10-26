@@ -1,0 +1,140 @@
+import { defineTemplate as t } from '../defineTemplate'
+
+const C = 'Messaging'
+
+export const MESSAGING = [
+  t(
+    C,
+    'queue-workers',
+    'Queue + workers',
+    'The API answers at once; workers drain the backlog',
+    [
+      ['user', 'user', 0, 1],
+      ['api', 'service', 1, 1, { label: 'API' }],
+      ['queue', 'queue', 2, 1, { label: 'Job queue' }],
+      ['w1', 'worker', 3, 0, { label: 'Worker 1' }],
+      ['w2', 'worker', 3, 2, { label: 'Worker 2' }],
+    ],
+    [
+      ['user', 'api'],
+      ['api', 'queue'],
+      ['queue', 'w1'],
+      ['queue', 'w2'],
+    ],
+  ),
+  t(
+    C,
+    'pub-sub',
+    'Pub/Sub fan-out',
+    'One event, a copy for every subscriber',
+    [
+      ['user', 'user', 0, 1],
+      ['orders', 'service', 1, 1, { label: 'Order service' }],
+      ['topic', 'pubSub', 2, 1, { label: 'order.placed' }],
+      ['email', 'email', 3, 0, { label: 'Email' }],
+      ['sms', 'sms', 3, 1, { label: 'SMS' }],
+      ['analytics', 'analytics', 3, 2, { label: 'Analytics' }],
+    ],
+    [
+      ['user', 'orders'],
+      ['orders', 'topic'],
+      ['topic', 'email'],
+      ['topic', 'sms'],
+      ['topic', 'analytics'],
+    ],
+  ),
+  t(
+    C,
+    'kafka-stream',
+    'Event streaming (Kafka)',
+    'Producers write events, consumers read at their own pace',
+    [
+      ['p1', 'service', 0, 0, { label: 'Producer A' }],
+      ['p2', 'service', 0, 2, { label: 'Producer B' }],
+      [
+        'kafka',
+        'stream',
+        1,
+        1,
+        { label: 'Kafka', icon: 'si:apachekafka', sim: { rate: 4 } },
+      ],
+      ['c1', 'worker', 2, 0, { label: 'Consumer 1' }],
+      ['c2', 'worker', 2, 2, { label: 'Consumer 2' }],
+    ],
+    [
+      ['p1', 'kafka'],
+      ['p2', 'kafka'],
+      ['kafka', 'c1'],
+      ['kafka', 'c2'],
+    ],
+  ),
+  t(
+    C,
+    'sqs-lambda',
+    'SQS + Lambda',
+    'Messages wait in SQS, Lambda processes them',
+    [
+      ['user', 'user', 0, 1],
+      ['api', 'service', 1, 1, { label: 'API' }],
+      [
+        'sqs',
+        'queue',
+        2,
+        1,
+        { label: 'SQS', icon: 'aws:Amazon-Simple-Queue-Service' },
+      ],
+      ['fn', 'function', 3, 1, { label: 'Lambda', icon: 'aws:AWS-Lambda' }],
+    ],
+    [
+      ['user', 'api'],
+      ['api', 'sqs'],
+      ['sqs', 'fn'],
+    ],
+  ),
+  t(
+    C,
+    'back-pressure',
+    'Back-pressure',
+    'A small queue fills up and starts refusing work',
+    [
+      ['user', 'user', 0, 1],
+      ['api', 'service', 1, 1, { label: 'API' }],
+      [
+        'queue',
+        'queue',
+        2,
+        1,
+        { label: 'Small queue', sim: { size: 5, rate: 1 } },
+      ],
+      ['worker', 'worker', 3, 1, { label: 'Slow worker' }],
+    ],
+    [
+      ['user', 'api'],
+      ['api', 'queue'],
+      ['queue', 'worker'],
+    ],
+  ),
+  t(
+    C,
+    'notifications',
+    'Notification system',
+    'One send request, delivered on every channel',
+    [
+      ['svc', 'service', 0, 1, { label: 'App service' }],
+      ['queue', 'queue', 1, 1, { label: 'Notify queue' }],
+      ['worker', 'worker', 2, 1, { label: 'Dispatcher' }],
+      ['bus', 'pubSub', 3, 1, { label: 'Channels' }],
+      ['email', 'email', 4, 0],
+      ['sms', 'sms', 4, 1],
+      ['push', 'notification', 4, 2, { label: 'Push' }],
+    ],
+    [
+      ['svc', 'queue'],
+      ['queue', 'worker'],
+      ['worker', 'bus'],
+      ['bus', 'email'],
+      ['bus', 'sms'],
+      ['bus', 'push'],
+    ],
+  ),
+]

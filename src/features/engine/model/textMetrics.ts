@@ -28,7 +28,7 @@ function getContext(): CanvasRenderingContext2D | null {
   return context
 }
 
-function measureLine(line: string, fontCss: string): number {
+export function measureLine(line: string, fontCss: string): number {
   const key = `${fontCss}|${line}`
   let width = widthCache.get(key)
   if (width === undefined) {
