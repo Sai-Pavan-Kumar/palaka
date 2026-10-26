@@ -1,4 +1,5 @@
 import { editCurrentPage, getCurrentPage, insertShape } from '../boardActions'
+import { BUILDING_SIZE, getBuilding } from '../model/buildings'
 import { useEngineStore } from '../engineStore'
 import { DEFAULT_BLOCK_SIZE, MIN_BLOCK_SIZE } from '../model/blockCatalog'
 import { bindingAt, findBindTarget } from '../model/connectors'
@@ -78,7 +79,7 @@ function updateLive<S extends BoxShape | LineShape>(
 // click drops one of the default size centred on the click.
 function createBoxTool(
   make: (box: Box, style: ShapeStyle) => BoxShape,
-  defaultSize: { w: number; h: number },
+  defaultSize: { w: number; h: number } | (() => { w: number; h: number }),
   minSize = { w: 1, h: 1 },
 ): ToolHandler {
   return {
@@ -98,7 +99,8 @@ function createBoxTool(
         },
         end: () => {
           if (isClick(start, end)) {
-            const { w, h } = defaultSize
+            const { w, h } =
+              typeof defaultSize === 'function' ? defaultSize() : defaultSize
             updateLive<BoxShape>(shape.id, (s) => ({
               ...s,
               x: start.x - w / 2,
@@ -137,7 +139,10 @@ export const blockTool = createBoxTool(
       ? { ...block, icon: blockIcon.id, label: blockIcon.label }
       : block
   },
-  DEFAULT_BLOCK_SIZE,
+  () =>
+    getBuilding(useSessionStore.getState().blockIcon?.id)
+      ? BUILDING_SIZE
+      : DEFAULT_BLOCK_SIZE,
   MIN_BLOCK_SIZE,
 )
 

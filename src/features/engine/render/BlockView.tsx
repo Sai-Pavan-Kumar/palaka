@@ -5,6 +5,8 @@ import {
   getLabelBaseline,
 } from '../model/labelLayout'
 import type { BlockShape } from '../model/types'
+import { BuildingView } from '../../buildings/BuildingView'
+import { isBuildingBlock } from '../model/buildings'
 import { BlockEffectView } from './BlockEffectView'
 import { BLOCK_ICONS } from './blockIcons'
 import { LibraryIconView } from '../../icons/LibraryIconView'
@@ -86,6 +88,9 @@ export function BlockView({
   shape: BlockShape
   hideLabel?: boolean
 }) {
+  if (isBuildingBlock(shape)) {
+    return <BuildingView shape={shape} hideLabel={hideLabel} />
+  }
   return (
     <>
       <GeoView shape={shape} />

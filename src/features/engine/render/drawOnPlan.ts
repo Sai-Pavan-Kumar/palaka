@@ -1,5 +1,6 @@
 import { SLOWEST_PACE } from '../../animate/motion'
 import { getPenWidth, getStrokeWidth } from '../model/boardSpec'
+import { isBuildingBlock } from '../model/buildings'
 import { getOutline } from '../model/geoOutline'
 import { getShapeBounds } from '../model/geometry'
 import { getLineSamplePoints } from '../model/lineRouting'
@@ -40,6 +41,12 @@ function polyline(points: Point[]): { d: string; length: number } {
 
 // The centre line in the order the ink was laid down: a pen stroke follows
 // its own points, an arrow goes start → tip → head, an outline goes round.
+function outlinePlan(shape: Parameters<typeof getOutline>[0]): DrawPlan {
+  const outline = getOutline(shape)
+  const closed = polyline([...outline, outline[0]])
+  return { kind: 'trace', ...closed, width: getStrokeWidth(shape) }
+}
+
 export function getDrawPlan(shape: Shape): DrawPlan | null {
   switch (shape.type) {
     case 'stroke': {
@@ -63,13 +70,12 @@ export function getDrawPlan(shape: Shape): DrawPlan | null {
         width,
       }
     }
-    case 'geo':
     case 'block':
-    case 'table': {
-      const outline = getOutline(shape)
-      const closed = polyline([...outline, outline[0]])
-      return { kind: 'trace', ...closed, width: getStrokeWidth(shape) }
-    }
+      if (isBuildingBlock(shape)) return null
+      return outlinePlan(shape)
+    case 'geo':
+    case 'table':
+      return outlinePlan(shape)
     case 'text': {
       const bounds = getShapeBounds(shape)
       return {

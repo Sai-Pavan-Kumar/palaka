@@ -1,4 +1,5 @@
 import { FONT_SIZE, LINE_HEIGHT } from './boardSpec'
+import { getBuilding, getBuildingFrame } from './buildings'
 import { getLineMidpoint } from './lineRouting'
 import {
   getBaselineOffset,
@@ -19,6 +20,10 @@ export type LabelLayout = LabelFont & {
   // Room the editor gets; the drawn label is centred on centreX anyway.
   width: number
   fontPx: number
+  // Building signs only: the name split for the board, and the board's
+  // height once it grew to hold two lines.
+  lines?: string[]
+  signH?: number
 }
 
 const BLOCK_LABEL_MIN_PX = 20
@@ -64,7 +69,57 @@ function fitLabelPx(label: string, width: number, fontPx: number): number {
   return Math.max(BLOCK_LABEL_FIT_MIN_PX, (fontPx * room) / widest)
 }
 
+// Below this a one-line sign gets hard to read on video, so the name
+// moves to two lines instead of shrinking further.
+const SIGN_TWO_LINES_BELOW_PX = 16
+const SIGN_PAD = 8
+
+// Split at the space that makes the two lines most even:
+// "Cognizant Technology" / "Solutions" beats "Cognizant" / "Technology…".
+function splitInTwo(label: string): string[] {
+  const words = label.trim().split(/\s+/)
+  let best = [label]
+  let bestGap = Infinity
+  for (let i = 1; i < words.length; i++) {
+    const a = words.slice(0, i).join(' ')
+    const b = words.slice(i).join(' ')
+    const gap = Math.abs(a.length - b.length)
+    if (gap < bestGap) {
+      bestGap = gap
+      best = [a, b]
+    }
+  }
+  return best
+}
+
+// A building's name sits on its sign board, sized to the board.
+function getBuildingLabelLayout(block: BlockShape): LabelLayout | null {
+  const spec = getBuilding(block.icon)
+  if (!spec) return null
+  const { plate } = getBuildingFrame(block, spec)
+  const maxPx = Math.min(30, plate.h * 0.58)
+  let lines = getTextLines(block.label)
+  let fontPx = fitLabelPx(block.label, plate.w, maxPx)
+  if (fontPx < SIGN_TWO_LINES_BELOW_PX && lines.length === 1) {
+    lines = splitInTwo(block.label)
+    fontPx = fitLabelPx(lines.join('\n'), plate.w, maxPx)
+  }
+  const textH = lines.length * fontPx * LINE_HEIGHT
+  const signH = Math.max(plate.h, textH + SIGN_PAD)
+  return {
+    ...fontFor('brand', fontPx),
+    centreX: plate.x + plate.w / 2,
+    top: plate.y + (signH - textH) / 2,
+    width: plate.w,
+    fontPx,
+    lines,
+    signH,
+  }
+}
+
 export function getBlockLabelLayout(block: BlockShape): LabelLayout {
+  const onSign = getBuildingLabelLayout(block)
+  if (onSign) return onSign
   const fontPx = fitLabelPx(
     block.label,
     block.w,

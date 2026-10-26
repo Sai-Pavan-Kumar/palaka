@@ -29,3 +29,13 @@ describe('diagram templates', () => {
     })
   }
 })
+
+describe('buildings', () => {
+  it('every building has a drawable emblem and a unique id', async () => {
+    const { BUILDINGS } = await import('../engine/model/buildings')
+    const { EMBLEMS } = await import('../buildings/emblems')
+    const ids = BUILDINGS.map((b) => b.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const b of BUILDINGS) expect(EMBLEMS[b.emblem]).toBeTruthy()
+  })
+})

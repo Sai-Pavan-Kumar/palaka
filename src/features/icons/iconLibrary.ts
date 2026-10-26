@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { BUILDING_ICONS } from '../buildings/buildingIcons'
 import type { AwsIcon, LibraryIcon, RealWorldIcon } from './iconTypes'
 
 type IconLibraryState = {
@@ -23,6 +24,7 @@ export function loadIconLibrary(): Promise<void> {
     import('./generated/awsIcons'),
   ]).then(([realWorld, brands, aws]) => {
     const list: LibraryIcon[] = [
+      ...BUILDING_ICONS,
       ...realWorld.REAL_WORLD_ICONS,
       ...brands.BRAND_ICONS,
       ...aws.AWS_ICONS,

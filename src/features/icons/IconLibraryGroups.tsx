@@ -16,10 +16,11 @@ const MENU_INK = 'currentColor'
 
 // Three families, each folded away until opened or searched, so the menu
 // opens on the familiar blocks instead of 840 icons.
-const FAMILIES = ['Real world', 'Brands', 'AWS'] as const
+const FAMILIES = ['Buildings', 'Real world', 'Brands', 'AWS'] as const
 type Family = (typeof FAMILIES)[number]
 
 function familyOf(icon: LibraryIcon): Family {
+  if (icon.id.startsWith('bld:')) return 'Buildings'
   if (isRealWorldIcon(icon)) return 'Real world'
   return isAwsIcon(icon) ? 'AWS' : 'Brands'
 }
@@ -135,7 +136,7 @@ export function IconLibraryGroups({
   }, [list, query])
 
   if (!isLoaded) {
-    return <p className="block-menu__empty">Loading 840 icons…</p>
+    return <p className="block-menu__empty">Loading 1,000+ icons…</p>
   }
   if (families.length === 0) {
     return hasOtherMatches ? null : (

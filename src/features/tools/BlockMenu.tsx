@@ -85,7 +85,7 @@ function BlockSearch({
     <input
       className="block-menu__search"
       type="search"
-      placeholder="Search 900+ icons (redis, kafka, s3…)"
+      placeholder="Search 1,000+ icons (redis, kafka, s3…)"
       aria-label="Search blocks"
       autoFocus
       value={query}
