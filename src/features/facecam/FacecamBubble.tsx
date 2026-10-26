@@ -1,6 +1,7 @@
 import { useEffect, useRef, type PointerEvent } from 'react'
 import {
   Circle,
+  CircleDashed,
   FlipHorizontal,
   Maximize2,
   Sparkles,
@@ -54,6 +55,12 @@ function SparkleEffectButton({
   )
 }
 
+const SHAPE_LABELS: Record<FacecamShape, string> = {
+  circle: 'Circle',
+  rounded: 'Squircle',
+  feather: 'Feather',
+}
+
 type ShapeSizeButtonsProps = {
   shape: FacecamShape
   cycleShape: () => void
@@ -70,10 +77,12 @@ function ShapeSizeButtons({
       <button
         type="button"
         className="facecam-btn"
-        title="Toggle shape (Circle/Square)"
+        title={`Shape: ${SHAPE_LABELS[shape]} (Click to switch)`}
         onClick={cycleShape}
       >
-        {shape === 'circle' ? <Square size={12} /> : <Circle size={12} />}
+        {shape === 'circle' && <Circle size={12} />}
+        {shape === 'rounded' && <Square size={12} />}
+        {shape === 'feather' && <CircleDashed size={12} />}
       </button>
       <button
         type="button"

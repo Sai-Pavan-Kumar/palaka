@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { describeCameraError, useFacecamStore } from './facecamStore'
+import {
+  describeCameraError,
+  effectForShape,
+  useFacecamStore,
+} from './facecamStore'
 import { useUiStore } from '../shell/uiStore'
 
 describe('facecamStore', () => {
@@ -17,7 +21,7 @@ describe('facecamStore', () => {
     expect(useFacecamStore.getState().size).toBe('m')
   })
 
-  it('cycles shape between circle and rounded', () => {
+  it('cycles shape circle -> rounded -> feather -> circle', () => {
     const store = useFacecamStore.getState()
     expect(store.shape).toBe('circle')
 
@@ -25,7 +29,36 @@ describe('facecamStore', () => {
     expect(useFacecamStore.getState().shape).toBe('rounded')
 
     store.cycleShape()
+    expect(useFacecamStore.getState().shape).toBe('feather')
+
+    store.cycleShape()
     expect(useFacecamStore.getState().shape).toBe('circle')
+  })
+
+  it('drops the rim when switching to feather and skips it in the cycle', () => {
+    useFacecamStore.setState({ shape: 'rounded', effect: 'studio-rim' })
+    useFacecamStore.getState().cycleShape()
+    expect(useFacecamStore.getState().effect).toBe('none')
+
+    useFacecamStore.getState().cycleEffect()
+    expect(useFacecamStore.getState().effect).toBe('pulse')
+    useFacecamStore.getState().cycleEffect()
+    expect(useFacecamStore.getState().effect).toBe('subscribe-badge')
+    useFacecamStore.getState().cycleEffect()
+    expect(useFacecamStore.getState().effect).toBe('none')
+    useFacecamStore.setState({ shape: 'circle', effect: 'none' })
+  })
+
+  it.each([
+    ['circle', 'studio-rim', 'studio-rim'],
+    ['circle', 'spinning-border', 'studio-rim'],
+    ['rounded', 'pulse', 'pulse'],
+    ['feather', 'studio-rim', 'none'],
+    ['feather', 'spinning-border', 'none'],
+    ['feather', 'pulse', 'pulse'],
+    ['feather', 'subscribe-badge', 'subscribe-badge'],
+  ] as const)('%s keeps %s as %s', (shape, effect, expected) => {
+    expect(effectForShape(effect, shape)).toBe(expected)
   })
 
   it('toggles mirrored and updates position', () => {

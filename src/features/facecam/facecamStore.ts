@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { useUiStore } from '../shell/uiStore'
 
-export type FacecamShape = 'circle' | 'rounded'
+export type FacecamShape = 'circle' | 'rounded' | 'feather'
 export type FacecamSize = 's' | 'm' | 'l'
 export type FacecamEffect =
   'none' | 'studio-rim' | 'pulse' | 'subscribe-badge' | 'spinning-border'
@@ -84,13 +84,41 @@ async function startMediaCamera(
   }
 }
 
-function nextEffect(current: FacecamEffect): FacecamEffect {
-  const effects: FacecamEffect[] = [
-    'none',
-    'studio-rim',
-    'pulse',
-    'subscribe-badge',
-  ]
+const SHAPE_ORDER: FacecamShape[] = ['circle', 'rounded', 'feather']
+
+// A feathered cam has no hard edge, so a rim light would draw a ring around nothing.
+const EFFECTS_BY_SHAPE: Record<FacecamShape, FacecamEffect[]> = {
+  circle: ['none', 'studio-rim', 'pulse', 'subscribe-badge'],
+  rounded: ['none', 'studio-rim', 'pulse', 'subscribe-badge'],
+  feather: ['none', 'pulse', 'subscribe-badge'],
+}
+
+export function allowedEffects(shape: FacecamShape): FacecamEffect[] {
+  return EFFECTS_BY_SHAPE[shape]
+}
+
+export function effectForShape(
+  effect: FacecamEffect,
+  shape: FacecamShape,
+): FacecamEffect {
+  const normalized = effect === 'spinning-border' ? 'studio-rim' : effect
+  return allowedEffects(shape).includes(normalized) ? normalized : 'none'
+}
+
+function nextShape(current: FacecamShape): FacecamShape {
+  return SHAPE_ORDER[(SHAPE_ORDER.indexOf(current) + 1) % SHAPE_ORDER.length]
+}
+
+function withNextShape(s: FacecamState): Partial<FacecamState> {
+  const shape = nextShape(s.shape)
+  return { shape, effect: effectForShape(s.effect, shape) }
+}
+
+function nextEffect(
+  current: FacecamEffect,
+  shape: FacecamShape,
+): FacecamEffect {
+  const effects = allowedEffects(shape)
   const currentNormalized =
     current === 'spinning-border' ? 'studio-rim' : current
   const nextIdx = (effects.indexOf(currentNormalized) + 1) % effects.length
@@ -138,8 +166,9 @@ export const useFacecamStore = create<FacecamState>((set, get) => ({
         Math.max(MIN_FACECAM_SIZE, Math.round(size)),
       ),
     }),
-  cycleEffect: () => set((s) => ({ effect: nextEffect(s.effect) })),
-  setEffect: (effect) => set({ effect }),
+  cycleEffect: () => set((s) => ({ effect: nextEffect(s.effect, s.shape) })),
+  setEffect: (effect) =>
+    set((s) => ({ effect: effectForShape(effect, s.shape) })),
   setBannerText: (bannerText) => set({ bannerText }),
   toggleBadgePlatform: () =>
     set((s) => ({
@@ -147,8 +176,7 @@ export const useFacecamStore = create<FacecamState>((set, get) => ({
     })),
   setBadgePlatform: (badgePlatform) => set({ badgePlatform }),
   toggleMirrored: () => set((s) => ({ mirrored: !s.mirrored })),
-  cycleShape: () =>
-    set((s) => ({ shape: s.shape === 'circle' ? 'rounded' : 'circle' })),
+  cycleShape: () => set((s) => withNextShape(s)),
   cycleSize: () => set((s) => nextPresetSize(s.size)),
   closeCamera: () => {
     const { stream } = get()

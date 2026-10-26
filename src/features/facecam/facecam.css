@@ -17,6 +17,14 @@
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   isolation: isolate;
+  animation: facecam-appear 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes facecam-appear {
+  from {
+    opacity: 0;
+    transform: translateZ(0) scale(0.94);
+  }
 }
 
 .facecam-bubble:active {
@@ -29,6 +37,33 @@
 
 .facecam-bubble.is-rounded {
   border-radius: 28px;
+}
+
+/* Feather: no frame at all, the face melts into the board like a cut-in shot. */
+.facecam-bubble.is-feather {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.facecam-bubble.is-feather .facecam-video-wrap {
+  background: transparent;
+  -webkit-mask-image: radial-gradient(
+    ellipse 50% 50% at center,
+    #000 52%,
+    rgba(0, 0, 0, 0.55) 74%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 50% 50% at center,
+    #000 52%,
+    rgba(0, 0, 0, 0.55) 74%,
+    transparent 100%
+  );
+}
+
+.facecam-bubble.is-feather .facecam-video-wrap::after {
+  box-shadow: none;
 }
 
 /* Border track for studio rim effect */
@@ -50,14 +85,15 @@
   height: 200%;
   background: conic-gradient(
     from 0deg,
-    rgba(255, 255, 255, 0.15) 0deg,
-    rgba(255, 255, 255, 0.95) 90deg,
-    rgba(245, 183, 0, 0.85) 180deg,
-    rgba(255, 255, 255, 0.95) 270deg,
-    rgba(255, 255, 255, 0.15) 360deg
+    rgba(0, 90, 224, 0.35) 0deg,
+    rgba(255, 255, 255, 1) 40deg,
+    rgba(56, 189, 248, 0.9) 110deg,
+    rgba(0, 90, 224, 0.35) 180deg,
+    rgba(255, 255, 255, 1) 220deg,
+    rgba(56, 189, 248, 0.9) 290deg,
+    rgba(0, 90, 224, 0.35) 360deg
   );
-  animation: facecam-spin 6s linear infinite;
-  filter: blur(0.8px);
+  animation: facecam-spin 8s linear infinite;
 }
 
 @keyframes facecam-spin {
@@ -71,10 +107,10 @@
 
 .facecam-bubble.has-studio-rim,
 .facecam-bubble.has-spinning-border {
+  border-color: transparent;
   box-shadow:
-    0 12px 36px rgba(0, 0, 0, 0.5),
-    0 0 0 2px rgba(255, 255, 255, 0.9),
-    0 0 20px rgba(255, 255, 255, 0.35);
+    0 12px 36px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(56, 189, 248, 0.28);
 }
 
 /* Pulse aura effect: soft breathing studio presenter backlighting */
@@ -86,15 +122,58 @@
   0%,
   100% {
     box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.45),
-      0 0 0 2.5px rgba(0, 90, 224, 0.75),
-      0 0 18px rgba(0, 90, 224, 0.35);
+      0 10px 30px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(56, 189, 248, 0.5),
+      0 0 14px rgba(0, 90, 224, 0.25);
   }
   50% {
     box-shadow:
-      0 14px 42px rgba(0, 0, 0, 0.55),
-      0 0 0 3.5px rgba(56, 189, 248, 0.9),
-      0 0 32px rgba(56, 189, 248, 0.55);
+      0 12px 36px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(56, 189, 248, 0.8),
+      0 0 34px rgba(56, 189, 248, 0.45);
+  }
+}
+
+/* Feather has no edge to light, so the pulse becomes a soft halo behind the fade. */
+.facecam-bubble.is-feather.has-pulse {
+  animation: none;
+}
+
+.facecam-bubble.is-feather.has-pulse::before {
+  content: '';
+  position: absolute;
+  inset: 4%;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    rgba(56, 189, 248, 0.5),
+    rgba(0, 90, 224, 0.18) 70%,
+    transparent
+  );
+  filter: blur(14px);
+  animation: facecam-halo 3.2s ease-in-out infinite;
+}
+
+@keyframes facecam-halo {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .facecam-bubble,
+  .facecam-studio-rim,
+  .facecam-bubble.has-pulse,
+  .facecam-bubble.is-feather.has-pulse::before {
+    animation: none;
   }
 }
 
