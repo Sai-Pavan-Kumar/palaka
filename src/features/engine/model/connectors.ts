@@ -1,4 +1,6 @@
+import { elbowEnds, type EndBox } from './elbowEnds'
 import { getOutline } from './geoOutline'
+import { getLineControlPoint } from './lineRouting'
 import { getTableBox } from './tableBox'
 import { getColumnAnchor, getTableLayout, getTableView } from './tableLayout'
 import type { Binding, LineShape, Page, Point, Shape } from './types'
@@ -154,10 +156,49 @@ export function bindingAt(target: BindableShape, point: Point): Binding {
   return { ...binding, anchor: snapped ?? { x: clamp(nx), y: clamp(ny) } }
 }
 
+// A free end, or one pinned to a spot or a column, keeps its own point;
+// only a plain "glued to this block" end can choose which side it uses.
+function elbowBox(
+  shape: BindableShape | null,
+  binding: Binding | undefined,
+  point: Point,
+): EndBox {
+  if (shape && !binding?.anchor && !binding?.column) return boxOf(shape)
+  return { x: point.x, y: point.y, w: 0, h: 0 }
+}
+
+// A curve bends toward its control point, so each end aims at that point
+// (not the far block) and the head enters along the curve. Two passes
+// settle it: the control point moves a little once the ends move.
+function curvedEnds(
+  line: LineShape,
+  from: BindableShape | null,
+  to: BindableShape | null,
+  start: Point,
+  end: Point,
+): LineShape {
+  let routed = { ...line, x1: start.x, y1: start.y, x2: end.x, y2: end.y }
+  for (let pass = 0; pass < 2; pass++) {
+    const cp = getLineControlPoint(routed)
+    const s = from ? attachPoint(from, cp, line.startBinding) : start
+    const e = to ? attachPoint(to, cp, line.endBinding) : end
+    routed = { ...routed, x1: s.x, y1: s.y, x2: e.x, y2: e.y }
+  }
+  return routed
+}
+
 export function routeConnector(page: Page, line: LineShape): LineShape {
   const from = getTarget(page, line.startBinding)
   const to = getTarget(page, line.endBinding)
   if (!from && !to) return line
+  const routing = line.routing ?? 'straight'
+  if (routing === 'curved') {
+    const start = from
+      ? aimOf(from, line.startBinding)
+      : { x: line.x1, y: line.y1 }
+    const end = to ? aimOf(to, line.endBinding) : { x: line.x2, y: line.y2 }
+    return curvedEnds(line, from, to, start, end)
+  }
   const startRef = to ? aimOf(to, line.endBinding) : { x: line.x2, y: line.y2 }
   const endRef = from
     ? aimOf(from, line.startBinding)
@@ -168,7 +209,19 @@ export function routeConnector(page: Page, line: LineShape): LineShape {
   const end = to
     ? attachPoint(to, endRef, line.endBinding)
     : { x: line.x2, y: line.y2 }
-  return { ...line, x1: start.x, y1: start.y, x2: end.x, y2: end.y }
+  if (routing === 'elbow') {
+    const sides = elbowEnds(
+      elbowBox(from, line.startBinding, start),
+      elbowBox(to, line.endBinding, end),
+      ATTACH_GAP,
+    )
+    if (sides) {
+      const { start: s, end: e, axis } = sides
+      return { ...line, x1: s.x, y1: s.y, x2: e.x, y2: e.y, elbowAxis: axis }
+    }
+  }
+  const { elbowAxis: _axis, ...plain } = line
+  return { ...plain, x1: start.x, y1: start.y, x2: end.x, y2: end.y }
 }
 
 function isBoundTo(line: LineShape, ids: Set<string>): boolean {

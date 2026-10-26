@@ -89,6 +89,9 @@ export type LineShape = ShapeBase & {
   y2: number
   arrowhead: boolean
   routing?: LineRouting
+  // Elbow only: which way the first leg runs. Set when both ends are glued,
+  // so the arrow enters the facing side; missing = the longer axis first.
+  elbowAxis?: 'h' | 'v'
   size: SizeKey
   dash: DashStyle
   startBinding?: Binding
@@ -190,6 +193,8 @@ export type BlockShape = ShapeBase & {
   fill: FillStyle
   dash: DashStyle
   effect?: BlockEffect
+  // Library icon ("aws:…", "si:…") drawn instead of the kind's line icon.
+  icon?: string
   // Simulation numbers the teacher changed. Missing = the kind's default.
   sim?: SimSettings
 }

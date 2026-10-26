@@ -130,7 +130,13 @@ export function createGeoTool(geo: GeoKind): ToolHandler {
 // The kind is read on each press, so picking another block in the catalog
 // changes what the next click drops.
 export const blockTool = createBoxTool(
-  (box, style) => createBlock(useSessionStore.getState().blockKind, box, style),
+  (box, style) => {
+    const { blockKind, blockIcon } = useSessionStore.getState()
+    const block = createBlock(blockKind, box, style)
+    return blockIcon
+      ? { ...block, icon: blockIcon.id, label: blockIcon.label }
+      : block
+  },
   DEFAULT_BLOCK_SIZE,
   MIN_BLOCK_SIZE,
 )

@@ -7,6 +7,8 @@ import {
 import type { BlockShape } from '../model/types'
 import { BlockEffectView } from './BlockEffectView'
 import { BLOCK_ICONS } from './blockIcons'
+import { LibraryIconView } from '../../icons/LibraryIconView'
+import { useLibraryIcon } from '../../icons/useLibraryIcon'
 import { GeoView } from './GeoLineViews'
 import { useBoardPalette } from './paletteContext'
 
@@ -26,19 +28,11 @@ export function BlockContents({
   const palette = useBoardPalette()
   const color =
     shape.fill === 'solid' ? palette.onSolid : palette.ink[shape.color]
-  const Icon = BLOCK_ICONS[shape.kind]
   const icon = getBlockIconBox(shape)
   const label = getBlockLabelLayout(shape)
   return (
     <>
-      <Icon
-        x={icon.x}
-        y={icon.y}
-        size={icon.size}
-        color={color}
-        strokeWidth={ICON_STROKE}
-        aria-hidden
-      />
+      <BlockIcon shape={shape} box={icon} color={color} />
       {!hideLabel && shape.label && (
         <text
           x={label.centreX}
@@ -54,6 +48,34 @@ export function BlockContents({
         </text>
       )}
     </>
+  )
+}
+
+// A library icon once its pack has loaded; the kind's line icon until then
+// (and for blocks that never picked one).
+function BlockIcon({
+  shape,
+  box,
+  color,
+}: {
+  shape: BlockShape
+  box: { x: number; y: number; size: number }
+  color: string
+}) {
+  const libraryIcon = useLibraryIcon(shape.icon)
+  if (libraryIcon && shape.icon) {
+    return <LibraryIconView id={shape.icon} box={box} />
+  }
+  const Icon = BLOCK_ICONS[shape.kind]
+  return (
+    <Icon
+      x={box.x}
+      y={box.y}
+      size={box.size}
+      color={color}
+      strokeWidth={ICON_STROKE}
+      aria-hidden
+    />
   )
 }
 

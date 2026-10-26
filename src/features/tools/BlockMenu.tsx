@@ -11,10 +11,21 @@ import {
 import type { BlockKind } from '../engine/model/types'
 import { BLOCK_ICONS } from '../engine/render/blockIcons'
 import { setSession, setTool, useSessionStore } from '../engine/sessionStore'
+import { IconLibraryGroups } from '../icons/IconLibraryGroups'
+import { TemplateList } from '../templates/TemplateList'
+import type { LibraryIcon } from '../icons/iconTypes'
 import './blockMenu.css'
 
 function pickBlock(kind: BlockKind) {
-  setSession({ blockKind: kind })
+  setSession({ blockKind: kind, blockIcon: null })
+  setTool('block')
+}
+
+function pickIcon(icon: LibraryIcon) {
+  setSession({
+    blockKind: icon.kind,
+    blockIcon: { id: icon.id, label: icon.label },
+  })
   setTool('block')
 }
 
@@ -24,6 +35,7 @@ function pickBlock(kind: BlockKind) {
 export function BlockMenu() {
   const isActive = useSessionStore((s) => s.tool === 'block')
   const blockKind = useSessionStore((s) => s.blockKind)
+  const blockIcon = useSessionStore((s) => s.blockIcon)
 
   return (
     <Popover
@@ -42,24 +54,61 @@ export function BlockMenu() {
     >
       {(close) => (
         <BlockPicker
-          current={isActive ? blockKind : null}
+          current={isActive && !blockIcon ? blockKind : null}
+          currentIcon={isActive ? (blockIcon?.id ?? null) : null}
           onPick={(kind) => {
-            if (isActive && kind === blockKind) setTool('select')
+            if (isActive && kind === blockKind && !blockIcon) setTool('select')
             else pickBlock(kind)
             close()
           }}
+          onPickIcon={(icon) => {
+            pickIcon(icon)
+            close()
+          }}
+          onClose={close}
         />
       )}
     </Popover>
   )
 }
 
+function BlockSearch({
+  query,
+  onChange,
+  onEnter,
+}: {
+  query: string
+  onChange: (query: string) => void
+  onEnter: () => void
+}) {
+  return (
+    <input
+      className="block-menu__search"
+      type="search"
+      placeholder="Search 500+ icons (redis, kafka, s3…)"
+      aria-label="Search blocks"
+      autoFocus
+      value={query}
+      onChange={(event) => onChange(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') onEnter()
+      }}
+    />
+  )
+}
+
 function BlockPicker({
   current,
+  currentIcon,
   onPick,
+  onPickIcon,
+  onClose,
 }: {
   current: BlockKind | null
+  currentIcon: string | null
   onPick: (kind: BlockKind) => void
+  onPickIcon: (icon: LibraryIcon) => void
+  onClose: () => void
 }) {
   const [query, setQuery] = useState('')
   const groups = BLOCK_GROUPS.map((group) => ({
@@ -70,23 +119,12 @@ function BlockPicker({
 
   return (
     <div className="block-menu">
-      <input
-        className="block-menu__search"
-        type="search"
-        placeholder="Search blocks (redis, kafka, s3…)"
-        aria-label="Search blocks"
-        autoFocus
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' && firstMatch) onPick(firstMatch)
-        }}
+      <BlockSearch
+        query={query}
+        onChange={setQuery}
+        onEnter={() => firstMatch && onPick(firstMatch)}
       />
-      {groups.length === 0 && (
-        <p className="block-menu__empty">
-          No block matches. Try the custom block.
-        </p>
-      )}
+      <TemplateList query={query} onDone={onClose} />
       {groups.map((group) => (
         <BlockGroupGrid
           key={group.name}
@@ -95,6 +133,12 @@ function BlockPicker({
           onPick={onPick}
         />
       ))}
+      <IconLibraryGroups
+        query={query}
+        currentId={currentIcon}
+        hasOtherMatches={groups.length > 0}
+        onPick={onPickIcon}
+      />
     </div>
   )
 }

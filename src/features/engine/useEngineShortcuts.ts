@@ -12,15 +12,20 @@ import {
   toggleLockSelected,
 } from './boardActions'
 import { useEngineStore } from './engineStore'
+import { armPasteFallback } from './systemClipboard'
 import { selectShapes, toggleTool, useSessionStore } from './sessionStore'
 
 function handleCommandKey(event: KeyboardEvent, key: string): boolean {
+  // Not prevented: the browser's paste event must still fire (Workspace).
+  if (key === 'v') {
+    armPasteFallback(pasteClipboard)
+    return false
+  }
   const store = useEngineStore.getState()
   if ((key === 'z' && event.shiftKey) || key === 'y') store.redo()
   else if (key === 'z') store.undo()
   else if (key === 'd') duplicateSelected()
   else if (key === 'c') copySelected()
-  else if (key === 'v') pasteClipboard()
   else if (key === 'x') cutSelected()
   else if (key === 'a') selectAllOnPage()
   else return false

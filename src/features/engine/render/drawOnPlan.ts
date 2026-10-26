@@ -2,6 +2,7 @@ import { SLOWEST_PACE } from '../../animate/motion'
 import { getPenWidth, getStrokeWidth } from '../model/boardSpec'
 import { getOutline } from '../model/geoOutline'
 import { getShapeBounds } from '../model/geometry'
+import { getLineSamplePoints } from '../model/lineRouting'
 import type { Point, Shape, TextAnimation } from '../model/types'
 import { getArrowheadWings } from './shapePaths'
 
@@ -49,10 +50,9 @@ export function getDrawPlan(shape: Shape): DrawPlan | null {
     }
     case 'line': {
       const width = getStrokeWidth(shape)
-      const body = polyline([
-        { x: shape.x1, y: shape.y1 },
-        { x: shape.x2, y: shape.y2 },
-      ])
+      // Follow the real route (curve, elbow), or the bent parts would stay
+      // hidden while the arrow draws itself in.
+      const body = polyline(getLineSamplePoints(shape))
       if (!shape.arrowhead) return { kind: 'trace', ...body, width }
       const { tip, left, right } = getArrowheadWings(shape, width)
       const wings = polyline([left, tip, right])

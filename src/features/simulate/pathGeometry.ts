@@ -1,31 +1,9 @@
-import {
-  getLineControlPoint,
-  getLineSamplePoints,
-} from '../engine/model/lineRouting'
+import { getLineSamplePoints } from '../engine/model/lineRouting'
 import type { LineShape, Point } from '../engine/model/types'
 import type { SimEdge } from './simTypes'
 
-// Enough points that a packet on a curve never visibly cuts the corner.
-const CURVE_SAMPLES = 24
-
-function samplePoints(line: LineShape): Point[] {
-  if ((line.routing ?? 'straight') !== 'curved')
-    return getLineSamplePoints(line)
-  const cp = getLineControlPoint(line)
-  return Array.from({ length: CURVE_SAMPLES + 1 }, (_, i) => {
-    const t = i / CURVE_SAMPLES
-    const a = (1 - t) * (1 - t)
-    const b = 2 * (1 - t) * t
-    const c = t * t
-    return {
-      x: a * line.x1 + b * cp.x + c * line.x2,
-      y: a * line.y1 + b * cp.y + c * line.y2,
-    }
-  })
-}
-
 export function toSimEdge(line: LineShape): SimEdge {
-  const points = samplePoints(line)
+  const points = getLineSamplePoints(line)
   const cumulative = [0]
   for (let i = 1; i < points.length; i++) {
     const step = Math.hypot(

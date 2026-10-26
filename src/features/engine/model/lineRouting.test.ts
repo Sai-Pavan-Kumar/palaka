@@ -75,8 +75,8 @@ describe('lineRouting', () => {
     expect(path.endsWith(' 200,0')).toBe(true)
 
     const samples = getLineSamplePoints(line)
-    expect(samples).toHaveLength(5)
+    expect(samples.length).toBeGreaterThan(10)
     expect(samples[0]).toEqual({ x: 0, y: 0 })
-    expect(samples[4]).toEqual({ x: 200, y: 0 })
+    expect(samples[samples.length - 1]).toEqual({ x: 200, y: 0 })
   })
 })

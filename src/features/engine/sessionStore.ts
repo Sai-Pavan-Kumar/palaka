@@ -32,6 +32,8 @@ type SessionState = {
   editingTextId: string | null
   // Which block the Block tool drops next.
   blockKind: BlockKind
+  // Picked from the icon library: the icon and the name it is born with.
+  blockIcon: { id: string; label: string } | null
   // Shape a new arrow end would stick to (ring on the overlay).
   bindTargetId: string | null
   // Editing chrome drawn on the overlay layer, never recorded.
@@ -60,6 +62,7 @@ export const useSessionStore = create<SessionState>(() => ({
   isShapeCleanupOn: false,
   editingTextId: null,
   blockKind: 'service',
+  blockIcon: null,
   bindTargetId: null,
   marquee: null,
   eraserTrail: [],

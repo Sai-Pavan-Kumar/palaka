@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { pasteClipboard } from '../engine/boardActions'
+import { disarmPasteFallback, pasteSource } from '../engine/systemClipboard'
 import { isTypingTarget } from '../../shared/keyboard'
 import { EngineStage } from '../engine/render/EngineStage'
 import { useEngineShortcuts } from '../engine/useEngineShortcuts'
@@ -60,15 +62,18 @@ function useDrawingFade() {
   }
 }
 
-// Ctrl V with an image on the clipboard drops it onto the slide.
+// Ctrl V: whichever was copied last wins, shapes from this board or an
+// image from anywhere else (screenshot, browser, file explorer).
 function usePasteImages() {
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
       if (isTypingTarget(event.target)) return
-      const files = [...(event.clipboardData?.files ?? [])]
-      if (files.length === 0) return
+      disarmPasteFallback()
+      const source = pasteSource(event.clipboardData)
+      if (source === 'none') return
       event.preventDefault()
-      void addImageFiles(files)
+      if (source === 'board') pasteClipboard()
+      else void addImageFiles([...(event.clipboardData?.files ?? [])])
     }
     window.addEventListener('paste', onPaste)
     return () => window.removeEventListener('paste', onPaste)

@@ -20,6 +20,18 @@
   text-overflow: ellipsis;
 }
 
+/* Long AWS names ("Elastic Container Service") clip instead of wrapping. */
+.block-menu__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.block-menu__item img,
+.block-menu__item svg {
+  flex: none;
+}
+
 /* Stays put while the list scrolls, so you can refine without scrolling up. */
 .block-menu__search {
   position: sticky;
@@ -44,4 +56,28 @@
   padding: var(--space-3);
   color: var(--color-text-secondary);
   font-size: 13px;
+}
+
+/* Templates span the full width: their one-line hint is the selling point. */
+.block-menu__templates {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.block-menu__template {
+  min-height: 48px;
+  text-align: left;
+}
+
+.block-menu__template-text {
+  display: grid;
+  min-width: 0;
+}
+
+.block-menu__template-hint {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

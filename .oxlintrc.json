@@ -34,5 +34,6 @@
         "eslint/max-lines": "off"
       }
     }
-  ]
+  ],
+  "ignorePatterns": ["src/features/icons/generated/**"]
 }

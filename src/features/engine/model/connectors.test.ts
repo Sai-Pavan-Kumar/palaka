@@ -73,3 +73,29 @@ describe('routeConnector with a pinned end', () => {
     expect(routed.x2).toBeGreaterThan(120)
   })
 })
+
+describe('routeConnector with elbow and curved routing', () => {
+  const right: GeoShape = { ...box, id: 'right', x: 500, y: 300 }
+  const both = { ...page, shapes: { box, right }, order: ['box', 'right'] }
+  const glued: LineShape = {
+    ...line,
+    startBinding: { shapeId: 'box' },
+    endBinding: { shapeId: 'right' },
+  }
+
+  it('elbow leaves the facing side and enters the facing side', () => {
+    const routed = routeConnector(both, { ...glued, routing: 'elbow' })
+    expect(routed.x1).toBeGreaterThan(box.x + box.w)
+    expect(routed.y1).toBe(box.y + box.h / 2)
+    expect(routed.x2).toBeLessThan(right.x)
+    expect(routed.y2).toBe(right.y + right.h / 2)
+  })
+
+  it('curved ends sit on the outlines, not at the centres', () => {
+    const routed = routeConnector(both, { ...glued, routing: 'curved' })
+    const outside = (x: number, y: number, s: GeoShape) =>
+      x <= s.x || x >= s.x + s.w || y <= s.y || y >= s.y + s.h
+    expect(outside(routed.x1, routed.y1, box)).toBe(true)
+    expect(outside(routed.x2, routed.y2, right)).toBe(true)
+  })
+})

@@ -5,8 +5,20 @@ export type LineTangent = {
   angle: number
 }
 
-function getElbowParams(x1: number, y1: number, x2: number, y2: number) {
-  const isHorizontalFirst = Math.abs(x2 - x1) >= Math.abs(y2 - y1)
+// The one place that decides an elbow's first leg; every path, tangent and
+// sample reads it, so they can never disagree.
+export function isElbowHorizontalFirst(line: LineShape): boolean {
+  if (line.elbowAxis) return line.elbowAxis === 'h'
+  return Math.abs(line.x2 - line.x1) >= Math.abs(line.y2 - line.y1)
+}
+
+function getElbowParams(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  isHorizontalFirst: boolean,
+) {
   const r = Math.min(16, Math.abs(x2 - x1) / 2, Math.abs(y2 - y1) / 2)
   return { isHorizontalFirst, r }
 }
@@ -80,7 +92,13 @@ export function getLinePath(
   }
 
   if (routing === 'elbow') {
-    const { isHorizontalFirst, r } = getElbowParams(x1, y1, x2, y2)
+    const { isHorizontalFirst, r } = getElbowParams(
+      x1,
+      y1,
+      x2,
+      y2,
+      isElbowHorizontalFirst(line),
+    )
     return isHorizontalFirst
       ? buildHorizontalElbowPath(x1, y1, x2, y2, r)
       : buildVerticalElbowPath(x1, y1, x2, y2, r)
@@ -99,12 +117,7 @@ export function getLineEndPointTangent(line: LineShape): LineTangent {
   }
 
   if (routing === 'elbow') {
-    const { isHorizontalFirst } = getElbowParams(
-      line.x1,
-      line.y1,
-      line.x2,
-      line.y2,
-    )
+    const isHorizontalFirst = isElbowHorizontalFirst(line)
     if (isHorizontalFirst) {
       const midX = (line.x1 + line.x2) / 2
       return { tip, angle: Math.atan2(0, line.x2 - midX) }
@@ -128,8 +141,7 @@ export function getLineMidpoint(line: LineShape): Point {
   }
 
   if (routing === 'elbow') {
-    const isHorizontalFirst =
-      Math.abs(line.x2 - line.x1) >= Math.abs(line.y2 - line.y1)
+    const isHorizontalFirst = isElbowHorizontalFirst(line)
     return isHorizontalFirst
       ? { x: (line.x1 + line.x2) / 2, y: (line.y1 + line.y2) / 2 }
       : { x: (line.x1 + line.x2) / 2, y: (line.y1 + line.y2) / 2 }
@@ -138,6 +150,14 @@ export function getLineMidpoint(line: LineShape): Point {
   return { x: (line.x1 + line.x2) / 2, y: (line.y1 + line.y2) / 2 }
 }
 
+// Dense enough that a mask, a hit test or a packet riding the curve never
+// visibly cuts the corner.
+const CURVE_SAMPLES = 24
+const CURVE_STEPS = Array.from(
+  { length: CURVE_SAMPLES + 1 },
+  (_, i) => i / CURVE_SAMPLES,
+)
+
 export function getLineSamplePoints(line: LineShape): Point[] {
   const routing = line.routing ?? 'straight'
   const p0 = { x: line.x1, y: line.y1 }
@@ -145,15 +165,14 @@ export function getLineSamplePoints(line: LineShape): Point[] {
 
   if (routing === 'curved') {
     const cp = getLineControlPoint(line)
-    return [0, 0.25, 0.5, 0.75, 1].map((t) => ({
+    return CURVE_STEPS.map((t) => ({
       x: (1 - t) * (1 - t) * line.x1 + 2 * (1 - t) * t * cp.x + t * t * line.x2,
       y: (1 - t) * (1 - t) * line.y1 + 2 * (1 - t) * t * cp.y + t * t * line.y2,
     }))
   }
 
   if (routing === 'elbow') {
-    const isHorizontalFirst =
-      Math.abs(line.x2 - line.x1) >= Math.abs(line.y2 - line.y1)
+    const isHorizontalFirst = isElbowHorizontalFirst(line)
     if (isHorizontalFirst) {
       const midX = (line.x1 + line.x2) / 2
       return [p0, { x: midX, y: line.y1 }, { x: midX, y: line.y2 }, p3]

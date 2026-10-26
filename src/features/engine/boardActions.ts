@@ -1,6 +1,6 @@
 import { useEngineStore } from './engineStore'
 import { isEffect } from './model/effects'
-import { remapBindings } from './model/connectors'
+import { remapBindings, rerouteConnectors } from './model/connectors'
 import {
   addShape,
   findPage,
@@ -15,6 +15,7 @@ import { applyStylePatch } from './model/stylePatch'
 import { translateShape } from './model/transform'
 import type { Page, Shape } from './model/types'
 import { selectShapes, setSession, useSessionStore } from './sessionStore'
+import { publishCopy } from './systemClipboard'
 
 // Copies land down-right of the original, clearly separate but close by.
 const DUPLICATE_OFFSET = 32
@@ -100,6 +101,7 @@ export function copySelected(): void {
   const originals = getShapesInOrder(getCurrentPage(), selectedIds)
   if (originals.length === 0) return
   clipboard = originals.map((shape) => structuredClone(shape))
+  void publishCopy(originals, useEngineStore.getState().doc.assets)
 }
 
 export function pasteClipboard(): void {
@@ -160,11 +162,21 @@ export function applyStyle(patch: Partial<ShapeStyle>): void {
   const targets = getShapesInOrder(getCurrentPage(), selectedIds)
   if (targets.length === 0) return
   const restyled = targets.map((shape) => applyStylePatch(shape, patch))
-  commitCurrentPage((page) => ({
+  const restyledPage = (page: Page): Page => ({
     ...page,
     shapes: {
       ...page.shapes,
       ...Object.fromEntries(restyled.map((s) => [s.id, s])),
     },
-  }))
+  })
+  // Curved and elbow ends sit on different sides than straight ones, so a
+  // routing change re-routes the glued connectors in the same undo step.
+  commitCurrentPage((page) =>
+    'routing' in patch
+      ? rerouteConnectors(
+          restyledPage(page),
+          restyled.map((s) => s.id),
+        )
+      : restyledPage(page),
+  )
 }

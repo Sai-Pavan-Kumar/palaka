@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "check": "tsc -b && oxlint && prettier --check . && vitest run"
+    "check": "tsc -b && oxlint && prettier --check . && vitest run",
+    "icons": "node scripts/build-icons.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.3",
@@ -30,6 +31,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
     "prettier": "^3.9.10",
+    "simple-icons": "^16.36.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vitest": "5.0.4"
