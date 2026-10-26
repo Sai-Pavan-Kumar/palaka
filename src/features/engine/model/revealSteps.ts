@@ -1,14 +1,18 @@
 import type { Page, Shape } from './types'
 
-// A reveal step either shows a shape or starts the flow dots on a
-// connector. Both live in one numbered sequence, so Space walks through
-// "arrow appears" and "data starts moving" in whatever order was set.
-export type StepKind = 'shape' | 'flow'
+// A reveal step shows a shape, starts the flow dots on a connector, takes a
+// shape away or pulses it. All live in one numbered sequence, so Space walks
+// through "arrow appears", "data starts moving", "cache leaves" in whatever
+// order was set.
+export type StepKind = 'shape' | 'flow' | 'exit' | 'pulse'
+const STEP_KINDS: StepKind[] = ['shape', 'flow', 'exit', 'pulse']
 
 export type StepItem = { shape: Shape; kind: StepKind; step: number }
 
 export function getStepOf(shape: Shape, kind: StepKind): number | undefined {
   if (kind === 'shape') return shape.revealStep
+  if (kind === 'exit') return shape.exit?.step
+  if (kind === 'pulse') return shape.pulseStep
   return shape.type === 'line' ? shape.flow?.step : undefined
 }
 
@@ -17,6 +21,16 @@ export function withStep(
   kind: StepKind,
   step: number | undefined,
 ): Shape {
+  // Exit and pulse exist only as steps, so clearing the step removes them.
+  if (kind === 'exit') {
+    const { exit, ...rest } = shape
+    if (step === undefined || !exit) return rest as Shape
+    return { ...shape, exit: { ...exit, step } }
+  }
+  if (kind === 'pulse') {
+    const { pulseStep: _old, ...rest } = shape
+    return (step === undefined ? rest : { ...rest, pulseStep: step }) as Shape
+  }
   if (kind === 'flow') {
     if (shape.type !== 'line' || !shape.flow) return shape
     const { step: _old, ...flow } = shape.flow
@@ -33,7 +47,7 @@ export function getStepItems(page: Page): StepItem[] {
   const items: StepItem[] = []
   for (const id of page.order) {
     const shape = page.shapes[id]
-    for (const kind of ['shape', 'flow'] as const) {
+    for (const kind of STEP_KINDS) {
       const step = getStepOf(shape, kind)
       if (step !== undefined) items.push({ shape, kind, step })
     }

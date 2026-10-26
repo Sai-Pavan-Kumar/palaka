@@ -1,3 +1,4 @@
+import { SLOWEST_PACE } from '../../animate/motion'
 import { getPenWidth, getStrokeWidth } from '../model/boardSpec'
 import { getOutline } from '../model/geoOutline'
 import { getShapeBounds } from '../model/geometry'
@@ -10,7 +11,7 @@ const DRAW_SPEED = 1400
 const MIN_DRAW_S = 0.35
 const MAX_DRAW_S = 1.6
 // After this, a revealed shape is shown plainly whatever the animation did.
-export const DRAW_ON_SAFETY_MS = MAX_DRAW_S * 1000 + 300
+export const DRAW_ON_SAFETY_MS = MAX_DRAW_S * SLOWEST_PACE * 1000 + 300
 // The mask band is wider than the ink so hand-drawn wobble and pen pressure
 // never poke out of it.
 export const MASK_WIDTH_FACTOR = 2.2

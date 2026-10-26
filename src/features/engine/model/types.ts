@@ -23,7 +23,19 @@ type ShapeBase = {
   fromQuery?: string
   // If true, the shape cannot be moved, resized, or deleted until unlocked.
   locked?: boolean
+  // How it arrives on its reveal step. Missing = draws itself in.
+  enter?: EnterStyle
+  // Leaves the board at this step (it was explained, make room).
+  exit?: { style: ExitStyle; step: number }
+  // A single "look here" pulse at this step.
+  pulseStep?: number
+  // Missing = normal pace.
+  animSpeed?: AnimSpeed
 }
+
+export type EnterStyle = 'draw' | 'fade' | 'pop' | 'rise'
+export type ExitStyle = 'fade' | 'shrink'
+export type AnimSpeed = 'fast' | 'slow'
 
 export type StrokeKind = 'pen' | 'highlighter'
 
@@ -60,6 +72,9 @@ export type Binding = {
   shapeId: string
   // On a table: attach at this column's row instead of the centre.
   column?: string
+  // Where on the shape the end was dropped, as 0..1 of its box. Missing =
+  // aim at the centre and slide around the outline (the old behaviour).
+  anchor?: Point
 }
 
 export type LineRouting = 'straight' | 'elbow' | 'curved'
@@ -175,6 +190,16 @@ export type BlockShape = ShapeBase & {
   fill: FillStyle
   dash: DashStyle
   effect?: BlockEffect
+  // Simulation numbers the teacher changed. Missing = the kind's default.
+  sim?: SimSettings
+}
+
+// Per second for rates, 0..1 for hit rate, a count for capacity and size.
+export type SimSettings = {
+  rate?: number
+  hitRate?: number
+  capacity?: number
+  size?: number
 }
 
 export type TextAnimation = 'wipe' | 'typewriter' | 'slide-up' | 'blur-in'

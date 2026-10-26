@@ -1,0 +1,83 @@
+/* Enter, exit and pulse motions. Transforms pivot on the shape's own box,
+   so a pop grows from its centre wherever it sits on the board. Specific
+   names come after the shared rule so they win. */
+.board.is-presenting .anim {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-duration: var(--anim-duration);
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+
+.board.is-presenting .anim-enter-fade {
+  animation-name: reveal-fade;
+}
+
+.board.is-presenting .anim-enter-pop {
+  animation-name: anim-pop;
+}
+
+.board.is-presenting .anim-enter-rise {
+  animation-name: anim-rise;
+}
+
+.board.is-presenting .anim-exit-fade {
+  animation-name: anim-fade-out;
+  animation-timing-function: ease-in;
+}
+
+.board.is-presenting .anim-exit-shrink {
+  animation-name: anim-shrink;
+  animation-timing-function: ease-in;
+}
+
+.board.is-presenting .anim-pulse {
+  animation-name: anim-pulse;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes anim-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes anim-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@keyframes anim-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes anim-shrink {
+  to {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes anim-pulse {
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* Query cards: the band glides to the running clause, other lines dim. */
+.query-line {
+  transition: fill-opacity var(--duration-standard) var(--ease-out);
+}
+
+.query-line-band {
+  transition: transform var(--duration-slow) var(--ease-out);
+}

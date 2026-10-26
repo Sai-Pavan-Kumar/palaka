@@ -1,17 +1,8 @@
 import { memo, useMemo, type CSSProperties } from 'react'
-import {
-  FONT_FAMILY,
-  FONT_WEIGHT,
-  HIGHLIGHT_OPACITY,
-  LINE_HEIGHT,
-  TINT,
-} from '../model/boardSpec'
-import {
-  getBaselineOffset,
-  getFontPx,
-  getTextLines,
-} from '../model/textMetrics'
-import type { ImageShape, Shape, StrokeShape, TextShape } from '../model/types'
+import { motionSeconds, speedFactor, type Motion } from '../../animate/motion'
+import '../../animate/animate.css'
+import { HIGHLIGHT_OPACITY, TINT } from '../model/boardSpec'
+import type { ImageShape, Shape, StrokeShape } from '../model/types'
 import { DrawOnMask } from './DrawOnMask'
 import { drawMaskId, getDrawDuration } from './drawOnPlan'
 import { BlockContents, BlockView } from './BlockView'
@@ -21,6 +12,7 @@ import { useBoardPalette } from './paletteContext'
 import type { RowState } from '../model/highlights'
 import { getStrokePath } from './shapePaths'
 import { TableContents, TableView } from './TableView'
+import { TextView } from './TextView'
 
 // The highlighter takes its mask on the path itself: a masked group would
 // cut it off from the ink below, and the marker would stop blending.
@@ -44,31 +36,6 @@ function StrokeView({ shape, mask }: { shape: StrokeShape; mask?: string }) {
         isHighlighter ? { mixBlendMode: palette.highlightBlend } : undefined
       }
     />
-  )
-}
-
-// Baselines follow CSS line layout, the same way the text editor (a textarea
-// with the same line height) places them, so text does not jump when
-// editing ends.
-function TextView({ shape }: { shape: TextShape }) {
-  const palette = useBoardPalette()
-  const fontPx = getFontPx(shape)
-  const lineBox = fontPx * LINE_HEIGHT
-  const baseline = getBaselineOffset(shape)
-  return (
-    <text
-      fill={palette.ink[shape.color]}
-      fontFamily={FONT_FAMILY[shape.font]}
-      fontWeight={FONT_WEIGHT[shape.font]}
-      fontSize={fontPx}
-      style={{ whiteSpace: 'pre' }}
-    >
-      {getTextLines(shape.text).map((line, index) => (
-        <tspan key={index} x={shape.x} y={shape.y + index * lineBox + baseline}>
-          {line || ' '}
-        </tspan>
-      ))}
-    </text>
   )
 }
 
@@ -106,6 +73,7 @@ type ShapeBodyProps = {
   highlighted?: ReadonlySet<string>
   isGlowing?: boolean
   rowStates?: RowState[]
+  focusLine?: number
 }
 
 function ShapeBody({
@@ -116,6 +84,7 @@ function ShapeBody({
   highlighted,
   isGlowing,
   rowStates,
+  focusLine,
 }: ShapeBodyProps) {
   switch (shape.type) {
     case 'stroke':
@@ -144,7 +113,7 @@ function ShapeBody({
         </>
       )
     case 'text':
-      return <TextView shape={shape} />
+      return <TextView shape={shape} focusLine={focusLine} />
     case 'image':
       return <ImageView shape={shape} url={imageUrl} />
   }
@@ -197,7 +166,7 @@ function DrawingOnBody({
   const timing = { '--draw-duration': `${duration}s` } as CSSProperties
   return (
     <>
-      <DrawOnMask shape={shape} />
+      <DrawOnMask shape={shape} duration={duration} />
       {shape.type === 'stroke' ? (
         <StrokeView shape={shape} mask={mask} />
       ) : (
@@ -214,14 +183,34 @@ function DrawingOnBody({
   )
 }
 
+// Draw-on has its own masks; every other motion is one CSS class on the
+// shape's group, so images, tables and blocks all animate the same way.
+function motionClass(shape: Shape, motion: Motion | null, drawsIn: boolean) {
+  if (!motion || drawsIn) return undefined
+  if (motion === 'enter') return `anim anim-enter-${shape.enter}`
+  if (motion === 'exit') return `anim anim-exit-${shape.exit?.style ?? 'fade'}`
+  return 'anim anim-pulse'
+}
+
+function motionStyle(
+  shape: Shape,
+  motion: Motion | null,
+  drawsIn: boolean,
+): CSSProperties | undefined {
+  if (!motion || drawsIn) return undefined
+  return {
+    '--anim-duration': `${motionSeconds(shape, motion)}s`,
+  } as CSSProperties
+}
+
 type ShapeViewProps = {
   shape: Shape
   imageUrl?: string
   // Text (or a label) being edited is drawn by the editor instead, so it
   // never doubles.
   isHidden?: boolean
-  // Just revealed while presenting: animate it being drawn.
-  drawOn?: boolean
+  // What the step being played does to it (presenting only).
+  motion?: Motion | null
   // Flow dots move (presenting, their step reached); otherwise they stand.
   isFlowing?: boolean
   // Columns lit by a highlight step (tables) / joins two lit columns (lines).
@@ -229,6 +218,8 @@ type ShapeViewProps = {
   isGlowing?: boolean
   // Row states of the query clause shown on this table (presenting only).
   rowStates?: RowState[]
+  // Query card line of the running clause (presenting only).
+  focusLine?: number
 }
 
 // Memo by shape object: shapes are immutable, so while one stroke is being
@@ -237,32 +228,46 @@ export const ShapeView = memo(function ShapeView({
   shape,
   imageUrl,
   isHidden = false,
-  drawOn = false,
+  motion = null,
   isFlowing = false,
   highlighted,
   isGlowing = false,
   rowStates,
+  focusLine,
 }: ShapeViewProps) {
-  const duration = drawOn ? getDrawDuration(shape) : null
+  const drawsIn = motion === 'enter' && (shape.enter ?? 'draw') === 'draw'
+  const drawSeconds = drawsIn ? getDrawDuration(shape) : null
+  const duration =
+    drawSeconds === null ? null : drawSeconds * speedFactor(shape)
+  // The outer group skips its mount fade while a motion plays. The motion
+  // itself sits on an inner group, so when its class goes away the outer
+  // animation name never changes and nothing replays.
+  const ownsEntrance = duration !== null || (motion === 'enter' && !drawsIn)
   return (
     <g
-      className={`board-shape ${duration !== null ? 'is-drawing-on' : ''}`}
+      className={`board-shape ${ownsEntrance ? 'is-drawing-on' : ''}`}
       opacity={shape.opacity < 1 ? shape.opacity : undefined}
       visibility={isHidden && shape.type === 'text' ? 'hidden' : undefined}
     >
-      {duration !== null ? (
-        <DrawingOnBody shape={shape} duration={duration} />
-      ) : (
-        <ShapeBody
-          shape={shape}
-          imageUrl={imageUrl}
-          hideLabel={isHidden}
-          isFlowing={isFlowing}
-          highlighted={highlighted}
-          isGlowing={isGlowing}
-          rowStates={rowStates}
-        />
-      )}
+      <g
+        className={motionClass(shape, motion, drawsIn)}
+        style={motionStyle(shape, motion, drawsIn)}
+      >
+        {duration !== null ? (
+          <DrawingOnBody shape={shape} duration={duration} />
+        ) : (
+          <ShapeBody
+            shape={shape}
+            imageUrl={imageUrl}
+            hideLabel={isHidden}
+            isFlowing={isFlowing}
+            highlighted={highlighted}
+            isGlowing={isGlowing}
+            rowStates={rowStates}
+            focusLine={focusLine}
+          />
+        )}
+      </g>
     </g>
   )
 })

@@ -6,6 +6,8 @@ import { COLOR_KEYS, SIZE_KEYS } from '../engine/model/boardSpec'
 import { getPalette } from '../engine/model/paper'
 import type { ShapeStyle } from '../engine/model/shapeFactory'
 import { setSession, useSessionStore } from '../engine/sessionStore'
+import { AnimateMenu } from '../animate/AnimateMenu'
+import { SimSettingsMenu } from '../simulate/SimSettingsMenu'
 import { FlowMenu } from './FlowMenu'
 import { TableViewToggle } from './TableViewToggle'
 import { SqlActionMenu } from './SqlActionMenu'
@@ -53,6 +55,8 @@ function StyleLayerRow({ shown, tool }: { shown: ShownStyle; tool: string }) {
 function ActionsLayerRow() {
   return (
     <div className="style-bar__row style-bar__row--actions">
+      <AnimateMenu />
+      <SimSettingsMenu />
       <FlowMenu />
       <TableViewToggle />
       <SqlActionMenu />

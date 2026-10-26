@@ -1,7 +1,7 @@
 import { editCurrentPage, getCurrentPage, insertShape } from '../boardActions'
 import { useEngineStore } from '../engineStore'
 import { DEFAULT_BLOCK_SIZE, MIN_BLOCK_SIZE } from '../model/blockCatalog'
-import { findBindTarget } from '../model/connectors'
+import { bindingAt, findBindTarget } from '../model/connectors'
 import { replaceShapes } from '../model/documentOps'
 import {
   createBlock,
@@ -157,7 +157,7 @@ export function createLineTool(arrowhead: boolean): ToolHandler {
       const from = bindTargetAt(start, start)
       const shape: LineShape = {
         ...createLine(start, arrowhead, style),
-        ...(from && { startBinding: { shapeId: from.id } }),
+        ...(from && { startBinding: bindingAt(from, start) }),
       }
       let end = start
       setSession({ bindTargetId: from?.id ?? null })
@@ -173,7 +173,7 @@ export function createLineTool(arrowhead: boolean): ToolHandler {
             ...s,
             x2: tip.x,
             y2: tip.y,
-            endBinding: to ? { shapeId: to.id } : undefined,
+            endBinding: to ? bindingAt(to, tip) : undefined,
           }))
         },
         end: () => {

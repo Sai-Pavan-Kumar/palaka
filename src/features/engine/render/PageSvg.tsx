@@ -1,4 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
+import { motionAt } from '../../animate/motion'
+import { getQueryFocus } from '../../sql/queryFocus'
 import { isEffect } from '../model/effects'
 import { getActiveHighlights } from '../model/highlights'
 import { SLIDE_SIZE } from '../model/boardSpec'
@@ -35,6 +37,10 @@ function PageShapes({
     () => getActiveHighlights(page, flowUpTo),
     [page, flowUpTo],
   )
+  const queryFocus = useMemo(
+    () => getQueryFocus(page, flowUpTo),
+    [page, flowUpTo],
+  )
   return page.order.map((id) => {
     const shape = page.shapes[id]
     // Effects have no ink of their own; tables and arrows draw them.
@@ -46,11 +52,12 @@ function PageShapes({
         shape={shape}
         imageUrl={shape.type === 'image' ? imageUrls[shape.assetId] : undefined}
         isHidden={id === hiddenShapeId}
-        drawOn={drawOnStep !== null && shape.revealStep === drawOnStep}
+        motion={motionAt(shape, drawOnStep)}
         isFlowing={isFlowRunning(shape, flowUpTo)}
         highlighted={lit.columns.get(id)}
         rowStates={lit.rowStates.get(id)}
         isGlowing={lit.lines.has(id)}
+        focusLine={queryFocus.get(id)}
       />
     )
   })

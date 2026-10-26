@@ -1,5 +1,6 @@
 import { editCurrentPage } from '../boardActions'
 import { useEngineStore } from '../engineStore'
+import { bindingAt } from '../model/connectors'
 import { replaceShapes } from '../model/documentOps'
 import type { LineShape } from '../model/types'
 import { setSession } from '../sessionStore'
@@ -29,7 +30,7 @@ export function startLineEndGesture(
       const moved: LineShape = {
         ...line,
         ...point,
-        [bindingKey]: target ? { shapeId: target.id } : undefined,
+        [bindingKey]: target ? bindingAt(target, tip) : undefined,
       }
       editCurrentPage((page) => replaceShapes(page, [moved]))
     },

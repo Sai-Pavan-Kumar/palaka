@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { stopSimulation, useSimStore } from '../simulate/simStore'
 import { hasModifier, isTypingTarget } from '../../shared/keyboard'
 import {
   setCameraFrame,
@@ -40,7 +41,10 @@ function handleKey(event: KeyboardEvent): boolean {
   const { presenting } = useSessionStore.getState()
   const key = event.key.toLowerCase()
 
-  if (key === 'f') ui.toggleFocusMode()
+  // Esc leaves the simulation first, then presenting on the next press.
+  if (event.key === 'Escape' && useSimStore.getState().active) {
+    stopSimulation()
+  } else if (key === 'f') ui.toggleFocusMode()
   else if (key === 'p' && !isRecording) setPresenting(!presenting)
   else if (event.key === 'PageDown') goToPageOffset(1)
   else if (event.key === 'PageUp') goToPageOffset(-1)

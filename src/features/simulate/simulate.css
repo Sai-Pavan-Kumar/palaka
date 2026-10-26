@@ -1,0 +1,61 @@
+/* Floats just above the page bar, centred, like the rest of the chrome. */
+.sim-controls {
+  position: fixed;
+  bottom: calc(var(--space-3) + 64px);
+  left: 50%;
+  z-index: var(--z-sticky);
+  transform: translateX(-50%);
+  padding-inline: var(--space-2);
+}
+
+.sim-controls__traffic {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding-inline: var(--space-2);
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+.sim-controls__label {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.sim-controls__traffic input {
+  width: 140px;
+  accent-color: var(--color-brand-primary);
+  cursor: pointer;
+}
+
+.sim-controls__value {
+  min-width: 3ch;
+  font-family: var(--font-code);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Packets move by transform only, so the browser just composites them. */
+.sim-packet {
+  will-change: transform;
+}
+
+/* An overloaded block breathes red; it reads as "struggling" at a glance. */
+.sim-glow {
+  animation: sim-glow 1s ease-in-out infinite alternate;
+}
+
+@keyframes sim-glow {
+  from {
+    stroke-opacity: 0.35;
+  }
+  to {
+    stroke-opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-glow {
+    animation: none;
+  }
+}

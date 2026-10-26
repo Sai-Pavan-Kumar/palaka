@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
+import { isShownAt } from '../../animate/motion'
+import { SimLayer } from '../../simulate/SimLayer'
 import { BoardFrame } from '../../board/BoardFrame'
 import { useBoardStore } from '../../board/boardStore'
 import { useEngineStore } from '../engineStore'
@@ -39,8 +41,7 @@ function useRevealRules(pageId: string) {
     s.drawOnStep?.pageId === pageId ? s.drawOnStep.step : null,
   )
   const isVisible = presenting
-    ? (shape: Shape) =>
-        shape.revealStep === undefined || shape.revealStep <= shownSteps
+    ? (shape: Shape) => isShownAt(shape, shownSteps, drawOnStep)
     : undefined
   return { isVisible, drawOnStep, flowUpTo: presenting ? shownSteps : null }
 }
@@ -120,6 +121,7 @@ function BoardCameraTrack({
         className="board__canvas"
         viewBox={`0 0 ${totalWorldWidth} ${height}`}
       >
+        <SimLayer page={page} paper={doc.paper} isVisible={isVisible} />
         <LaserTrail />
       </svg>
     </div>

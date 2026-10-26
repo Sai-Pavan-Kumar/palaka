@@ -49,6 +49,14 @@ function buildRows(doc: BoardDocument, page: Page): OrderRow[] {
         const step = shape.flow.step ?? null
         rows.push({ shape, kind: 'flow', step, label: `Flow: ${label}` })
       }
+      if (shape.pulseStep !== undefined) {
+        const step = shape.pulseStep
+        rows.push({ shape, kind: 'pulse', step, label: `Pulse: ${label}` })
+      }
+      if (shape.exit) {
+        const step = shape.exit.step
+        rows.push({ shape, kind: 'exit', step, label: `Exit: ${label}` })
+      }
       return rows
     })
     .sort((a, b) => (a.step ?? 0) - (b.step ?? 0))
@@ -56,6 +64,7 @@ function buildRows(doc: BoardDocument, page: Page): OrderRow[] {
 
 function pinLabel(kind: StepKind, step: number | null): string {
   if (step === null) return 'Make it a step'
+  if (kind === 'exit' || kind === 'pulse') return 'Remove this step'
   return kind === 'flow' ? 'Moves from the start' : 'Always visible'
 }
 

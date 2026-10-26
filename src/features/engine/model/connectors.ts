@@ -39,8 +39,15 @@ function centreOf(shape: BindableShape): Point {
   return { x: x + w / 2, y: y + h / 2 }
 }
 
-// What the other end aims at: a foreign key's column row, else the centre.
+function anchorPoint(shape: BindableShape, anchor: Point): Point {
+  const { x, y, w, h } = boxOf(shape)
+  return { x: x + anchor.x * w, y: y + anchor.y * h }
+}
+
+// What the other end aims at: a pinned spot, a foreign key's column row,
+// else the centre.
 function aimOf(shape: BindableShape, binding?: Binding): Point {
+  if (binding?.anchor) return anchorPoint(shape, binding.anchor)
   const centre = centreOf(shape)
   if (shape.type !== 'table' || !binding?.column) return centre
   if (getTableView(shape) === 'data') return centre
@@ -94,6 +101,7 @@ function attachPoint(
     if (anchor) return anchor
   }
   const centre = centreOf(target)
+  if (binding?.anchor) return pinnedPoint(target, binding.anchor)
   const dir = { x: toward.x - centre.x, y: toward.y - centre.y }
   const distance = Math.hypot(dir.x, dir.y)
   const t = distance > 0 ? rayHit(centre, dir, outlineOf(target)) : null
@@ -101,6 +109,49 @@ function attachPoint(
   const gap = ATTACH_GAP / distance
   const reach = Math.min(1, t + gap)
   return { x: centre.x + dir.x * reach, y: centre.y + dir.y * reach }
+}
+
+// A pinned end sits on the outline where it was dropped, pushed out by the
+// same gap a free end gets.
+function pinnedPoint(target: BindableShape, anchor: Point): Point {
+  const centre = centreOf(target)
+  const spot = anchorPoint(target, anchor)
+  const dir = { x: spot.x - centre.x, y: spot.y - centre.y }
+  const distance = Math.hypot(dir.x, dir.y)
+  if (distance === 0) return centre
+  const t = rayHit(centre, dir, outlineOf(target)) ?? 1
+  const reach = t + ATTACH_GAP / distance
+  return { x: centre.x + dir.x * reach, y: centre.y + dir.y * reach }
+}
+
+// Inside this share of the box around the centre, a drop means "this block",
+// not "this spot", so the end keeps sliding to the nearest edge.
+const CENTRE_ZONE = 0.25
+// Near a side's midpoint the end clicks onto it, so tidy diagrams line up.
+const MIDPOINT_SNAP = 0.12
+const SIDE_MIDPOINTS: Point[] = [
+  { x: 0.5, y: 0 },
+  { x: 1, y: 0.5 },
+  { x: 0.5, y: 1 },
+  { x: 0, y: 0.5 },
+]
+
+// The binding for an end dropped at `point` on `target`: pinned to that spot
+// unless it landed near the centre (or on a table, which aims by column).
+export function bindingAt(target: BindableShape, point: Point): Binding {
+  const binding: Binding = { shapeId: target.id }
+  if (target.type === 'table') return binding
+  const { x, y, w, h } = boxOf(target)
+  if (w <= 0 || h <= 0) return binding
+  const nx = (point.x - x) / w
+  const ny = (point.y - y) / h
+  const offCentre = Math.max(Math.abs(nx - 0.5), Math.abs(ny - 0.5))
+  if (offCentre < CENTRE_ZONE) return binding
+  const snapped = SIDE_MIDPOINTS.find(
+    (m) => Math.hypot(m.x - nx, m.y - ny) < MIDPOINT_SNAP,
+  )
+  const clamp = (v: number) => Math.min(1.2, Math.max(-0.2, v))
+  return { ...binding, anchor: snapped ?? { x: clamp(nx), y: clamp(ny) } }
 }
 
 export function routeConnector(page: Page, line: LineShape): LineShape {

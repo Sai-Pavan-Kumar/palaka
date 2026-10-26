@@ -1,4 +1,4 @@
-import { Camera, CameraOff, Presentation, Undo2 } from 'lucide-react'
+import { Activity, Camera, CameraOff, Presentation, Undo2 } from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
 import { useFacecamStore } from '../facecam/facecamStore'
 import { useEngineStore } from '../engine/engineStore'
@@ -7,6 +7,7 @@ import { ExportMenu } from '../export/ExportMenu'
 import { RecordControls } from '../recorder/RecordControls'
 import { useRecorderStore } from '../recorder/recorderStore'
 import { setPresenting } from '../reveal/revealModel'
+import { toggleSimulation, useSimStore } from '../simulate/simStore'
 import { BlockMenu } from './BlockMenu'
 import { PenMenu, ShapesMenu } from './ShapesMenu'
 import { MAIN_TOOLS, TRAILING_TOOLS, type ToolDefinition } from './toolList'
@@ -74,9 +75,23 @@ function SessionGroup() {
         disabled={isRecording}
         onClick={() => setPresenting(!isPresenting)}
       />
+      <SimulateButton />
       <ExportMenu disabled={isPresenting} />
       <RecordControls />
     </div>
+  )
+}
+
+// Traffic flowing through the diagram on this page, live.
+function SimulateButton() {
+  const isActive = useSimStore((s) => s.active)
+  return (
+    <IconButton
+      icon={Activity}
+      label={isActive ? 'Stop simulation' : 'Simulate traffic'}
+      isActive={isActive}
+      onClick={toggleSimulation}
+    />
   )
 }
 

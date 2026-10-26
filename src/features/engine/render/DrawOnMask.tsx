@@ -25,9 +25,15 @@ function textMaskClass(animation: string): string {
 
 // A white band that grows along the drawing path. Whatever it covers shows;
 // the rest of the shape stays hidden until the band reaches it.
-export function DrawOnMask({ shape }: { shape: Shape }) {
+export function DrawOnMask({
+  shape,
+  duration = getDrawDuration(shape),
+}: {
+  shape: Shape
+  // Already scaled by the shape's speed; defaults to the normal pace.
+  duration?: number | null
+}) {
   const plan = getDrawPlan(shape)
-  const duration = getDrawDuration(shape)
   if (!plan || duration === null) return null
   const style = { '--draw-duration': `${duration}s` } as CSSProperties
   const bounds = getShapeBounds(shape)

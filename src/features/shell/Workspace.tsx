@@ -4,6 +4,7 @@ import { EngineStage } from '../engine/render/EngineStage'
 import { useEngineShortcuts } from '../engine/useEngineShortcuts'
 import { NotesPanel } from '../notes/NotesPanel'
 import { PageBar } from '../pages/PageBar'
+import { SimControls } from '../simulate/SimControls'
 import { allowBoardDrop, handleBoardDrop } from '../panel/addFolderImage'
 import { LeftPanel } from '../panel/LeftPanel'
 import { addImageFiles } from '../project/addImages'
@@ -88,6 +89,7 @@ function BoardChrome() {
       <LeftPanel />
       <NotesPanel />
       <PageBar />
+      <SimControls />
     </>
   )
 }
