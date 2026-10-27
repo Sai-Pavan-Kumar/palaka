@@ -93,6 +93,18 @@ describe('tracer', () => {
     })
   })
 
+  it('keeps node ids stable while a list is reversed', () => {
+    const reverse = CODE_TEMPLATES.find((t) => t.id === 'reverse-list')!
+    const out = run(reverse.source, reverse.call)
+    const ids = (step: (typeof out.steps)[number], name: string) => {
+      const value = step.frames.at(-1)!.vars[name]
+      return value?.t === 'listnode' ? value.ids : null
+    }
+    const first = out.steps.find((s) => s.frames.at(-1)!.fn === 'reverseList')!
+    expect(ids(first, 'head')).toEqual([1, 2, 3, 4])
+    expect(ids(out.steps.at(-1)!, 'prev')).toEqual([4, 3, 2, 1])
+  })
+
   it.each(CODE_TEMPLATES)('runs the $label template cleanly', (template) => {
     const out = run(template.source, template.call)
     expect(out.error).toBeNull()

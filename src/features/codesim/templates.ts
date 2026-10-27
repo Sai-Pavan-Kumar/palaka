@@ -76,4 +76,35 @@ export const CODE_TEMPLATES: CodeTemplate[] = [
         return []`,
     call: 'Solution().twoSum([1, 3, 4, 6, 8, 11], 10)',
   },
+  {
+    id: 'reverse-list',
+    label: 'Reverse linked list',
+    source: `class Solution:
+    def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        prev, curr = None, head
+        while curr:
+            nxt = curr.next
+            curr.next = prev
+            prev = curr
+            curr = nxt
+        return prev`,
+    call: 'Solution().reverseList(build_list([1, 2, 3, 4]))',
+  },
+  {
+    id: 'bfs',
+    label: 'BFS',
+    source: `def bfs(graph, src):
+    visited = {src}
+    queue = deque([src])
+    order = []
+    while queue:
+        node = queue.popleft()
+        order.append(node)
+        for nxt in graph[node]:
+            if nxt not in visited:
+                visited.add(nxt)
+                queue.append(nxt)
+    return order`,
+    call: 'bfs({0: [1, 2], 1: [0, 3, 4], 2: [0, 5], 3: [1], 4: [1, 5], 5: [2, 4]}, 0)',
+  },
 ]

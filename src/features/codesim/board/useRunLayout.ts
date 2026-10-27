@@ -3,6 +3,9 @@ import { getFontPx, measureText } from '../../engine/model/textMetrics'
 import type { TextShape } from '../../engine/model/types'
 import { useCodeSimStore } from '../codeSimStore'
 import { arrayGeometry, buildArrays } from './arrayModel'
+import { placeDiagrams } from './diagramLayout'
+import { buildGraph } from './graphModel'
+import { buildLinked } from './linkedModel'
 import {
   outputContent,
   panelMetrics,
@@ -36,6 +39,8 @@ export function useRunLayout(card: TextShape) {
   const output = outputContent(step, isLast, result, error)
   const texts = [...output, ...(stack ?? [])].map((row) => row.text)
   const cardSize = measureText(card)
+  // Arrays are the star of DSA videos: drawn a size up from the panels.
+  const geo = arrayGeometry(m.fontPx * ARRAY_SCALE)
   return {
     step,
     index,
@@ -46,10 +51,15 @@ export function useRunLayout(card: TextShape) {
     output,
     width: Math.max(vars.width, panelWidth(texts, m)),
     columnX: card.x + cardSize.w + GAP,
-    arrays: buildArrays(previous, step, card.codePins),
-    arraysY: card.y + cardSize.h + GAP,
-    // Arrays are the star of DSA videos: drawn a size up from the panels.
-    geo: arrayGeometry(m.fontPx * ARRAY_SCALE),
+    geo,
+    diagrams: placeDiagrams(
+      card.x,
+      card.y + cardSize.h + GAP,
+      geo,
+      buildArrays(previous, step, card.codePins),
+      buildLinked(step),
+      buildGraph(step),
+    ),
   }
 }
 

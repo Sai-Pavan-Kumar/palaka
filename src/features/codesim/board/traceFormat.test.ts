@@ -39,6 +39,7 @@ describe('formatValue', () => {
     const chain: PyValue = {
       t: 'listnode',
       items: [num('1'), num('2')],
+      ids: [1, 2],
       cycle: false,
     }
     expect(formatValue(chain)).toBe('1 → 2 → None')

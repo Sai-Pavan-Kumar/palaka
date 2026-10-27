@@ -81,15 +81,32 @@ def is_list_node(value):
     return hasattr(value, "val") and hasattr(value, "next") and not callable(value)
 
 
+# Every node gets a small number the first time it is seen, kept for the
+# whole run, so the board can follow one node while arrows around it change
+# (the point of "reverse a linked list"). Holding the node keeps id() unique.
+NODE_IDS = {}
+NODE_KEEP = []
+
+
+def node_id(node):
+    key = id(node)
+    if key not in NODE_IDS:
+        NODE_IDS[key] = len(NODE_IDS) + 1
+        NODE_KEEP.append(node)
+    return NODE_IDS[key]
+
+
 def describe_chain(node):
-    items, seen = [], set()
+    items, ids, seen = [], [], set()
     while node is not None and len(items) < MAX_LIST_NODES:
         if id(node) in seen:
-            return {"t": "listnode", "items": items, "cycle": True}
+            return {"t": "listnode", "items": items, "ids": ids, "cycle": True}
         seen.add(id(node))
         items.append(describe(node.val, MAX_NEST))
+        ids.append(node_id(node))
         node = node.next
-    return {"t": "listnode", "items": items, "cycle": False, "more": node is not None}
+    return {"t": "listnode", "items": items, "ids": ids, "cycle": False,
+            "more": node is not None}
 
 
 def describe(value, nest=0):
@@ -210,6 +227,8 @@ def execute(source, call, steps, out):
 
 def run_traced(source, call):
     steps, out = [], io.StringIO()
+    NODE_IDS.clear()
+    NODE_KEEP.clear()
     old_stdout, sys.stdout = sys.stdout, out
     result, has_result, error = None, False, None
     try:

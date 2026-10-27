@@ -1,6 +1,8 @@
 import type { BoardPalette } from '../../engine/model/paper'
-import { arrayHeight } from './arrayModel'
 import { ArrayView } from './ArrayView'
+import type { PlacedDiagram } from './diagramLayout'
+import { GraphView } from './GraphView'
+import { LinkedListView } from './LinkedListView'
 import { CallStackPanel, OutputPanel, VariablesPanel } from './CodePanels'
 import { panelHeight } from './panelLayout'
 import type { RunLayout } from './useRunLayout'
@@ -55,33 +57,37 @@ export function PanelColumn({
   )
 }
 
-export function ArraysBlock({
+function Diagram({
+  item,
   run,
-  x,
+  palette,
+}: {
+  item: PlacedDiagram
+  run: RunLayout
+  palette: BoardPalette
+}) {
+  const common = { x: item.x, y: item.y, geo: run.geo, palette }
+  if (item.kind === 'array') {
+    return <ArrayView model={item.model} stepIndex={run.index} {...common} />
+  }
+  if (item.kind === 'list')
+    return <LinkedListView model={item.model} {...common} />
+  return <GraphView model={item.model} g={item.g} {...common} />
+}
+
+export function DiagramsBlock({
+  run,
   palette,
 }: {
   run: RunLayout
-  x: number
   palette: BoardPalette
 }) {
-  const tops = run.arrays.map((_, i) =>
-    run.arrays
-      .slice(0, i)
-      .reduce((y, model) => y + arrayHeight(model, run.geo), run.arraysY),
-  )
-  return (
-    <>
-      {run.arrays.map((model, i) => (
-        <ArrayView
-          key={model.name}
-          model={model}
-          x={x}
-          y={tops[i]}
-          geo={run.geo}
-          palette={palette}
-          stepIndex={run.index}
-        />
-      ))}
-    </>
-  )
+  return run.diagrams.map((item) => (
+    <Diagram
+      key={`${item.kind}:${'name' in item.model ? item.model.name : 'list'}`}
+      item={item}
+      run={run}
+      palette={palette}
+    />
+  ))
 }

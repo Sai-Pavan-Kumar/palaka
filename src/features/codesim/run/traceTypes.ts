@@ -13,6 +13,8 @@ export type DictValue = { t: 'dict'; n: number; entries: [PyValue, PyValue][] }
 export type ListNodeValue = {
   t: 'listnode'
   items: PyValue[]
+  // Run-stable node numbers, same order as items.
+  ids: number[]
   cycle: boolean
   more?: boolean
 }

@@ -3,7 +3,7 @@ import { getFontPx, measureText } from '../../engine/model/textMetrics'
 import { LINE_HEIGHT } from '../../engine/model/boardSpec'
 import type { Page, Paper, Shape, TextShape } from '../../engine/model/types'
 import { useCodeSimStore } from '../codeSimStore'
-import { ArraysBlock, PanelColumn } from './RunViews'
+import { DiagramsBlock, PanelColumn } from './RunViews'
 import { useRunLayout } from './useRunLayout'
 import './codesim.css'
 
@@ -63,7 +63,7 @@ function CodeSimRun({ card, paper }: { card: TextShape; paper: Paper }) {
         palette={palette}
       />
       <PanelColumn run={run} y={card.y} palette={palette} />
-      <ArraysBlock run={run} x={card.x} palette={palette} />
+      <DiagramsBlock run={run} palette={palette} />
     </g>
   )
 }

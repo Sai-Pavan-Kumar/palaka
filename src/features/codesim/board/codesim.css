@@ -85,3 +85,47 @@
     animation: none;
   }
 }
+
+/* A re-pointed "next" draws itself from its node, then the head lands:
+   the viewer sees the arrow being re-aimed, not a picture swap. */
+.codesim-link path:first-child {
+  stroke-dasharray: 1;
+  animation: codesim-draw 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.codesim-link path:last-child {
+  animation: codesim-land 320ms ease-out;
+}
+
+@keyframes codesim-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes codesim-land {
+  0%,
+  70% {
+    opacity: 0;
+  }
+}
+
+.codesim-graph-node circle,
+.codesim-graph-edge {
+  transition:
+    fill 240ms ease-out,
+    stroke 240ms ease-out,
+    stroke-width 240ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .codesim-link path,
+  .codesim-graph-node circle,
+  .codesim-graph-edge {
+    animation: none;
+    transition: none;
+  }
+}
