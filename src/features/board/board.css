@@ -89,7 +89,9 @@
   position: absolute;
   inset: 0;
   isolation: isolate;
-  overflow: hidden;
+  /* clip, not hidden: a hidden box can still be scrolled by the browser
+     (to show a text caret), which slid the whole board sideways. */
+  overflow: clip;
   background: var(--color-surface-card-light);
   color: var(--color-text-primary-light);
   border-radius: var(--radius-md);
@@ -339,4 +341,62 @@
   transition:
     transform var(--duration-slow) var(--ease-out),
     opacity var(--duration-standard) var(--ease-out);
+}
+
+/* Word by word: every word (a letter, for the typewriter) is its own piece
+   with its own delay. Pieces wait hidden ("both") until their turn. */
+.word-in {
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transform-box: fill-box;
+}
+
+.word-in-wipe {
+  animation-name: word-in-wipe;
+}
+
+@keyframes word-in-wipe {
+  from {
+    opacity: 0;
+    transform: translateX(-0.25em);
+  }
+}
+
+.word-in-typewriter {
+  animation-name: word-in-type;
+  animation-timing-function: steps(1, end);
+}
+
+@keyframes word-in-type {
+  from {
+    opacity: 0;
+  }
+}
+
+.word-in-slide-up {
+  animation-name: word-in-slide-up;
+}
+
+@keyframes word-in-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em);
+  }
+}
+
+.word-in-blur-in {
+  animation-name: word-in-blur;
+}
+
+@keyframes word-in-blur {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-in {
+    animation: none;
+  }
 }

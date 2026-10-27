@@ -2,6 +2,7 @@ import { SLOWEST_PACE } from '../../animate/motion'
 import { getPenWidth, getStrokeWidth } from '../model/boardSpec'
 import { isBuildingBlock } from '../model/buildings'
 import { getOutline } from '../model/geoOutline'
+import { getRevealPieces, revealsByWord } from '../model/textReveal'
 import { getShapeBounds } from '../model/geometry'
 import { getLineSamplePoints } from '../model/lineRouting'
 import type { Point, Shape, TextAnimation } from '../model/types'
@@ -12,8 +13,14 @@ import { getArrowheadWings } from './shapePaths'
 const DRAW_SPEED = 1400
 const MIN_DRAW_S = 0.35
 const MAX_DRAW_S = 1.6
+// Word by word reads at speaking pace; a long paragraph speeds up instead of
+// stalling the talk past a few seconds.
+const PER_WORD_S = 0.11
+const PER_LETTER_S = 0.035
+const MAX_TEXT_S = 4
 // After this, a revealed shape is shown plainly whatever the animation did.
-export const DRAW_ON_SAFETY_MS = MAX_DRAW_S * SLOWEST_PACE * 1000 + 300
+export const DRAW_ON_SAFETY_MS =
+  Math.max(MAX_DRAW_S, MAX_TEXT_S) * SLOWEST_PACE * 1000 + 300
 // The mask band is wider than the ink so hand-drawn wobble and pen pressure
 // never poke out of it.
 export const MASK_WIDTH_FACTOR = 2.2
@@ -24,6 +31,8 @@ export const MASK_REGION = 30000
 export type DrawPlan =
   | { kind: 'trace'; d: string; length: number; width: number }
   | { kind: 'wipe'; length: number; animation: TextAnimation }
+  // Text that lands word by word (letters for a typewriter): no mask.
+  | { kind: 'words'; units: number; animation: TextAnimation }
 
 function polyline(points: Point[]): { d: string; length: number } {
   let length = 0
@@ -77,6 +86,14 @@ export function getDrawPlan(shape: Shape): DrawPlan | null {
     case 'table':
       return outlinePlan(shape)
     case 'text': {
+      if (revealsByWord(shape)) {
+        const units = getRevealPieces(shape).length
+        return {
+          kind: 'words',
+          units,
+          animation: shape.textAnimation ?? 'wipe',
+        }
+      }
       const bounds = getShapeBounds(shape)
       return {
         kind: 'wipe',
@@ -94,6 +111,10 @@ export function getDrawPlan(shape: Shape): DrawPlan | null {
 export function getDrawDuration(shape: Shape): number | null {
   const plan = getDrawPlan(shape)
   if (!plan) return null
+  if (plan.kind === 'words') {
+    const perUnit = plan.animation === 'typewriter' ? PER_LETTER_S : PER_WORD_S
+    return Math.min(MAX_TEXT_S, Math.max(MIN_DRAW_S, plan.units * perUnit))
+  }
   return Math.min(MAX_DRAW_S, Math.max(MIN_DRAW_S, plan.length / DRAW_SPEED))
 }
 

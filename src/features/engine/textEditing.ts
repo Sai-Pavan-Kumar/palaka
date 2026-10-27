@@ -1,7 +1,8 @@
 import { editCurrentPage, getCurrentPage } from './boardActions'
 import { useEngineStore } from './engineStore'
 import { findPage, removeShapes, replaceShapes } from './model/documentOps'
-import type { Shape } from './model/types'
+import { fitTextToBoard, textAreaFor } from './model/textFit'
+import type { Shape, TextShape } from './model/types'
 import { setSession, useSessionStore } from './sessionStore'
 
 // A whole typing session (open box → type → click away) is one undo step.
@@ -18,11 +19,17 @@ export function updateEditingText(text: string): void {
   if (!shape) return
   const label = text.replace(/\n/g, ' ')
   let next: Shape
-  if (shape.type === 'text') next = { ...shape, text }
+  if (shape.type === 'text') next = fitTyped({ ...shape, text })
   else if (shape.type === 'block' || shape.type === 'line') {
     next = { ...shape, label }
   } else return
   editCurrentPage((page) => replaceShapes(page, [next]))
+}
+
+function fitTyped(shape: TextShape): TextShape {
+  const { doc } = useEngineStore.getState()
+  const frames = getCurrentPage().frameCount ?? 1
+  return fitTextToBoard(shape, textAreaFor(shape.x, doc.aspect, frames))
 }
 
 export function hasEditableLabel(shape: Shape): boolean {

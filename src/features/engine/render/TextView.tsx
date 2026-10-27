@@ -2,7 +2,7 @@ import { FONT_FAMILY, FONT_WEIGHT, LINE_HEIGHT } from '../model/boardSpec'
 import {
   getBaselineOffset,
   getFontPx,
-  getTextLines,
+  getShapeLines,
 } from '../model/textMetrics'
 import type { TextShape } from '../model/types'
 import { useBoardPalette } from './paletteContext'
@@ -22,7 +22,7 @@ export function TextView({
   const fontPx = getFontPx(shape)
   const lineBox = fontPx * LINE_HEIGHT
   const baseline = getBaselineOffset(shape)
-  const lines = getTextLines(shape.text)
+  const lines = getShapeLines(shape)
   const hasFocus = focusLine !== undefined
   return (
     <>

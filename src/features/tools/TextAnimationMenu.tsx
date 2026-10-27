@@ -8,7 +8,7 @@ import {
 import { IconButton } from '../../shared/ui/IconButton'
 import { Popover } from '../../shared/ui/Popover'
 import { applyStyle } from '../engine/boardActions'
-import type { TextAnimation } from '../engine/model/types'
+import type { TextAnimation, TextReveal } from '../engine/model/types'
 import './textAnimationMenu.css'
 
 type AnimOption = {
@@ -71,10 +71,36 @@ function AnimMenuItem({
   )
 }
 
+const REVEAL_OPTIONS: { id: TextReveal; label: string }[] = [
+  { id: 'word', label: 'Word by word' },
+  { id: 'whole', label: 'All at once' },
+]
+
+// Word by word is the default; "All at once" is the old whole-box reveal.
+function RevealToggle({ current }: { current: TextReveal }) {
+  return (
+    <div className="text-anim-menu__reveal" role="group" aria-label="Reveal">
+      {REVEAL_OPTIONS.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          className={`text-anim-menu__chip ${option.id === current ? 'is-active' : ''}`}
+          aria-pressed={option.id === current}
+          onClick={() => applyStyle({ textReveal: option.id })}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function TextAnimationMenu({
   current = 'wipe',
+  reveal = 'word',
 }: {
   current?: TextAnimation
+  reveal?: TextReveal
 }) {
   const activeOpt =
     ANIM_OPTIONS.find((opt) => opt.id === current) ?? ANIM_OPTIONS[0]
@@ -104,6 +130,7 @@ export function TextAnimationMenu({
               }}
             />
           ))}
+          <RevealToggle current={reveal} />
         </div>
       )}
     </Popover>

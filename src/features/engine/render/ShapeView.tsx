@@ -9,6 +9,8 @@ import { BlockContents, BlockView } from './BlockView'
 import { FlowDots } from './FlowDots'
 import { GeoView, LineGlow, LineLabel, LineView } from './GeoLineViews'
 import { useBoardPalette } from './paletteContext'
+import { WordReveal } from './WordReveal'
+import { revealsByWord } from '../model/textReveal'
 import type { RowState } from '../model/highlights'
 import { getStrokePath } from './shapePaths'
 import { TableContents, TableView } from './TableView'
@@ -162,6 +164,9 @@ function DrawingOnBody({
   shape: Shape
   duration: number
 }) {
+  if (shape.type === 'text' && revealsByWord(shape)) {
+    return <WordReveal shape={shape} duration={duration} />
+  }
   const mask = `url(#${drawMaskId(shape)})`
   const timing = { '--draw-duration': `${duration}s` } as CSSProperties
   return (

@@ -1,5 +1,7 @@
 import { commitCurrentPage, getCurrentPage } from '../engine/boardActions'
+import { useEngineStore } from '../engine/engineStore'
 import { addShape } from '../engine/model/documentOps'
+import { fitTextToBoard, textAreaFor } from '../engine/model/textFit'
 import { withRevealStep } from '../engine/model/revealSteps'
 import type { CodePins, Page, TextShape } from '../engine/model/types'
 import { selectShapes, useSessionStore } from '../engine/sessionStore'
@@ -42,10 +44,19 @@ function newCard(source: string, call: string, pins: CodePins): TextShape {
   }
 }
 
+// A long program shrinks to stay on the board (it never wraps: the line
+// band needs every source line on its own row).
+function fitCard(card: TextShape): TextShape {
+  const { aspect } = useEngineStore.getState().doc
+  const frames = getCurrentPage().frameCount ?? 1
+  return fitTextToBoard(card, textAreaFor(card.x, aspect, frames))
+}
+
 function patchCard(card: TextShape, patch: Partial<TextShape>): void {
+  const next = fitCard({ ...card, ...patch })
   commitCurrentPage((page) => ({
     ...page,
-    shapes: { ...page.shapes, [card.id]: { ...card, ...patch } },
+    shapes: { ...page.shapes, [card.id]: next },
   }))
 }
 
@@ -61,7 +72,7 @@ export function placeCard(
     patchCard(existing, { text: source, codeCall: call, codePins: pins })
     return existing.id
   }
-  const card = newCard(source, call, pins)
+  const card = fitCard(newCard(source, call, pins))
   const { presenting } = useSessionStore.getState()
   commitCurrentPage((page) =>
     addShape(page, withRevealStep(page, card, presenting)),

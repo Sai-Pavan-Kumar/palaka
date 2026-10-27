@@ -40,7 +40,10 @@ function StyleLayerRow({ shown, tool }: { shown: ShownStyle; tool: string }) {
       {fields.has('font') && <span className="floating-bar__divider" />}
       {fields.has('font') && <FontToggle font={shown.values.font} />}
       {fields.has('font') && (
-        <TextAnimationMenu current={shown.values.textAnimation} />
+        <TextAnimationMenu
+          current={shown.values.textAnimation}
+          reveal={shown.values.textReveal}
+        />
       )}
       {tool === 'pen' && !hasSelection && (
         <span className="floating-bar__divider" />

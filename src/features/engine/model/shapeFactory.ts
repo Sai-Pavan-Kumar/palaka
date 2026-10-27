@@ -17,6 +17,7 @@ import type {
   StrokeShape,
   TextAnimation,
   TextShape,
+  TextReveal,
 } from './types'
 
 // The styles a new shape is born with. The style bar edits these, so
@@ -29,6 +30,7 @@ export type ShapeStyle = {
   font: FontKey
   opacity: number
   textAnimation?: TextAnimation
+  textReveal?: TextReveal
   routing?: LineRouting
   effect?: BlockEffect
 }

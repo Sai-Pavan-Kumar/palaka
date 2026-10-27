@@ -34,7 +34,8 @@ export function DrawOnMask({
   duration?: number | null
 }) {
   const plan = getDrawPlan(shape)
-  if (!plan || duration === null) return null
+  // Word-by-word text animates each word itself; it needs no mask.
+  if (!plan || plan.kind === 'words' || duration === null) return null
   const style = { '--draw-duration': `${duration}s` } as CSSProperties
   const bounds = getShapeBounds(shape)
   return (

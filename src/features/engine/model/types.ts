@@ -222,6 +222,8 @@ export type SimSettings = {
 }
 
 export type TextAnimation = 'wipe' | 'typewriter' | 'slide-up' | 'blur-in'
+// Word by word (default) or the whole text box at once.
+export type TextReveal = 'word' | 'whole'
 
 export type TextShape = ShapeBase & {
   type: 'text'
@@ -233,6 +235,11 @@ export type TextShape = ShapeBase & {
   size: SizeKey
   scale: number
   textAnimation?: TextAnimation
+  // Missing = word by word (typewriter: letter by letter).
+  textReveal?: TextReveal
+  // Lines wrap at this width (board units), word by word, so typed text
+  // never runs off the board. Missing = only the typed line breaks.
+  wrapWidth?: number
   // Present only on a code-simulation card: the "Run with" line
   // (e.g. "Solution().search([1, 3], 3)") that runs after the code.
   codeCall?: string

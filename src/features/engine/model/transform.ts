@@ -79,7 +79,6 @@ export function scaleShape(shape: Shape, t: ScaleTransform): Shape {
         y2: mapY(t, shape.y2),
       }
     case 'table':
-    case 'text':
       // Text cannot stretch, so it grows by the average and keeps its corner
       // in place relative to the selection.
       return {
@@ -87,6 +86,17 @@ export function scaleShape(shape: Shape, t: ScaleTransform): Shape {
         x: mapX(t, shape.x),
         y: mapY(t, shape.y),
         scale: shape.scale * inkFactor,
+      }
+    case 'text':
+      // The wrap width scales with the letters, so a resize keeps the same
+      // line breaks and the whole box grows like a picture, instead of the
+      // bigger words re-wrapping inside a box that never widens.
+      return {
+        ...shape,
+        x: mapX(t, shape.x),
+        y: mapY(t, shape.y),
+        scale: shape.scale * inkFactor,
+        ...(shape.wrapWidth && { wrapWidth: shape.wrapWidth * inkFactor }),
       }
     case 'highlight':
     case 'tableState':

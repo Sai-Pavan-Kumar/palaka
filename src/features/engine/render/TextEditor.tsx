@@ -13,7 +13,7 @@ import {
   getLineLabelLayout,
   type LabelLayout,
 } from '../model/labelLayout'
-import { getFontPx, getTextLines, measureText } from '../model/textMetrics'
+import { getFontPx, getShapeLines, measureText } from '../model/textMetrics'
 import { getPalette } from '../model/paper'
 import type { Paper, Shape, TextShape } from '../model/types'
 import { useSessionStore } from '../sessionStore'
@@ -39,11 +39,14 @@ function placement(x: number, y: number, w: number, h: number, slide: Slide) {
 function textStyle(paper: Paper, shape: TextShape, slide: Slide) {
   const fontPx = getFontPx(shape)
   const { w } = measureText(shape)
-  const lines = getTextLines(shape.text).length
+  const lines = getShapeLines(shape).length
+  // A wrapping box is exactly its wrap width, so the textarea breaks lines
+  // where the drawn text will.
+  const width = shape.wrapWidth ?? w + fontPx * CARET_ROOM_EM
   const { toWidth, ...box } = placement(
     shape.x,
     shape.y,
-    w + fontPx * CARET_ROOM_EM,
+    width,
     lines * fontPx * LINE_HEIGHT,
     slide,
   )
@@ -55,6 +58,10 @@ function textStyle(paper: Paper, shape: TextShape, slide: Slide) {
     lineHeight: LINE_HEIGHT,
     color: getPalette(paper).ink[shape.color],
     opacity: shape.opacity,
+    ...(shape.wrapWidth && {
+      whiteSpace: 'pre-wrap',
+      overflowWrap: 'anywhere',
+    }),
   }
 }
 
