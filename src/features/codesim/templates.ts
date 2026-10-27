@@ -42,4 +42,38 @@ export const CODE_TEMPLATES: CodeTemplate[] = [
         return nums`,
     call: 'Solution().sortArray([5, 2, 4, 1])',
   },
+  {
+    id: 'binary-search',
+    label: 'Binary search',
+    source: `class Solution:
+    def search(self, nums: List[int], target: int) -> int:
+        lo, hi = 0, len(nums) - 1
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            if nums[mid] == target:
+                return mid
+            if nums[mid] < target:
+                lo = mid + 1
+            else:
+                hi = mid - 1
+        return -1`,
+    call: 'Solution().search([-1, 0, 3, 5, 9, 12, 15, 21], 15)',
+  },
+  {
+    id: 'two-pointers',
+    label: 'Two pointers',
+    source: `class Solution:
+    def twoSum(self, numbers: List[int], target: int) -> List[int]:
+        left, right = 0, len(numbers) - 1
+        while left < right:
+            total = numbers[left] + numbers[right]
+            if total == target:
+                return [left + 1, right + 1]
+            if total < target:
+                left += 1
+            else:
+                right -= 1
+        return []`,
+    call: 'Solution().twoSum([1, 3, 4, 6, 8, 11], 10)',
+  },
 ]

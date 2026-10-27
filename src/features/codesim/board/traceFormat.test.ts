@@ -13,6 +13,7 @@ function step(fn: string, vars: Record<string, PyValue>, depth = 1): TraceStep {
   const frames = Array.from({ length: depth }, (_, i) => ({
     fn: i === depth - 1 ? fn : '<module>',
     line: 1,
+    args: [],
     vars: i === depth - 1 ? vars : {},
   }))
   return { line: 1, event: 'line', frames, stdout: '' }

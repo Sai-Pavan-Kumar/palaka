@@ -228,7 +228,12 @@ export type TextShape = ShapeBase & {
   // Present only on a code-simulation card: the "Run with" line
   // (e.g. "Solution().search([1, 3], 3)") that runs after the code.
   codeCall?: string
+  // Overrides the code simulation's guess of what to draw: which variables
+  // are arrays, which are pointers into them. Empty = guess.
+  codePins?: CodePins
 }
+
+export type CodePins = { arrays: string[]; pointers: string[] }
 
 export type ImageShape = ShapeBase & {
   type: 'image'

@@ -44,6 +44,11 @@ describe('tracer', () => {
     expect(last.frames.at(-1)!.vars).not.toHaveProperty('self')
   })
 
+  it('records parameter names per call, without self', () => {
+    const out = run(BINARY_SEARCH, 'Solution().search([1, 2], 2)')
+    expect(out.steps.at(-1)!.frames.at(-1)!.args).toEqual(['nums', 'target'])
+  })
+
   it('hides prelude names and functions from module variables', () => {
     const out = run('x = 3\ndef f():\n    return 1\ny = f()')
     const vars = out.steps.at(-1)!.frames[0].vars

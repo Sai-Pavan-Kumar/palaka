@@ -21,6 +21,8 @@ export type PyValue = ScalarValue | SeqValue | DictValue | ListNodeValue
 export type TraceFrame = {
   fn: string
   line: number
+  // Parameter names in order (self left out), for "fn(n=3)" in the stack.
+  args: string[]
   vars: Record<string, PyValue>
 }
 

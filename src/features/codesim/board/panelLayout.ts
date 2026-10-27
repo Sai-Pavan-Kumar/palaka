@@ -1,6 +1,11 @@
 import { FONT_FAMILY, LINE_HEIGHT } from '../../engine/model/boardSpec'
 import { measureLine } from '../../engine/model/textMetrics'
-import type { PyValue, TraceError, TraceStep } from '../run/traceTypes'
+import type {
+  PyValue,
+  TraceError,
+  TraceFrame,
+  TraceStep,
+} from '../run/traceTypes'
 import {
   clipValue,
   currentFrame,
@@ -107,4 +112,41 @@ export function outputContent(
     lines.push({ text: clipValue(error.message), tone: 'error' })
   }
   return lines
+}
+
+export type StackRow = { key: string; text: string; isTop: boolean }
+
+function callText(frame: TraceFrame): string {
+  const args = frame.args
+    .filter((name) => frame.vars[name])
+    .map((name) => `${name}=${clipValue(formatValue(frame.vars[name]))}`)
+  return `${frame.fn}(${args.join(', ')})`
+}
+
+// Newest call on top, the way the stack is drawn on every whiteboard. The
+// module level is left out: "<module>" means nothing to a viewer.
+export function stackRows(step: TraceStep): StackRow[] {
+  const calls = step.frames.filter((frame) => frame.fn !== '<module>')
+  return calls
+    .map((frame, depth) => {
+      const isTop = depth === calls.length - 1
+      const returning = isTop && step.event === 'return' && step.ret
+      const text = callText(frame)
+      return {
+        // Depth + name: a new call mounts a new row (and animates in).
+        key: `${depth}:${frame.fn}`,
+        text: returning
+          ? `${text} → ${clipValue(formatValue(step.ret!))}`
+          : text,
+        isTop,
+      }
+    })
+    .reverse()
+}
+
+// A single call never stacks: the panel would only repeat the function name.
+export function runHasNestedCalls(steps: TraceStep[]): boolean {
+  return steps.some(
+    (step) => step.frames.filter((f) => f.fn !== '<module>').length > 1,
+  )
 }

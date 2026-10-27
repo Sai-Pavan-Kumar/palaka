@@ -128,11 +128,17 @@ def frame_vars(frame, hidden):
     return {k: describe(v) for k, v in list(names.items()) if is_shown(k, v, hidden)}
 
 
+def arg_names(code):
+    count = code.co_argcount + code.co_kwonlyargcount
+    return [name for name in code.co_varnames[:count] if name != "self"]
+
+
 def user_frames(frame, hidden):
     stack = []
     while frame is not None:
         if frame.f_code.co_filename == "<user>":
             stack.append({"fn": frame.f_code.co_name, "line": frame.f_lineno,
+                          "args": arg_names(frame.f_code),
                           "vars": frame_vars(frame, hidden)})
         frame = frame.f_back
     stack.reverse()

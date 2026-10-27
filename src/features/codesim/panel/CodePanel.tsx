@@ -3,9 +3,10 @@ import { useEngineStore } from '../../engine/engineStore'
 import { findPage } from '../../engine/model/documentOps'
 import { useSessionStore } from '../../engine/sessionStore'
 import { useCodeSimStore, type CodeSimStatus } from '../codeSimStore'
-import { findCodeCard, runOnBoard } from '../runOnBoard'
+import { findCodeCard, NO_PINS, runOnBoard } from '../runOnBoard'
 import { CODE_TEMPLATES } from '../templates'
 import { CodeStepControls } from './CodeStepControls'
+import { PinFields } from './PinFields'
 import '../../sql/sqlPanel.css'
 import './codePanel.css'
 
@@ -82,12 +83,15 @@ function useCardDraft() {
   })
   const [source, setSource] = useState(card?.text ?? '')
   const [call, setCall] = useState(card?.codeCall ?? '')
-  return { source, setSource, call, setCall }
+  const [pins, setPins] = useState(card?.codePins ?? NO_PINS)
+  return { source, setSource, call, setCall, pins, setPins }
 }
 
 export function CodePanel() {
-  const { source, setSource, call, setCall } = useCardDraft()
+  const { source, setSource, call, setCall, pins, setPins } = useCardDraft()
   const status = useCodeSimStore((s) => s.status)
+  // Bumped on template pick: remounts the pin inputs so they clear too.
+  const [pinsKey, setPinsKey] = useState(0)
   const isBusy = status === 'loading' || status === 'running'
 
   return (
@@ -96,6 +100,8 @@ export function CodePanel() {
         onPick={(nextSource, nextCall) => {
           setSource(nextSource)
           setCall(nextCall)
+          setPins(NO_PINS)
+          setPinsKey((key) => key + 1)
         }}
       />
       <textarea
@@ -116,12 +122,13 @@ export function CodePanel() {
           onChange={(event) => setCall(event.target.value)}
         />
       </label>
+      <PinFields key={pinsKey} pins={pins} onChange={setPins} />
       <div className="sql-panel__actions">
         <button
           type="button"
           className="sql-panel__insert"
           disabled={isBusy || source.trim() === ''}
-          onClick={() => void runOnBoard(source, call)}
+          onClick={() => void runOnBoard(source, call, pins)}
         >
           {RUN_LABEL[status]}
         </button>

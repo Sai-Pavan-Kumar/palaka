@@ -30,3 +30,58 @@
     opacity: 0.35;
   }
 }
+
+/* Pointers glide between cells; a short ease-out reads as "moved", not
+   "teleported", and still keeps up when stepping fast. */
+.codesim-pointer {
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.codesim-cell {
+  transition: opacity 240ms ease-out;
+}
+
+/* A swapped value starts in the other cell and arcs home. */
+.codesim-swap {
+  animation: codesim-swap 420ms cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+@keyframes codesim-swap {
+  0% {
+    transform: translate(var(--from-x), 0);
+  }
+  50% {
+    transform: translate(calc(var(--from-x) / 2), var(--lift));
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .codesim-pointer,
+  .codesim-cell {
+    transition: none;
+  }
+  .codesim-swap {
+    animation: none;
+  }
+}
+
+.codesim-stack-row {
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: codesim-push 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes codesim-push {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .codesim-stack-row {
+    transition: none;
+    animation: none;
+  }
+}
