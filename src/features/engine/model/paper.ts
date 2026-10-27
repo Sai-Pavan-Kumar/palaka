@@ -25,7 +25,7 @@ export const PAPER_COLORS: Record<
 > = {
   white: { fill: '#ffffff', tone: 'light', label: 'White' },
   cream: { fill: '#fdfaf2', tone: 'light', label: 'Cream' },
-  mist: { fill: '#f4f8ff', tone: 'light', label: 'Mist' },
+  black: { fill: '#111118', tone: 'dark', label: 'Black' }, // --color-surface-card
   blueprint: { fill: '#0a4494', tone: 'dark', label: 'Blueprint' }, // --color-brand-deep
   chalk: { fill: '#1d2b25', tone: 'dark', label: 'Chalk' },
 }
@@ -101,7 +101,8 @@ export function getPalette(paper: Paper): BoardPalette {
 }
 
 // Boards saved before paper existed (or with an unknown value) get the
-// default, instead of failing to load.
+// default, instead of failing to load. Mist was removed 2026-10-27 for
+// Black; old Mist boards open on White, its nearest colour.
 export function normalizePaper(value: unknown): Paper {
   if (typeof value !== 'object' || value === null) return DEFAULT_PAPER
   const paper = value as Partial<Paper>

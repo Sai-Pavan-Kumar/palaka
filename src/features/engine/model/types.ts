@@ -348,7 +348,7 @@ export type Page = {
 
 // One paper for the whole board, so a video never changes look between pages.
 export type PaperPattern = 'plain' | 'dots' | 'grid' | 'grain' | 'blueprint'
-export type PaperColor = 'white' | 'cream' | 'mist' | 'blueprint' | 'chalk'
+export type PaperColor = 'white' | 'cream' | 'black' | 'blueprint' | 'chalk'
 
 export type Paper = {
   pattern: PaperPattern
