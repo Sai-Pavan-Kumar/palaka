@@ -91,14 +91,19 @@ export function StyleBar() {
 
 // Swatches show the ink as it looks on the current paper.
 function ColorRow({ current }: { current: ShapeStyle['color'] | undefined }) {
-  const ink = useEngineStore((s) => getPalette(s.doc.paper).ink)
-  return COLOR_KEYS.map((name) => (
+  const palette = useEngineStore((s) => getPalette(s.doc.paper))
+  // On light paper brand blue is the same as blue, so it would only be a
+  // duplicate swatch. It stays visible if the selection already uses it.
+  const keys = COLOR_KEYS.filter(
+    (name) => name !== 'brand' || palette.tone === 'dark' || current === name,
+  )
+  return keys.map((name) => (
     <button
       key={name}
       type="button"
       className={`style-bar__swatch ${current === name ? 'is-active' : ''}`}
-      style={{ color: ink[name] }}
-      aria-label={`Colour ${name}`}
+      style={{ color: palette.ink[name] }}
+      aria-label={`Colour ${name === 'brand' ? 'brand blue' : name}`}
       aria-pressed={current === name}
       onClick={() => applyStyle({ color: name })}
     />

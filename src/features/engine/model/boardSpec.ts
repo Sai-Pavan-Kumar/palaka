@@ -16,6 +16,7 @@ export const COLOR_KEYS: ColorKey[] = [
   'green',
   'orange',
   'violet',
+  'brand',
 ]
 
 // Board ink, not UI: SVG needs plain strings. Every ink colour has at least
@@ -28,6 +29,7 @@ export const INK: Record<ColorKey, string> = {
   green: '#067647',
   orange: '#b54708',
   violet: '#6e3ff3',
+  brand: '#005ae0', // --color-brand-primary
 }
 
 export const TINT: Record<ColorKey, string> = {
@@ -37,6 +39,7 @@ export const TINT: Record<ColorKey, string> = {
   green: '#dff5ea',
   orange: '#fdebdd',
   violet: '#ece6fe',
+  brand: '#e0ecff',
 }
 
 // Highlighters need bright, light colours: dark ink at 40% looks muddy.
@@ -47,6 +50,7 @@ export const HIGHLIGHT: Record<ColorKey, string> = {
   green: '#5ee0a0',
   orange: '#ffb066',
   violet: '#b79cff',
+  brand: '#6aa3f8',
 }
 
 export const HIGHLIGHT_OPACITY = 0.4

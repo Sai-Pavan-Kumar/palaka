@@ -2,7 +2,15 @@
 // x = 960 sits in the middle of the exported PNG and of the video frame.
 export type Aspect = '16:9' | '9:16'
 
-export type ColorKey = 'black' | 'blue' | 'red' | 'green' | 'orange' | 'violet'
+export type ColorKey =
+  | 'black'
+  | 'blue'
+  | 'red'
+  | 'green'
+  | 'orange'
+  | 'violet'
+  // #005ae0 on every paper, even dark ones where `blue` turns light.
+  | 'brand'
 export type SizeKey = 's' | 'm' | 'l' | 'xl'
 export type FillStyle = 'none' | 'tint' | 'solid' | 'hatch'
 export type DashStyle = 'hand' | 'clean' | 'dashed' | 'dotted'

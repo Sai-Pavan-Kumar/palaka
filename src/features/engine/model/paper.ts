@@ -39,6 +39,9 @@ const DARK_INK: Record<ColorKey, string> = {
   green: '#7ce8b4',
   orange: '#ffc085',
   violet: '#cdbcff',
+  // Kept as the real brand blue on purpose (owner request). Below text
+  // contrast on dark paper: for shapes and big text, see Design System.
+  brand: '#005ae0',
 }
 
 export type BoardPalette = {
