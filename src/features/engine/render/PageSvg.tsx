@@ -25,7 +25,7 @@ type PageShapesProps = Pick<
   'page' | 'imageUrls' | 'isVisible' | 'hiddenShapeId'
 > & { drawOnStep: number | null; flowUpTo: number | null }
 
-function PageShapes({
+export function PageShapes({
   page,
   imageUrls,
   isVisible,

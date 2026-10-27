@@ -47,3 +47,9 @@ export function isShownAt(
   if (exitStep === undefined || exitStep > shown) return true
   return exitStep === playingStep
 }
+
+// Still waiting for its turn (not yet revealed). Shapes that already left
+// through an exit are not "upcoming": they are done, not ahead.
+export function isUpcoming(shape: Shape, shown: number): boolean {
+  return shape.revealStep !== undefined && shape.revealStep > shown
+}

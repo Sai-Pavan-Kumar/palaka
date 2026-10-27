@@ -3,6 +3,7 @@ import { findPage } from '../engine/model/documentOps'
 import { useSessionStore } from '../engine/sessionStore'
 import { getStepCount } from './revealModel'
 import { useArmedCodeCount } from '../codesim/presentCodeSim'
+import { useUiStore } from '../shell/uiStore'
 import './reveal.css'
 
 // Lives in the page bar, outside the board: only the speaker sees it.
@@ -15,6 +16,7 @@ export function StepCounter() {
     return page ? getStepCount(page) : 0
   })
   const code = useArmedCodeCount()
+  const showUpcoming = useUiStore((s) => s.showUpcoming)
   if (!presenting) return null
 
   return (
@@ -26,7 +28,9 @@ export function StepCounter() {
           · code {code.index + 1} / {code.total}
         </span>
       )}
-      <span className="step-counter__hint">Space next · ← back</span>
+      <span className="step-counter__hint">
+        Space next · ← back · G {showUpcoming ? 'hide' : 'show'} next
+      </span>
     </div>
   )
 }

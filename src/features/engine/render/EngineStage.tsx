@@ -10,7 +10,7 @@ import { findPage } from '../model/documentOps'
 import { getPalette } from '../model/paper'
 import type { BoardDocument, Page, Shape } from '../model/types'
 import { useSessionStore, type EngineTool } from '../sessionStore'
-import { EditingOverlay } from './EditingOverlay'
+import { StageOverlays } from './StageOverlays'
 import { LaserTrail } from './LaserTrail'
 import { PageSvg } from './PageSvg'
 import { TextEditor } from './TextEditor'
@@ -255,11 +255,7 @@ export function EngineStage({ onPress, onDragOver, onDrop }: EngineStageProps) {
         isVisible={isVisible}
         layout={layout}
       />
-      <EditingOverlay
-        width={layout.stageWidth}
-        height={layout.height}
-        unitsPerPixel={unitsPerPixel}
-      />
+      <StageOverlays {...{ page, doc, imageUrls, layout, unitsPerPixel }} />
     </div>
   )
 }

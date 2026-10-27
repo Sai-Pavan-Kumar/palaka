@@ -25,6 +25,10 @@ function handlePresentingKey(event: KeyboardEvent, isRecording: boolean) {
     toggleCameraFrame()
     return true
   }
+  if (event.key.toLowerCase() === 'g') {
+    useUiStore.getState().toggleUpcoming()
+    return true
+  }
   if (event.shiftKey && event.key === 'ArrowRight') {
     setCameraFrame(1)
     return true
