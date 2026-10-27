@@ -231,6 +231,9 @@ export type TextShape = ShapeBase & {
   // Overrides the code simulation's guess of what to draw: which variables
   // are arrays, which are pointers into them. Empty = guess.
   codePins?: CodePins
+  // On: while presenting, Space steps through the code once this card is
+  // shown, then moves on. Off/missing: the card is a plain reveal object.
+  codeStepThrough?: boolean
 }
 
 export type CodePins = { arrays: string[]; pointers: string[] }

@@ -2,7 +2,9 @@ import { getPalette, type BoardPalette } from '../../engine/model/paper'
 import { getFontPx, measureText } from '../../engine/model/textMetrics'
 import { LINE_HEIGHT } from '../../engine/model/boardSpec'
 import type { Page, Paper, Shape, TextShape } from '../../engine/model/types'
+import { useSessionStore } from '../../engine/sessionStore'
 import { useCodeSimStore } from '../codeSimStore'
+import { showsRunWhilePresenting, usePresentPrewarm } from '../presentCodeSim'
 import { DiagramsBlock, PanelColumn } from './RunViews'
 import { useRunLayout } from './useRunLayout'
 import './codesim.css'
@@ -79,8 +81,12 @@ export function CodeSimLayer({
   paper: Paper
   isVisible?: (shape: Shape) => boolean
 }) {
+  usePresentPrewarm(page)
+  const presenting = useSessionStore((s) => s.presenting)
   const cardId = useCodeSimStore((s) => s.cardId)
+  useCodeSimStore((s) => s.runKey)
   const card = cardId ? page.shapes[cardId] : undefined
   if (!card || card.type !== 'text' || !isVisible(card)) return null
+  if (presenting && !showsRunWhilePresenting(card)) return null
   return <CodeSimRun card={card} paper={paper} />
 }

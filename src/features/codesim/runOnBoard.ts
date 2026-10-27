@@ -1,80 +1,14 @@
-import { commitCurrentPage, getCurrentPage } from '../engine/boardActions'
-import { addShape } from '../engine/model/documentOps'
-import { withRevealStep } from '../engine/model/revealSteps'
-import type { CodePins, Page, TextShape } from '../engine/model/types'
-import { selectShapes, useSessionStore } from '../engine/sessionStore'
+import type { CodePins, TextShape } from '../engine/model/types'
+import { placeCard, runKeyOf } from './codeCard'
 import { useCodeSimStore } from './codeSimStore'
 import { runCode } from './run/runClient'
 
-// Code reads best a little under the "S" text size: a 15-line solution
-// still fits a 16:9 board next to its Variables panel.
-const CARD_SCALE = 0.75
-const CARD_AT = { x: 96, y: 150 }
-
-export const NO_PINS: CodePins = { arrays: [], pointers: [] }
-
-export function findCodeCard(page: Page): TextShape | null {
-  for (const id of page.order) {
-    const shape = page.shapes[id]
-    if (shape.type === 'text' && shape.codeCall !== undefined) return shape
-  }
-  return null
-}
-
-function newCard(source: string, call: string, pins: CodePins): TextShape {
-  return {
-    id: crypto.randomUUID(),
-    type: 'text',
-    ...CARD_AT,
-    text: source,
-    font: 'code',
-    size: 's',
-    scale: CARD_SCALE,
-    color: 'black',
-    opacity: 1,
-    textAnimation: 'wipe',
-    codeCall: call,
-    codePins: pins,
-  }
-}
-
-// One card per page: running again rewrites it in place, so its spot and
-// style survive edits made in the panel.
-function placeCard(source: string, call: string, pins: CodePins): string {
-  const existing = findCodeCard(getCurrentPage())
-  const { presenting } = useSessionStore.getState()
-  if (existing) {
-    commitCurrentPage((page) => ({
-      ...page,
-      shapes: {
-        ...page.shapes,
-        [existing.id]: {
-          ...existing,
-          text: source,
-          codeCall: call,
-          codePins: pins,
-        },
-      },
-    }))
-    return existing.id
-  }
-  const card = newCard(source, call, pins)
-  commitCurrentPage((page) =>
-    addShape(page, withRevealStep(page, card, presenting)),
-  )
-  selectShapes([card.id])
-  return card.id
-}
-
-export async function runOnBoard(
-  source: string,
-  call: string,
-  pins: CodePins,
-): Promise<void> {
-  const cardId = placeCard(source, call, pins)
+async function executeRun(cardId: string, source: string, call: string) {
+  const runKey = runKeyOf(source, call)
   useCodeSimStore.setState({
     status: 'loading',
     cardId,
+    runKey,
     steps: [],
     index: 0,
     error: null,
@@ -84,6 +18,8 @@ export async function runOnBoard(
     const trace = await runCode(source, call, () =>
       useCodeSimStore.setState({ status: 'running' }),
     )
+    // A newer run may have started meanwhile; its result wins.
+    if (useCodeSimStore.getState().runKey !== runKey) return
     useCodeSimStore.setState({
       status: trace.error ? 'error' : 'ready',
       steps: trace.steps,
@@ -98,4 +34,26 @@ export async function runOnBoard(
       error: { line: null, message },
     })
   }
+}
+
+export async function runOnBoard(
+  source: string,
+  call: string,
+  pins: CodePins,
+): Promise<void> {
+  const cardId = placeCard(source, call, pins)
+  await executeRun(cardId, source, call)
+}
+
+// Called when presenting starts: the run is computed before the card is
+// revealed, so the first Space on it never waits for Python. A run that
+// is already current is just rewound to its first line.
+export function prepareCodeRun(card: TextShape): void {
+  const state = useCodeSimStore.getState()
+  const runKey = runKeyOf(card.text, card.codeCall ?? '')
+  if (state.cardId === card.id && state.runKey === runKey) {
+    useCodeSimStore.setState({ index: 0 })
+    return
+  }
+  void executeRun(card.id, card.text, card.codeCall ?? '')
 }

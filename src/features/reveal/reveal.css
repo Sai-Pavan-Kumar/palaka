@@ -19,6 +19,11 @@
   box-shadow: var(--shadow-active);
 }
 
+.step-counter__code {
+  color: var(--color-brand-primary-light);
+  font-variant-numeric: tabular-nums;
+}
+
 .step-counter__hint {
   margin-left: var(--space-2);
   color: var(--color-text-secondary);

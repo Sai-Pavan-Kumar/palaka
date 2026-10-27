@@ -7,6 +7,8 @@ export type CodeSimStatus = 'idle' | 'loading' | 'running' | 'ready' | 'error'
 type CodeSimState = {
   status: CodeSimStatus
   cardId: string | null
+  // What the steps were computed from (code + Run with line).
+  runKey: string | null
   steps: TraceStep[]
   index: number
   error: TraceError | null
@@ -17,6 +19,7 @@ type CodeSimState = {
 export const useCodeSimStore = create<CodeSimState>(() => ({
   status: 'idle',
   cardId: null,
+  runKey: null,
   steps: [],
   index: 0,
   error: null,
@@ -43,6 +46,7 @@ export function stopCodeSim(): void {
   useCodeSimStore.setState({
     status: 'idle',
     cardId: null,
+    runKey: null,
     steps: [],
     index: 0,
     error: null,

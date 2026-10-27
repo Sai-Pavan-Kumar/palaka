@@ -74,3 +74,35 @@
   color: var(--color-text-secondary);
   cursor: pointer;
 }
+
+.code-panel__switch {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.code-panel__switch input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--color-brand-primary);
+  cursor: inherit;
+}
+
+.code-panel__switch small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.code-panel__switch.is-disabled {
+  opacity: var(--opacity-40);
+  cursor: not-allowed;
+}

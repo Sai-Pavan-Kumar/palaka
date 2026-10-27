@@ -3,10 +3,12 @@ import { useEngineStore } from '../../engine/engineStore'
 import { findPage } from '../../engine/model/documentOps'
 import { useSessionStore } from '../../engine/sessionStore'
 import { useCodeSimStore, type CodeSimStatus } from '../codeSimStore'
-import { findCodeCard, NO_PINS, runOnBoard } from '../runOnBoard'
+import { findCodeCard, NO_PINS } from '../codeCard'
+import { runOnBoard } from '../runOnBoard'
 import { CODE_TEMPLATES } from '../templates'
 import { CodeStepControls } from './CodeStepControls'
 import { PinFields } from './PinFields'
+import { StepThroughSwitch } from './StepThroughSwitch'
 import '../../sql/sqlPanel.css'
 import './codePanel.css'
 
@@ -134,6 +136,7 @@ export function CodePanel() {
         </button>
       </div>
       <RunStatus />
+      <StepThroughSwitch />
       <CodeStepControls />
     </div>
   )

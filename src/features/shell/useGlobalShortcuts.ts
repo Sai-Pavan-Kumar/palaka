@@ -4,6 +4,7 @@ import {
   stepCodeSim,
   stopCodeSim,
 } from '../codesim/codeSimStore'
+import { handlePresentCodeKey } from '../codesim/presentCodeSim'
 import { nextStep, stopSimulation, useSimStore } from '../simulate/simStore'
 import { hasModifier, isTypingTarget } from '../../shared/keyboard'
 import {
@@ -39,19 +40,29 @@ function handlePresentingKey(event: KeyboardEvent, isRecording: boolean) {
   return true
 }
 
-// While a code run is open, Space walks its lines, even when presenting:
-// stepping the code is the slide's whole job at that moment. Arrows join in
-// only while presenting, so they still nudge shapes while editing.
-function handleCodeSimKey(event: KeyboardEvent, presenting: boolean): boolean {
-  if (!isCodeSimActive()) return false
+// Presenting: a switched-on code card takes Space (and the arrows) until
+// its last line, then the same key moves the reveal on. Shift+Space walks
+// back the same way, stepping the reveal back once the code is at line one.
+function handlePresentCodeSimKey(event: KeyboardEvent): boolean {
   const back =
-    (presenting && event.key === 'ArrowLeft') ||
-    (event.key === ' ' && event.shiftKey)
+    event.key === 'ArrowLeft' || (event.key === ' ' && event.shiftKey)
   const next =
-    (presenting && event.key === 'ArrowRight') ||
-    (event.key === ' ' && !event.shiftKey)
-  if (back) stepCodeSim(-1)
-  else if (next) stepCodeSim(1)
+    event.key === 'ArrowRight' || (event.key === ' ' && !event.shiftKey)
+  if (back) {
+    if (handlePresentCodeKey(-1)) return true
+    if (event.key !== ' ') return false
+    stepReveal(-1)
+    return true
+  }
+  return next && handlePresentCodeKey(1)
+}
+
+// Editing: once a run is open, Space walks its lines. Arrows stay with the
+// board there, so they still nudge shapes.
+function handleCodeSimKey(event: KeyboardEvent, presenting: boolean): boolean {
+  if (presenting) return handlePresentCodeSimKey(event)
+  if (!isCodeSimActive()) return false
+  if (event.key === ' ') stepCodeSim(event.shiftKey ? -1 : 1)
   else if (event.key === 'Escape') stopCodeSim()
   else return false
   return true
