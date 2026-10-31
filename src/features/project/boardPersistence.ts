@@ -13,7 +13,7 @@ import { useProjectStore } from './projectStore'
 // empty start-up board. This stays false until loading has finished.
 let isBrowserCopyLoaded = false
 
-function currentBoardText(): string {
+export function currentBoardText(): string {
   return serializeBoard(
     useEngineStore.getState().doc,
     useNotesStore.getState().notes,

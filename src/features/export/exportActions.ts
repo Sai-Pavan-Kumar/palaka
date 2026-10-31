@@ -5,7 +5,13 @@ import {
 } from '../../shared/fileSystem'
 import { useEngineStore } from '../engine/engineStore'
 import { useSessionStore } from '../engine/sessionStore'
-import { EXPORTS_DIR } from '../project/projectFiles'
+import { currentBoardText } from '../project/boardPersistence'
+import { resolveAssetAsDataUrl } from '../project/folderAssetStore'
+import {
+  EXPORTS_DIR,
+  parseBoard,
+  serializeBoard,
+} from '../project/projectFiles'
 import { downloadFile } from '../../shared/downloadFile'
 import { useProjectStore } from '../project/projectStore'
 import { renderPages, type RenderedPage } from './renderPages'
@@ -94,6 +100,26 @@ export async function exportAllPagesPdf(): Promise<string> {
     `pages-${timestampForFileName()}.pdf`,
     await buildPdf(pages),
   )
+}
+
+// Folder images become data URLs so the downloaded file works on its own,
+// away from the folder it came from.
+export async function exportBoardFile(): Promise<string> {
+  const board = parseBoard(currentBoardText())
+  const assets = Object.fromEntries(
+    await Promise.all(
+      Object.entries(board.document.assets).map(async ([id, asset]) => [
+        id,
+        { ...asset, src: await resolveAssetAsDataUrl(asset.src) },
+      ]),
+    ),
+  )
+  const text = serializeBoard(
+    { ...board.document, assets },
+    board.notes,
+    board.sql,
+  )
+  return saveToExports(`board-${timestampForFileName()}.json`, text)
 }
 
 export async function exportCurrentPagePdf(): Promise<string> {

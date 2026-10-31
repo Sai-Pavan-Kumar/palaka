@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { Download, FileArchive, FileImage, FileText, Save } from 'lucide-react'
+import {
+  Download,
+  FileArchive,
+  FileImage,
+  FileJson,
+  FileText,
+  Save,
+} from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
 import { Popover } from '../../shared/ui/Popover'
 import { useProjectStore } from '../project/projectStore'
@@ -8,6 +15,7 @@ import { useUiStore } from '../shell/uiStore'
 import {
   exportAllPagesPdf,
   exportAllPagesZip,
+  exportBoardFile,
   exportCurrentPagePng,
   exportCurrentPagePdf,
 } from './exportActions'
@@ -21,6 +29,7 @@ const EXPORT_ITEMS = [
   { label: 'This page as PDF', icon: FileText, run: exportCurrentPagePdf },
   { label: 'All pages as PDF', icon: FileText, run: exportAllPagesPdf },
   { label: 'All pages as ZIP', icon: FileArchive, run: exportAllPagesZip },
+  { label: 'Board file (.json)', icon: FileJson, run: exportBoardFile },
 ] as const
 
 type ExportAction = () => Promise<string | void>
