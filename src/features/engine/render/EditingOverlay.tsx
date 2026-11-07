@@ -1,23 +1,43 @@
 import { useEngineStore } from '../engineStore'
 import { findPage } from '../model/documentOps'
 import { LINE_HEIGHT } from '../model/boardSpec'
-import { getShapeBounds } from '../model/geometry'
+import {
+  getBoundsCentre,
+  getLocalBounds,
+  getRotation,
+  getShapeBounds,
+} from '../model/geometry'
 import { getBlockLabelLayout, getLineLabelLayout } from '../model/labelLayout'
+import { rotationTransform } from '../model/rotation'
 import { useSessionStore } from '../sessionStore'
-import type { Bounds, LineShape, Shape, StrokePoint } from '../model/types'
+import type {
+  Bounds,
+  LineShape,
+  Page,
+  Shape,
+  StrokePoint,
+} from '../model/types'
 import {
   getCornerPoint,
   getLineEndPoint,
-  getSelectionBounds,
+  getRotateHandlePoint,
+  getSelectionFrame,
   getSoloLine,
   HANDLE_CORNERS,
   HANDLE_SIZE_PX,
+  type SelectionFrame,
 } from '../tools/selectionHandles'
 
 type EditingOverlayProps = {
   width: number
   height: number
   unitsPerPixel: number
+}
+
+function frameTransform({ bounds, rotation }: SelectionFrame) {
+  return rotation === 0
+    ? undefined
+    : rotationTransform(rotation, getBoundsCentre(bounds))
 }
 
 function BoundsRect({
@@ -38,19 +58,50 @@ function BoundsRect({
   )
 }
 
-function SelectionFrame({
+function RotateHandle({
   bounds,
   unitsPerPixel,
-  isLocked,
 }: {
   bounds: Bounds
   unitsPerPixel: number
+}) {
+  const handle = getRotateHandlePoint(bounds, unitsPerPixel)
+  return (
+    <>
+      <line
+        className="board-overlay__rotate-stem"
+        x1={handle.x}
+        y1={handle.y}
+        x2={handle.x}
+        y2={bounds.minY}
+      />
+      <circle
+        className="board-overlay__handle is-rotate"
+        cx={handle.x}
+        cy={handle.y}
+        r={(HANDLE_SIZE_PX / 2 + 1) * unitsPerPixel}
+      />
+    </>
+  )
+}
+
+function SelectionFrameView({
+  frame,
+  unitsPerPixel,
+  isLocked,
+}: {
+  frame: SelectionFrame
+  unitsPerPixel: number
   isLocked?: boolean
 }) {
+  const { bounds } = frame
   const size = HANDLE_SIZE_PX * unitsPerPixel
   const lockR = 9 * unitsPerPixel
   return (
-    <g>
+    <g transform={frameTransform(frame)}>
+      {!isLocked && (
+        <RotateHandle bounds={bounds} unitsPerPixel={unitsPerPixel} />
+      )}
       <BoundsRect
         bounds={bounds}
         className={`board-overlay__selection ${isLocked ? 'is-locked' : ''}`}
@@ -96,15 +147,22 @@ function LabelEditFrame({ shape }: { shape: Shape | undefined }) {
   const pad = layout.fontPx * 0.25
   const height = layout.fontPx * LINE_HEIGHT
   return (
-    <BoundsRect
-      className="board-overlay__label-edit"
-      bounds={{
-        minX: layout.centreX - layout.width / 2 - pad,
-        minY: layout.top - pad,
-        maxX: layout.centreX + layout.width / 2 + pad,
-        maxY: layout.top + height + pad,
-      }}
-    />
+    <g
+      transform={frameTransform({
+        bounds: getLocalBounds(shape),
+        rotation: getRotation(shape),
+      })}
+    >
+      <BoundsRect
+        className="board-overlay__label-edit"
+        bounds={{
+          minX: layout.centreX - layout.width / 2 - pad,
+          minY: layout.top - pad,
+          maxX: layout.centreX + layout.width / 2 + pad,
+          maxY: layout.top + height + pad,
+        }}
+      />
+    </g>
   )
 }
 
@@ -206,6 +264,43 @@ function OverlayExtras({
   )
 }
 
+// A line has no box to resize, so it gets its end handles plus the turn handle.
+function SelectionMarks({
+  page,
+  selectedIds,
+  unitsPerPixel,
+}: {
+  page: Page
+  selectedIds: string[]
+  unitsPerPixel: number
+}) {
+  const rotatingFrame = useSessionStore((s) => s.rotatingFrame)
+  const frame = rotatingFrame ?? getSelectionFrame(page, selectedIds)
+  const soloLine = getSoloLine(page, selectedIds)
+  const isLocked = selectedIds.some((id) => page.shapes[id]?.locked)
+  if (!soloLine) {
+    return (
+      frame && (
+        <SelectionFrameView
+          frame={frame}
+          unitsPerPixel={unitsPerPixel}
+          isLocked={isLocked}
+        />
+      )
+    )
+  }
+  return (
+    <>
+      <LineEndHandles line={soloLine} unitsPerPixel={unitsPerPixel} />
+      {frame && !isLocked && (
+        <g transform={frameTransform(frame)}>
+          <RotateHandle bounds={frame.bounds} unitsPerPixel={unitsPerPixel} />
+        </g>
+      )}
+    </>
+  )
+}
+
 // Sibling of the recorded board, same size and viewBox. Selection boxes,
 // handles, marquee and eraser trail help the teacher and never reach the video.
 export function EditingOverlay({
@@ -222,13 +317,6 @@ export function EditingOverlay({
   const snapGuides = useSessionStore((s) => s.snapGuides)
   const editingId = useSessionStore((s) => s.editingTextId)
   const page = findPage(doc, pageId)
-  const soloLine = page && getSoloLine(page, selectedIds)
-  const isLocked =
-    page && selectedIds.length > 0
-      ? selectedIds.some((id) => page.shapes[id]?.locked)
-      : false
-  const selection =
-    page && !soloLine ? getSelectionBounds(page, selectedIds) : null
 
   return (
     <svg
@@ -236,15 +324,12 @@ export function EditingOverlay({
       viewBox={`0 0 ${width} ${height}`}
       aria-hidden
     >
-      {selection && (
-        <SelectionFrame
-          bounds={selection}
+      {page && (
+        <SelectionMarks
+          page={page}
+          selectedIds={selectedIds}
           unitsPerPixel={unitsPerPixel}
-          isLocked={isLocked}
         />
-      )}
-      {soloLine && (
-        <LineEndHandles line={soloLine} unitsPerPixel={unitsPerPixel} />
       )}
       {page && editingId && <LabelEditFrame shape={page.shapes[editingId]} />}
       <OverlayExtras

@@ -1,4 +1,6 @@
 import { cleanStroke } from '../../cleanup/cleanStroke'
+import { useHandSettings } from '../../pointerHand/handSettings'
+import { isTapGesture } from '../../pointerHand/handTools'
 import { editCurrentPage, getCurrentPage, insertShape } from '../boardActions'
 import { useEngineStore } from '../engineStore'
 import { replaceShapes } from '../model/documentOps'
@@ -22,11 +24,21 @@ function cleanUpIfAsked(stroke: StrokeShape): void {
   if (clean) editCurrentPage((page) => replaceShapes(page, [clean]))
 }
 
+// With the hand on, a quick tap is a pointing gesture, so it must leave no mark.
+// Going back to the exact old document means endChange records no undo step.
+function discardStroke(): void {
+  const store = useEngineStore.getState()
+  const base = store.changeBase
+  if (base) store.updateDoc(() => base)
+}
+
 // Pen and highlighter share one tool; only the rendering differs.
 export function createDrawTool(kind: StrokeKind): ToolHandler {
   return {
     start: (pointer) => {
       const { style } = useSessionStore.getState()
+      const startedAt = performance.now()
+      let furthestPx = 0
       let stroke = createStroke(
         kind,
         toStrokePoint(pointer),
@@ -37,6 +49,13 @@ export function createDrawTool(kind: StrokeKind): ToolHandler {
       insertShape(stroke)
       return {
         move: (samples) => {
+          for (const sample of samples) {
+            const travel = Math.hypot(
+              sample.x - pointer.x,
+              sample.y - pointer.y,
+            )
+            furthestPx = Math.max(furthestPx, travel / pointer.unitsPerPixel)
+          }
           const saved = getCurrentPage().shapes[stroke.id]
           if (saved?.type !== 'stroke') return
           stroke = {
@@ -47,7 +66,9 @@ export function createDrawTool(kind: StrokeKind): ToolHandler {
           editCurrentPage((page) => replaceShapes(page, [current]))
         },
         end: () => {
-          cleanUpIfAsked(stroke)
+          const isTap = isTapGesture(performance.now() - startedAt, furthestPx)
+          if (isTap && useHandSettings.getState().isOn) discardStroke()
+          else cleanUpIfAsked(stroke)
           useEngineStore.getState().endChange()
         },
       }

@@ -2,6 +2,8 @@ import { memo, useMemo, type CSSProperties } from 'react'
 import { motionSeconds, speedFactor, type Motion } from '../../animate/motion'
 import '../../animate/animate.css'
 import { HIGHLIGHT_OPACITY, TINT } from '../model/boardSpec'
+import { getRotation, getRotationCentre } from '../model/geometry'
+import { rotationTransform } from '../model/rotation'
 import type { ImageShape, Shape, StrokeShape } from '../model/types'
 import { DrawOnMask } from './DrawOnMask'
 import { drawMaskId, getDrawDuration } from './drawOnPlan'
@@ -16,6 +18,13 @@ import { getStrokePath } from './shapePaths'
 import { TableContents, TableView } from './TableView'
 import { TextView } from './TextView'
 
+function shapeTransform(shape: Shape) {
+  const rotation = getRotation(shape)
+  return rotation === 0
+    ? undefined
+    : rotationTransform(rotation, getRotationCentre(shape))
+}
+
 // The highlighter takes its mask on the path itself: a masked group would
 // cut it off from the ink below, and the marker would stop blending.
 function StrokeView({ shape, mask }: { shape: StrokeShape; mask?: string }) {
@@ -24,6 +33,7 @@ function StrokeView({ shape, mask }: { shape: StrokeShape; mask?: string }) {
   const isHighlighter = shape.kind === 'highlighter'
   return (
     <path
+      transform={shapeTransform(shape)}
       d={path}
       mask={mask}
       fill={
@@ -248,6 +258,9 @@ export const ShapeView = memo(function ShapeView({
   // itself sits on an inner group, so when its class goes away the outer
   // animation name never changes and nothing replays.
   const ownsEntrance = duration !== null || (motion === 'enter' && !drawsIn)
+  // Rotation sits on its own group, because the CSS motions below set
+  // `transform` and would replace the attribute. A stroke turns on its own
+  // path: a transformed group would cut the highlighter off from the ink below.
   return (
     <g
       className={`board-shape ${ownsEntrance ? 'is-drawing-on' : ''}`}
@@ -255,23 +268,27 @@ export const ShapeView = memo(function ShapeView({
       visibility={isHidden && shape.type === 'text' ? 'hidden' : undefined}
     >
       <g
-        className={motionClass(shape, motion, drawsIn)}
-        style={motionStyle(shape, motion, drawsIn)}
+        transform={shape.type === 'stroke' ? undefined : shapeTransform(shape)}
       >
-        {duration !== null ? (
-          <DrawingOnBody shape={shape} duration={duration} />
-        ) : (
-          <ShapeBody
-            shape={shape}
-            imageUrl={imageUrl}
-            hideLabel={isHidden}
-            isFlowing={isFlowing}
-            highlighted={highlighted}
-            isGlowing={isGlowing}
-            rowStates={rowStates}
-            focusLine={focusLine}
-          />
-        )}
+        <g
+          className={motionClass(shape, motion, drawsIn)}
+          style={motionStyle(shape, motion, drawsIn)}
+        >
+          {duration !== null ? (
+            <DrawingOnBody shape={shape} duration={duration} />
+          ) : (
+            <ShapeBody
+              shape={shape}
+              imageUrl={imageUrl}
+              hideLabel={isHidden}
+              isFlowing={isFlowing}
+              highlighted={highlighted}
+              isGlowing={isGlowing}
+              rowStates={rowStates}
+              focusLine={focusLine}
+            />
+          )}
+        </g>
       </g>
     </g>
   )

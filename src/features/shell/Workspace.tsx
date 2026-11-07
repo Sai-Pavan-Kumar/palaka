@@ -21,6 +21,7 @@ import { SaveStatus } from './SaveStatus'
 import { Toast } from './Toast'
 import { useGlobalShortcuts } from './useGlobalShortcuts'
 import { useUiStore } from './uiStore'
+import './responsive.css'
 
 // Fonts must be ready before text is measured, or selection boxes around
 // text are sized for the fallback font.

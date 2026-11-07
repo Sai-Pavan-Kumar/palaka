@@ -5,7 +5,13 @@ import { useEngineStore } from '../engine/engineStore'
 import { COLOR_KEYS, SIZE_KEYS } from '../engine/model/boardSpec'
 import { getPalette } from '../engine/model/paper'
 import type { ShapeStyle } from '../engine/model/shapeFactory'
-import { setSession, useSessionStore } from '../engine/sessionStore'
+import {
+  setSession,
+  useSessionStore,
+  type EngineTool,
+} from '../engine/sessionStore'
+import { HAND_TOOLS } from '../pointerHand/handTools'
+import { HandControls } from '../pointerHand/HandControls'
 import { AnimateMenu } from '../animate/AnimateMenu'
 import { SimSettingsMenu } from '../simulate/SimSettingsMenu'
 import { FlowMenu } from './FlowMenu'
@@ -49,6 +55,10 @@ function StyleLayerRow({ shown, tool }: { shown: ShownStyle; tool: string }) {
         <span className="floating-bar__divider" />
       )}
       {tool === 'pen' && !hasSelection && <CleanupToggle />}
+      {HAND_TOOLS.has(tool as EngineTool) && !hasSelection && (
+        <span className="floating-bar__divider" />
+      )}
+      {HAND_TOOLS.has(tool as EngineTool) && !hasSelection && <HandControls />}
       {hasMoreStyles && <span className="floating-bar__divider" />}
       {hasMoreStyles && <MoreStylesMenu shown={shown} />}
     </div>
@@ -71,7 +81,16 @@ function ActionsLayerRow() {
 export function StyleBar() {
   const shown = useShownStyle()
   const tool = useSessionStore((s) => s.tool)
-  if (!shown) return null
+  if (!shown) {
+    // The laser leaves no ink to style, so the hand is all it needs here.
+    return tool === 'laser' ? (
+      <div className="style-bar floating-bar chrome" aria-label="Pointer hand">
+        <div className="style-bar__row style-bar__row--style">
+          <HandControls />
+        </div>
+      </div>
+    ) : null
+  }
 
   if (shown.hasSelection) {
     return (

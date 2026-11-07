@@ -2,6 +2,7 @@ export type DebouncedTask = {
   schedule: () => void
   flush: () => Promise<void>
   cancel: () => void
+  hasPending: () => boolean
 }
 
 // Runs `task` once things go quiet, and never runs two copies at the same time,
@@ -32,6 +33,7 @@ export function createDebouncedTask(
       window.clearTimeout(timer)
       return run()
     },
+    hasPending: () => pending,
     cancel() {
       pending = false
       window.clearTimeout(timer)

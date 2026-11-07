@@ -1,6 +1,7 @@
 import { getPenWidth, getStrokeWidth } from './boardSpec'
 import { getTableBox } from './tableBox'
 import { getLineSamplePoints } from './lineRouting'
+import { rotatePoint } from './rotation'
 import { measureText } from './textMetrics'
 import type { Bounds, Point, Shape, StrokeShape } from './types'
 
@@ -82,7 +83,46 @@ function computeBounds(shape: Shape): Bounds {
   }
 }
 
+export function getRotation(shape: Shape): number {
+  return shape.rotation ?? 0
+}
+
+export function getBoundsCentre(bounds: Bounds): Point {
+  return {
+    x: (bounds.minX + bounds.maxX) / 2,
+    y: (bounds.minY + bounds.maxY) / 2,
+  }
+}
+
+export function getRotationCentre(shape: Shape): Point {
+  return getBoundsCentre(getLocalBounds(shape))
+}
+
+// A board point in the shape's own unrotated frame, where its x, y, w and h
+// mean what they say.
+export function toShapeFrame(shape: Shape, point: Point): Point {
+  const rotation = getRotation(shape)
+  if (rotation === 0) return point
+  return rotatePoint(point, getRotationCentre(shape), -rotation)
+}
+
+// What the shape covers on the board, for snapping, marquee and spotlight.
 export function getShapeBounds(shape: Shape): Bounds {
+  const local = getLocalBounds(shape)
+  const rotation = getRotation(shape)
+  if (rotation === 0) return local
+  const centre = getBoundsCentre(local)
+  const corners = [
+    { x: local.minX, y: local.minY },
+    { x: local.maxX, y: local.minY },
+    { x: local.maxX, y: local.maxY },
+    { x: local.minX, y: local.maxY },
+  ].map((corner) => rotatePoint(corner, centre, rotation))
+  return pointsBounds(corners, 0)
+}
+
+// The box before rotation: the frame a rotated shape draws and resizes in.
+export function getLocalBounds(shape: Shape): Bounds {
   // Text and tables are measured, and widths change once the fonts load.
   if (shape.type === 'text' || shape.type === 'table') {
     return computeBounds(shape)

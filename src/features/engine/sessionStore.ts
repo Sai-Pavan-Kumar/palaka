@@ -40,6 +40,9 @@ type SessionState = {
   marquee: Bounds | null
   eraserTrail: StrokePoint[]
   snapGuides: import('./model/snapGuides').SnapGuide[] | null
+  // A group turning as one: the frame turns too, instead of re-fitting its
+  // axis-aligned box on every move.
+  rotatingFrame: import('./tools/selectionHandles').SelectionFrame | null
   // Spotlight: dims everything on board except this shape to focus viewer attention
   spotlightId: string | null
   // Reveal: how many steps of each page are showing while presenting.
@@ -57,7 +60,7 @@ const initialPageId = useEngineStore.getState().doc.pages[0].id
 export const useSessionStore = create<SessionState>(() => ({
   pageId: initialPageId,
   selectedIds: [],
-  tool: 'pen',
+  tool: 'select',
   style: DEFAULT_STYLE,
   isShapeCleanupOn: false,
   editingTextId: null,
@@ -67,6 +70,7 @@ export const useSessionStore = create<SessionState>(() => ({
   marquee: null,
   eraserTrail: [],
   snapGuides: null,
+  rotatingFrame: null,
   spotlightId: null,
   presenting: false,
   revealedUpTo: {},

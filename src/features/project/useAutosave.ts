@@ -3,7 +3,12 @@ import { createDebouncedTask } from '../../shared/createDebouncedTask'
 import { useEngineStore } from '../engine/engineStore'
 import { useNotesStore } from '../notes/pageNotes'
 import { useUiStore } from '../shell/uiStore'
-import { saveBoardNow } from './boardPersistence'
+import {
+  isApplyingSavedBoard,
+  openBoardChannel,
+  saveBoardNow,
+  syncFromOtherTab,
+} from './boardPersistence'
 import { useProjectStore } from './projectStore'
 
 // Long enough to batch a pen stroke's many small updates into one write,
@@ -34,22 +39,31 @@ export function useAutosave(): void {
     disconnectStaleFolder()
     const task = createDebouncedTask(saveBoardNow, SAVE_DELAY_MS)
     const stopDoc = useEngineStore.subscribe((state, previous) => {
-      if (state.doc !== previous.doc) task.schedule()
+      if (state.doc !== previous.doc && !isApplyingSavedBoard()) task.schedule()
     })
-    const stopNotes = useNotesStore.subscribe(task.schedule)
-    const saveNow = () => {
-      task.schedule()
-      void task.flush()
+    const stopNotes = useNotesStore.subscribe(() => {
+      if (!isApplyingSavedBoard()) task.schedule()
+    })
+    // Unsaved edits here win; a clean tab always takes the newer saved board.
+    const pullNewerBoard = () => {
+      if (!task.hasPending()) void syncFromOtherTab()
     }
-    const saveOnHide = () => {
-      if (document.visibilityState === 'hidden') saveNow()
+    // Only flushes: a tab with no edits must never write, or simply hiding an
+    // old tab would replace the board with its stale copy.
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') void task.flush()
+      else pullNewerBoard()
     }
-    document.addEventListener('visibilitychange', saveOnHide)
+    const channel = openBoardChannel(pullNewerBoard)
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('focus', pullNewerBoard)
     return () => {
       stopDoc()
       stopNotes()
-      document.removeEventListener('visibilitychange', saveOnHide)
-      saveNow()
+      channel?.close()
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('focus', pullNewerBoard)
+      void task.flush()
     }
   }, [])
 }

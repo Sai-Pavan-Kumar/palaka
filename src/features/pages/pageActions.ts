@@ -1,11 +1,14 @@
-import type { Aspect, Paper } from '../engine/model/types'
+import type { Aspect, BoardDocument, Paper } from '../engine/model/types'
 import { useEngineStore } from '../engine/engineStore'
 import {
   createPage,
   insertPageAfter,
   removePage,
 } from '../engine/model/documentOps'
+import { getPageWidth, SLIDE_SIZE } from '../engine/model/boardSpec'
+import { getShapeBounds, isBoundsInside } from '../engine/model/geometry'
 import { goToPage, useSessionStore } from '../engine/sessionStore'
+import { useUiStore } from '../shell/uiStore'
 import { finishTextEditing } from '../engine/textEditing'
 
 export function switchToPage(pageId: string): void {
@@ -40,10 +43,36 @@ export function deleteCurrentPage(): void {
   commit((current) => removePage(current, useSessionStore.getState().pageId))
 }
 
-// Undoable, like any other board edit.
+export function countShapesOutside(doc: BoardDocument, aspect: Aspect): number {
+  const height = SLIDE_SIZE[aspect].height
+  return doc.pages.reduce((count, page) => {
+    const board = {
+      minX: 0,
+      minY: 0,
+      maxX: getPageWidth(aspect, page.frameCount ?? 1),
+      maxY: height,
+    }
+    const outside = Object.values(page.shapes).filter(
+      (shape) => !isBoundsInside(getShapeBounds(shape), board),
+    )
+    return count + outside.length
+  }, 0)
+}
+
+// Undoable, like any other board edit. Changing shape clips whatever no longer
+// fits, which looks exactly like lost work unless it is said out loud.
 export function setAspect(aspect: Aspect): void {
   const { doc, commit } = useEngineStore.getState()
-  if (doc.aspect !== aspect) commit((current) => ({ ...current, aspect }))
+  if (doc.aspect === aspect) return
+  commit((current) => ({ ...current, aspect }))
+  const outside = countShapesOutside(doc, aspect)
+  if (outside > 0) {
+    useUiStore
+      .getState()
+      .showToast(
+        `${outside} ${outside === 1 ? 'item is' : 'items are'} cut off by this board shape. Undo brings the old shape back.`,
+      )
+  }
 }
 
 // Paper is a board setting, so changing it is undoable like any edit.

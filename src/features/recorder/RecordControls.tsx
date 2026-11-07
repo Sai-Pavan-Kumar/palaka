@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ChevronDown, Mic, MicOff, Pause, Play, Square } from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
 import { Popover } from '../../shared/ui/Popover'
+import { useUiStore } from '../shell/uiStore'
 import { isElementCaptureSupported } from './boardRecorder'
 import { getElapsedMs, useRecorderStore } from './recorderStore'
 import {
@@ -132,11 +133,17 @@ export function RecordControls() {
       <button
         type="button"
         className="record-button"
-        disabled={!supported}
         title={
           supported ? 'Record only the board' : 'Needs Chrome 132+ on desktop'
         }
-        onClick={() => void startRecording()}
+        onClick={() => {
+          // Stays tappable: a touch screen has no hover to explain a dead button.
+          if (supported) void startRecording()
+          else
+            useUiStore
+              .getState()
+              .showToast('Recording needs Chrome on a computer.', 'error')
+        }}
       >
         <span className="record-button__dot" aria-hidden />
         Rec

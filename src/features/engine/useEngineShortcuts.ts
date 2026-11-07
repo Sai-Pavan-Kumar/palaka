@@ -1,5 +1,9 @@
 import { useEffect } from 'react'
 import { hasModifier, isTypingTarget } from '../../shared/keyboard'
+import {
+  updateHandSettings,
+  useHandSettings,
+} from '../pointerHand/handSettings'
 import { toolForKey } from '../tools/toolList'
 import {
   copySelected,
@@ -45,6 +49,10 @@ function handlePlainKey(event: KeyboardEvent, key: string): boolean {
   }
   if (key === 'l' && selectedIds.length > 0) {
     toggleLockSelected()
+    return true
+  }
+  if (key === 'h' && !event.shiftKey) {
+    updateHandSettings({ isOn: !useHandSettings.getState().isOn })
     return true
   }
   const tool = toolForKey(key, event.shiftKey)

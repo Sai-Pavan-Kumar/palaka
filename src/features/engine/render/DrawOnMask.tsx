@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { getShapeBounds } from '../model/geometry'
+import { getLocalBounds } from '../model/geometry'
 import type { Shape } from '../model/types'
 import {
   drawMaskId,
@@ -37,7 +37,7 @@ export function DrawOnMask({
   // Word-by-word text animates each word itself; it needs no mask.
   if (!plan || plan.kind === 'words' || duration === null) return null
   const style = { '--draw-duration': `${duration}s` } as CSSProperties
-  const bounds = getShapeBounds(shape)
+  const bounds = getLocalBounds(shape)
   return (
     <mask
       id={drawMaskId(shape)}

@@ -6,6 +6,7 @@ import {
 } from '../project/projectStore'
 import { useOpenFolder } from '../project/useOpenFolder'
 import { useRecorderStore } from '../recorder/recorderStore'
+import { useUiStore } from './uiStore'
 import './shell.css'
 
 const STATUS_LABELS: Record<SaveStatusValue, string> = {
@@ -21,9 +22,15 @@ function OpenFolderButton({ label }: { label: string }) {
     <button
       type="button"
       className="menu-item"
-      disabled={!isSupported || isOpening || isRecording}
-      title={isSupported ? undefined : 'Needs Chrome or Edge on desktop'}
-      onClick={() => void openFolder()}
+      disabled={isOpening || isRecording}
+      title={isSupported ? undefined : 'Needs Chrome or Edge'}
+      onClick={() => {
+        if (isSupported) void openFolder()
+        else
+          useUiStore
+            .getState()
+            .showToast('Opening a folder needs Chrome or Edge.', 'error')
+      }}
     >
       <FolderOpen size={16} strokeWidth={1.75} aria-hidden />
       {isOpening ? 'Opening…' : label}
@@ -42,7 +49,7 @@ export function SaveStatus() {
       <div className="save-status chrome">
         <OpenFolderButton label="Open folder" />
         <span className="save-status__dot" aria-hidden />
-        Kept in this browser
+        <span className="save-status__text">Kept in this browser</span>
       </div>
     )
   }
@@ -62,7 +69,7 @@ export function SaveStatus() {
         {() => <OpenFolderButton label="Open another folder" />}
       </Popover>
       <span className="save-status__dot" aria-hidden />
-      {STATUS_LABELS[status]}
+      <span className="save-status__text">{STATUS_LABELS[status]}</span>
     </div>
   )
 }

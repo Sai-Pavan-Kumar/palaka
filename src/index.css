@@ -20,6 +20,11 @@ body {
   overflow: hidden;
 }
 
+* {
+  scrollbar-color: var(--color-border-default) transparent;
+  scrollbar-width: thin;
+}
+
 button,
 select {
   font: inherit;

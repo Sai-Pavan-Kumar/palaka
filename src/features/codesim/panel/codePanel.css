@@ -1,7 +1,7 @@
 /* Builds on .sql-panel: same field, chip and button language, so the two
    "paste text, get a board" tabs feel like one tool. */
 .code-panel__input {
-  min-height: 240px;
+  min-height: 160px;
   tab-size: 4;
   white-space: pre;
   overflow-x: auto;

@@ -3,19 +3,28 @@ import { useEngineStore } from '../engineStore'
 import { getShapesInOrder, replaceShapes } from '../model/documentOps'
 import {
   boundsFromCorners,
+  getRotation,
   getShapeBounds,
   isBoundsInside,
 } from '../model/geometry'
-import { scaleShape, translateShape } from '../model/transform'
+import {
+  scaleKeepingAnchor,
+  scaleRotatedMember,
+  scaleShape,
+  translateShape,
+  type ScaleTransform,
+} from '../model/transform'
 import { detachLine } from '../model/connectors'
-import type { Binding, Bounds, LineShape } from '../model/types'
+import type { Binding, Bounds, LineShape, Shape } from '../model/types'
 import { selectShapes, setSession, useSessionStore } from '../sessionStore'
 import { computeSnap } from '../model/snapGuides'
 import {
   getCornerPoint,
   getOppositeCorner,
   getSelectionBounds,
+  toFrameSpace,
   type HandleCorner,
+  type SelectionFrame,
 } from './selectionHandles'
 import type { BoardPointer, ToolGesture } from './toolTypes'
 
@@ -37,7 +46,7 @@ function clampScale(scale: number): number {
 // A connector moved or resized on its own was moved on purpose, so its ends
 // let go of shapes that stay behind. Moved together with its blocks, it
 // keeps them.
-function selectedShapes() {
+export function selectedShapes() {
   const { selectedIds } = useSessionStore.getState()
   const selected = new Set(selectedIds)
   return getShapesInOrder(getCurrentPage(), selectedIds).map((shape) =>
@@ -133,31 +142,43 @@ export function startMoveGesture(
 // Text cannot stretch and photos should not, so a selection holding either
 // always keeps its proportions.
 export function startResizeGesture(
-  bounds: Bounds,
+  frame: SelectionFrame,
   corner: HandleCorner,
 ): ToolGesture {
   const originals = selectedShapes()
   if (originals.some((s) => s.locked)) {
     return { move: () => {}, end: () => {} }
   }
-  const keepsRatio = originals.some(
-    (s) => s.type === 'text' || s.type === 'image' || s.type === 'table',
-  )
-  const anchor = getCornerPoint(bounds, getOppositeCorner(corner))
-  const handle = getCornerPoint(bounds, corner)
+  const isSolo = originals.length === 1
+  const hasRotatedMember =
+    !isSolo && originals.some((s) => getRotation(s) !== 0)
+  const keepsRatio =
+    hasRotatedMember ||
+    originals.some(
+      (s) => s.type === 'text' || s.type === 'image' || s.type === 'table',
+    )
+  const anchor = getCornerPoint(frame.bounds, getOppositeCorner(corner))
+  const handle = getCornerPoint(frame.bounds, corner)
+  const scaleOne = (shape: Shape, transform: ScaleTransform) => {
+    if (isSolo) return scaleKeepingAnchor(shape, transform)
+    return getRotation(shape) !== 0
+      ? scaleRotatedMember(shape, transform)
+      : scaleShape(shape, transform)
+  }
   useEngineStore.getState().beginChange()
   return {
     move: (samples) => {
-      const pointer = last(samples)
+      const sample = last(samples)
+      const pointer = toFrameSpace(frame, sample)
       let scaleX = clampScale((pointer.x - anchor.x) / (handle.x - anchor.x))
       let scaleY = clampScale((pointer.y - anchor.y) / (handle.y - anchor.y))
-      if (pointer.shiftKey || keepsRatio) {
+      if (sample.shiftKey || keepsRatio) {
         const uniform = Math.max(Math.abs(scaleX), Math.abs(scaleY))
         scaleX = Math.sign(scaleX) * uniform
         scaleY = Math.sign(scaleY) * uniform
       }
       const transform = { originX: anchor.x, originY: anchor.y, scaleX, scaleY }
-      const scaled = originals.map((shape) => scaleShape(shape, transform))
+      const scaled = originals.map((shape) => scaleOne(shape, transform))
       editCurrentPage((page) => replaceShapes(page, scaled))
     },
     end: () => useEngineStore.getState().endChange(),

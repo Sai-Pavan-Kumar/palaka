@@ -4,7 +4,7 @@
 }
 
 .sql-panel__input {
-  min-height: 280px;
+  min-height: 180px;
   resize: vertical;
   padding: var(--space-3);
   border: 1px solid var(--color-border-default);

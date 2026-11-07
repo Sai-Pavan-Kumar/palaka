@@ -15,6 +15,7 @@ import { LaserTrail } from './LaserTrail'
 import { PageSvg } from './PageSvg'
 import { TextEditor } from './TextEditor'
 import { FacecamBubble } from '../../facecam/FacecamBubble'
+import { PointerHand } from '../../pointerHand/PointerHand'
 import { useBoardPointer } from './useBoardPointer'
 import { useImageUrls } from './useImageUrls'
 
@@ -194,6 +195,7 @@ function StageBoardFrame({
       />
       <TextEditor />
       <FacecamBubble />
+      <PointerHand />
     </BoardFrame>
   )
 }

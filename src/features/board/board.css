@@ -3,7 +3,8 @@
  * exactly the same size. It fits the screen in either orientation.
  */
 .board-stage {
-  --board-gutter: var(--space-16);
+  --gutter-x: var(--space-16);
+  --gutter-y: var(--space-16);
 
   position: relative;
   touch-action: none;
@@ -13,30 +14,31 @@
 .board-stage.is-landscape {
   aspect-ratio: 16 / 9;
   width: min(
-    100vw - var(--board-gutter) * 2,
-    (100vh - var(--board-gutter) * 2) * 16 / 9
+    100vw - var(--gutter-x) * 2,
+    (100dvh - var(--gutter-y) * 2) * 16 / 9
   );
 }
 
 .board-stage.is-landscape.is-wide:not(.is-presenting) {
   aspect-ratio: 32 / 9;
   width: min(
-    100vw - var(--board-gutter) * 2,
-    (100vh - var(--board-gutter) * 2) * 32 / 9
+    100vw - var(--gutter-x) * 2,
+    (100dvh - var(--gutter-y) * 2) * 32 / 9
   );
 }
 
 .board-stage.is-portrait {
   aspect-ratio: 9 / 16;
   width: min(
-    100vw - var(--board-gutter) * 2,
-    (100vh - var(--board-gutter) * 2) * 9 / 16
+    100vw - var(--gutter-x) * 2,
+    (100dvh - var(--gutter-y) * 2) * 9 / 16
   );
 }
 
 /* Focus mode gives the board almost the whole screen. */
 .shell.is-focus .board-stage {
-  --board-gutter: var(--space-4);
+  --gutter-x: var(--space-4);
+  --gutter-y: var(--space-4);
 }
 
 /* Shapes need a precise point; tool icons show current selection. */
@@ -82,6 +84,11 @@
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='7' fill='%23ef4444' stroke='white' stroke-width='2.5'/%3E%3C/svg%3E")
       10 10,
     crosshair;
+}
+
+/* The pointer hand's fingertip is the cursor while it is on. */
+.board-stage:has(.pointer-hand.is-on) {
+  cursor: none;
 }
 
 /* Board is the Element Capture target. Forms isolated stacking context. */
@@ -267,6 +274,16 @@
   fill: var(--color-surface-card-light);
   stroke: var(--color-brand-primary);
   stroke-width: 1.5;
+}
+
+.board-overlay__handle.is-rotate {
+  cursor: grab;
+}
+
+.board-overlay__rotate-stem {
+  stroke: var(--color-brand-primary);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
 }
 
 .board-overlay__marquee {

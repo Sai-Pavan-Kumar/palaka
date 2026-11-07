@@ -1,6 +1,6 @@
 import { getPenWidth, getStrokeWidth } from './boardSpec'
 import { getOutline } from './geoOutline'
-import { getShapeBounds, isPointInBounds } from './geometry'
+import { getLocalBounds, isPointInBounds, toShapeFrame } from './geometry'
 import { getLineSamplePoints } from './lineRouting'
 import type { Point, Shape } from './types'
 
@@ -56,8 +56,8 @@ export function hitTestShape(
   y: number,
   tolerance: number,
 ): boolean {
-  if (!isPointInBounds(getShapeBounds(shape), x, y, tolerance)) return false
-  const p = { x, y }
+  const p = toShapeFrame(shape, { x, y })
+  if (!isPointInBounds(getLocalBounds(shape), p.x, p.y, tolerance)) return false
   switch (shape.type) {
     case 'stroke': {
       const points = shape.points.map(([px, py]) => ({ x: px, y: py }))

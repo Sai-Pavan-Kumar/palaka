@@ -1,4 +1,11 @@
-import { Activity, Camera, CameraOff, Presentation, Undo2 } from 'lucide-react'
+import {
+  Activity,
+  Camera,
+  CameraOff,
+  Presentation,
+  Redo2,
+  Undo2,
+} from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
 import { useFacecamStore } from '../facecam/facecamStore'
 import { useEngineStore } from '../engine/engineStore'
@@ -28,7 +35,9 @@ function ToolButton({ tool }: { tool: ToolDefinition }) {
 
 function ToolGroup() {
   const canUndo = useEngineStore((s) => s.past.length > 0)
+  const canRedo = useEngineStore((s) => s.future.length > 0)
   const undo = useEngineStore((s) => s.undo)
+  const redo = useEngineStore((s) => s.redo)
 
   return (
     <nav className="floating-bar" aria-label="Tools">
@@ -48,6 +57,13 @@ function ToolGroup() {
         shortcut="Ctrl Z"
         disabled={!canUndo}
         onClick={undo}
+      />
+      <IconButton
+        icon={Redo2}
+        label="Redo"
+        shortcut="Ctrl Shift Z"
+        disabled={!canRedo}
+        onClick={redo}
       />
     </nav>
   )

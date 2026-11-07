@@ -1,4 +1,5 @@
 import { captureBoardTrack, CHUNK_INTERVAL_MS } from './boardRecorder'
+import { mixRecordingAudio } from '../pointerHand/tapAudio'
 import { fileExtensionFor, pickRecordingMimeType } from './codecs'
 import type { TakeWriter } from './takeWriters'
 
@@ -47,13 +48,16 @@ export async function openCaptureSession(
     throw error
   }
   const [videoTrack] = display.getVideoTracks()
+  const audio = mixRecordingAudio(mic)
   return {
-    stream: new MediaStream([videoTrack, ...(mic?.getAudioTracks() ?? [])]),
+    stream: new MediaStream([videoTrack, audio.track]),
     videoTrack,
     mimeType,
     extension: fileExtensionFor(mimeType),
-    release: () =>
-      [display, mic].forEach((s) => s?.getTracks().forEach((t) => t.stop())),
+    release: () => {
+      audio.release()
+      ;[display, mic].forEach((s) => s?.getTracks().forEach((t) => t.stop()))
+    },
   }
 }
 

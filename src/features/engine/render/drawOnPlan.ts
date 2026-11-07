@@ -3,7 +3,7 @@ import { getPenWidth, getStrokeWidth } from '../model/boardSpec'
 import { isBuildingBlock } from '../model/buildings'
 import { getOutline } from '../model/geoOutline'
 import { getRevealPieces, revealsByWord } from '../model/textReveal'
-import { getShapeBounds } from '../model/geometry'
+import { getLocalBounds } from '../model/geometry'
 import { getLineSamplePoints } from '../model/lineRouting'
 import type { Point, Shape, TextAnimation } from '../model/types'
 import { getArrowheadWings } from './shapePaths'
@@ -98,7 +98,7 @@ export function getDrawPlan(shape: Shape): DrawPlan | null {
           animation: shape.textAnimation ?? 'wipe',
         }
       }
-      const bounds = getShapeBounds(shape)
+      const bounds = getLocalBounds(shape)
       return {
         kind: 'wipe',
         length: bounds.maxX - bounds.minX,

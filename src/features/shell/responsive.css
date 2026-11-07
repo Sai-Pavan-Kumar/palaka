@@ -1,0 +1,353 @@
+/*
+ * Every layout rule for small screens lives here, so the desktop files stay
+ * readable. Workspace imports it last, so these rules win ties.
+ *
+ * "Compact" = phones either way round and small tablets. Portrait stacks tool
+ * rows above the board and panels below it; short landscape has no height for
+ * that, so bars stay single rows and the rail stays on the left.
+ */
+
+/* Touch screens have no hover, and a tooltip stuck after a tap covers tools. */
+@media (hover: none) {
+  .icon-button[data-tooltip]::after {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  button,
+  a,
+  input,
+  summary {
+    touch-action: manipulation;
+  }
+
+  .style-bar__swatch,
+  .style-bar__size {
+    width: 44px;
+    height: 44px;
+  }
+
+  .chip,
+  .sql-panel__chip,
+  .block-menu__item,
+  .code-panel__pins summary,
+  .camera-glide-pill__btn {
+    min-height: 44px;
+  }
+
+  .order-list__actions .icon-button {
+    min-width: 44px;
+    height: 44px;
+  }
+
+  .facecam-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 1240px) {
+  .brand-badge__text,
+  .save-status__text {
+    display: none;
+  }
+}
+
+@media (max-width: 900px), (max-height: 500px) {
+  .brand-badge {
+    display: none;
+  }
+
+  /* Saving is automatic, so only a failure is worth this much phone space. */
+  .save-status:not(.is-error) {
+    display: none;
+  }
+
+  .save-status.is-error {
+    top: var(--space-2);
+    bottom: auto;
+    left: var(--space-2);
+  }
+
+  .save-status.is-error .save-status__text {
+    display: inline;
+  }
+
+  /* A transform would trap the fixed bottom sheets inside these bars. */
+  .top-bar,
+  .style-bar,
+  .page-bar {
+    right: 0;
+    left: 0;
+    justify-content: center;
+    transform: none;
+    animation: none;
+    pointer-events: none;
+  }
+
+  .top-bar {
+    top: calc(var(--space-2) + env(safe-area-inset-top));
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .page-bar {
+    bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
+    flex-wrap: wrap;
+  }
+
+  .top-bar > *,
+  .page-bar > *,
+  .style-bar > * {
+    pointer-events: auto;
+  }
+
+  .top-bar .floating-bar,
+  .page-bar .floating-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+    border-radius: var(--radius-lg);
+  }
+
+  .top-bar .floating-bar__divider,
+  .page-bar .floating-bar__divider {
+    display: none;
+  }
+
+  .page-bar__word {
+    display: none;
+  }
+
+  .page-bar__label {
+    min-width: 44px;
+    padding: 0 var(--space-1);
+  }
+
+  .style-bar {
+    top: calc(var(--top-chrome) + env(safe-area-inset-top));
+    max-width: none;
+    margin-inline: var(--space-2);
+    background: none;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .style-bar > .style-bar__row,
+  .style-bar:not(.style-bar--dual) {
+    flex-wrap: wrap;
+  }
+
+  .style-bar.style-bar--dual {
+    padding: 0;
+  }
+
+  .style-bar__row {
+    flex-wrap: wrap;
+    background: var(--color-surface-elevated);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Menus become bottom sheets: a popover anchored to a button would run off
+     the side of a phone. */
+  .popover__panel,
+  .popover__panel.align-start,
+  .popover__panel.align-end,
+  .popover__panel.align-center,
+  .popover__panel.side-above,
+  .popover__panel.side-below {
+    position: fixed;
+    top: auto;
+    right: var(--space-2);
+    bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
+    left: var(--space-2);
+    max-height: 70dvh;
+    overflow-y: auto;
+    translate: none;
+    z-index: var(--z-overlay);
+    box-shadow: var(--shadow-modal);
+  }
+
+  .top-bar:has(.popover__panel),
+  .style-bar:has(.popover__panel),
+  .page-bar:has(.popover__panel),
+  .save-status:has(.popover__panel) {
+    z-index: var(--z-overlay);
+  }
+
+  .block-menu,
+  .paper-menu,
+  .more-styles {
+    width: 100%;
+    max-height: none;
+  }
+
+  .sim-controls {
+    max-width: calc(100vw - var(--space-4));
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+  }
+
+  .sim-controls__traffic input {
+    width: 96px;
+  }
+
+  .take-card {
+    right: var(--space-2);
+    bottom: var(--space-2);
+    width: auto;
+    left: var(--space-2);
+    max-height: calc(100dvh - var(--space-4));
+    overflow-y: auto;
+  }
+
+  .toast {
+    width: max-content;
+    max-width: calc(100vw - var(--space-4));
+  }
+
+  /* iOS zooms the whole page when a field below 16px takes focus. */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  .countdown__number {
+    font-size: 96px;
+  }
+
+  .welcome {
+    padding: var(--space-4);
+  }
+
+  .welcome__title {
+    font-size: 24px;
+  }
+}
+
+/* Upright phones and small tablets. */
+@media (max-width: 900px) and (min-height: 501px) {
+  :root {
+    --top-chrome: 64px;
+    --bottom-chrome: 124px;
+  }
+
+  .shell:not(.is-focus) .board-stage {
+    --gutter-x: var(--space-2);
+    --gutter-y: calc(var(--top-chrome) + var(--space-2));
+  }
+
+  .left-panel {
+    top: auto;
+    right: 0;
+    bottom: calc(
+      var(--space-2) + 52px + var(--space-2) + env(safe-area-inset-bottom)
+    );
+    left: 0;
+    flex-direction: column-reverse;
+    gap: var(--space-2);
+    transform: none;
+  }
+
+  .left-panel__rail {
+    flex-direction: row;
+  }
+
+  .left-panel__sheet {
+    width: calc(100vw - var(--space-4));
+    max-height: 55dvh;
+    transform: translateY(12px);
+  }
+
+  .notes-panel {
+    top: auto;
+    right: var(--space-2);
+    bottom: calc(
+      var(--space-2) + 52px + var(--space-2) + env(safe-area-inset-bottom)
+    );
+    left: var(--space-2);
+    width: auto;
+    height: 50dvh;
+    transform: translateY(12px);
+  }
+
+  .notes-panel.is-open {
+    transform: none;
+  }
+
+  .toast,
+  .sim-controls {
+    bottom: calc(var(--bottom-chrome) + env(safe-area-inset-bottom));
+  }
+
+  /* Clears the panel rail, which shares this strip. */
+  .step-counter {
+    bottom: calc(100% + 60px);
+  }
+}
+
+/* Under this width the two top groups no longer share one row. */
+@media (max-width: 790px) and (min-height: 501px) {
+  :root {
+    --top-chrome: 116px;
+  }
+}
+
+/* Under this width the tool group itself takes two rows. */
+@media (max-width: 520px) and (min-height: 501px) {
+  :root {
+    --top-chrome: 164px;
+  }
+
+  /* Five over four reads as one block; eight over one left Redo stranded. */
+  .top-bar nav.floating-bar {
+    max-width: 236px;
+  }
+}
+
+/* Phones on their side. */
+@media (max-height: 500px) {
+  :root {
+    --top-chrome: 56px;
+  }
+
+  .shell:not(.is-focus) .board-stage {
+    --gutter-x: 60px;
+    --gutter-y: 56px;
+  }
+
+  .left-panel {
+    left: calc(var(--space-1) + env(safe-area-inset-left));
+  }
+
+  .left-panel__sheet {
+    max-height: calc(100dvh - 120px);
+  }
+
+  .notes-panel {
+    height: calc(100dvh - 120px);
+  }
+
+  .toast,
+  .sim-controls {
+    bottom: 60px;
+  }
+}
+
+/* Small phones on their side: the top groups wrap, so the board steps down. */
+@media (max-height: 500px) and (max-width: 790px) {
+  :root {
+    --top-chrome: 112px;
+  }
+
+  .shell:not(.is-focus) .board-stage {
+    --gutter-y: 112px;
+  }
+
+  .left-panel__sheet {
+    max-height: calc(100dvh - 176px);
+  }
+}

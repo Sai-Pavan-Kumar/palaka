@@ -1,5 +1,7 @@
 import { MIN_BLOCK_SIZE } from './blockCatalog'
-import type { Shape } from './types'
+import { getRotation, getRotationCentre } from './geometry'
+import { normalizeDegrees, rotatePoint } from './rotation'
+import type { Point, Shape } from './types'
 
 export type ScaleTransform = {
   originX: number
@@ -56,6 +58,54 @@ function scaleBox<S extends { x: number; y: number; w: number; h: number }>(
     w: Math.abs(x2 - x1),
     h: Math.abs(y2 - y1),
   }
+}
+
+export function rotateShapeAround(
+  shape: Shape,
+  pivot: Point,
+  degrees: number,
+): Shape {
+  if (shape.type === 'highlight' || shape.type === 'tableState') return shape
+  if (shape.type === 'line') {
+    const start = rotatePoint({ x: shape.x1, y: shape.y1 }, pivot, degrees)
+    const end = rotatePoint({ x: shape.x2, y: shape.y2 }, pivot, degrees)
+    return { ...shape, x1: start.x, y1: start.y, x2: end.x, y2: end.y }
+  }
+  const centre = getRotationCentre(shape)
+  const moved = rotatePoint(centre, pivot, degrees)
+  return {
+    ...translateShape(shape, moved.x - centre.x, moved.y - centre.y),
+    rotation: normalizeDegrees(getRotation(shape) + degrees),
+  }
+}
+
+// Scaling changes a shape's centre, which is its pivot, so a rotated shape
+// would slide. Shifting it back keeps the corner opposite the handle still.
+export function scaleKeepingAnchor(shape: Shape, t: ScaleTransform): Shape {
+  const rotation = getRotation(shape)
+  const anchor = { x: t.originX, y: t.originY }
+  const before = rotatePoint(anchor, getRotationCentre(shape), rotation)
+  const scaled = scaleShape(shape, t)
+  const after = rotatePoint(anchor, getRotationCentre(scaled), rotation)
+  return translateShape(scaled, before.x - after.x, before.y - after.y)
+}
+
+// In a group, a rotated shape cannot stretch along the group's axes without
+// skewing, so its centre follows the group and it grows around that centre.
+export function scaleRotatedMember(shape: Shape, t: ScaleTransform): Shape {
+  const centre = getRotationCentre(shape)
+  const scaled = scaleShape(shape, {
+    originX: centre.x,
+    originY: centre.y,
+    scaleX: Math.abs(t.scaleX),
+    scaleY: Math.abs(t.scaleY),
+  })
+  const after = getRotationCentre(scaled)
+  return translateShape(
+    scaled,
+    mapX(t, centre.x) - after.x,
+    mapY(t, centre.y) - after.y,
+  )
 }
 
 // Ink follows the average stretch, so shrinking a word by half also halves

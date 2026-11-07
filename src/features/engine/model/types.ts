@@ -31,6 +31,9 @@ type ShapeBase = {
   fromQuery?: string
   // If true, the shape cannot be moved, resized, or deleted until unlocked.
   locked?: boolean
+  // Degrees clockwise around the centre of its unrotated box. Missing = 0.
+  // Lines never use it: they rotate by moving their end points.
+  rotation?: number
   // How it arrives on its reveal step. Missing = draws itself in.
   enter?: EnterStyle
   // Leaves the board at this step (it was explained, make room).

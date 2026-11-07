@@ -36,7 +36,8 @@ function PageList() {
       side="above"
       trigger={({ toggle }) => (
         <button type="button" className="page-bar__label" onClick={toggle}>
-          Page {position} / {pages.length}
+          <span className="page-bar__word">Page </span>
+          {position} / {pages.length}
         </button>
       )}
     >

@@ -13,6 +13,7 @@ import {
   buildSelectWhere,
   buildUpdateRow,
 } from './builder/sqlTemplates'
+import { useUiStore } from '../shell/uiStore'
 import { insertSqlTables } from './insertTables'
 import { parseSql } from './parseSql'
 import './sqlPanel.css'
@@ -32,6 +33,18 @@ type Outcome = { tone: 'ok' | 'error'; lines: string[] }
 
 function plural(count: number, word: string, many = `${word}s`): string {
   return `${count} ${count === 1 ? word : many}`
+}
+
+// The panel would sit on top of the new tables, so it gets out of the way and
+// the result moves to a toast.
+function insertAndReveal(sql: string): Outcome {
+  const outcome = insert(sql)
+  if (outcome.tone === 'ok') {
+    const ui = useUiStore.getState()
+    useUiStore.setState({ isLeftPanelOpen: false })
+    ui.showToast(outcome.lines.join(' '), 'success')
+  }
+  return outcome
 }
 
 function insert(sql: string): Outcome {
@@ -242,7 +255,7 @@ export function SqlPanel() {
       )}
       <SqlActions
         canInsert={sql.trim() !== ''}
-        onInsert={() => setOutcome(insert(sql))}
+        onInsert={() => setOutcome(insertAndReveal(sql))}
         showExample={sql.trim() === ''}
         onExample={() => setSql(pageId, EXAMPLE_SQL)}
       />

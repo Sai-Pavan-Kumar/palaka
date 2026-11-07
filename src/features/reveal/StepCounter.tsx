@@ -1,7 +1,9 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { IconButton } from '../../shared/ui/IconButton'
 import { useEngineStore } from '../engine/engineStore'
 import { findPage } from '../engine/model/documentOps'
 import { useSessionStore } from '../engine/sessionStore'
-import { getStepCount } from './revealModel'
+import { getStepCount, stepReveal } from './revealModel'
 import { useArmedCodeCount } from '../codesim/presentCodeSim'
 import { useUiStore } from '../shell/uiStore'
 import './reveal.css'
@@ -21,6 +23,12 @@ export function StepCounter() {
 
   return (
     <div className="step-counter floating-bar" role="status">
+      <IconButton
+        icon={ChevronLeft}
+        label="Previous step"
+        tooltipSide="above"
+        onClick={() => stepReveal(-1)}
+      />
       <span className="step-counter__live" aria-hidden />
       Step {shown} / {total}
       {code && (
@@ -31,6 +39,12 @@ export function StepCounter() {
       <span className="step-counter__hint">
         Space next · ← back · G {showUpcoming ? 'hide' : 'show'} next
       </span>
+      <IconButton
+        icon={ChevronRight}
+        label="Next step"
+        tooltipSide="above"
+        onClick={() => stepReveal(1)}
+      />
     </div>
   )
 }

@@ -17,10 +17,13 @@
 .left-panel__rail {
   flex-direction: column;
   border-radius: var(--radius-lg);
+  /* The rail can overlap the white board; a soft shadow would smear on it. */
+  box-shadow: none;
+  border: 1px solid var(--color-border-subtle);
 }
 
 .left-panel__sheet {
-  width: 280px;
+  width: 320px;
   max-height: calc(100vh - var(--space-16) * 2);
   overflow-x: hidden;
   overflow-y: auto;

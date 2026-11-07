@@ -1,10 +1,23 @@
 import { getShapesInOrder } from '../model/documentOps'
-import { getShapeBounds, unionBounds } from '../model/geometry'
-import type { Bounds, LineShape, Page } from '../model/types'
+import {
+  getBoundsCentre,
+  getLocalBounds,
+  getRotation,
+  getShapeBounds,
+  unionBounds,
+} from '../model/geometry'
+import { rotatePoint } from '../model/rotation'
+import type { Bounds, LineShape, Page, Point } from '../model/types'
 
 // Screen pixels: handles look and grab the same at any board size.
 export const HANDLE_SIZE_PX = 10
-const HANDLE_GRAB_PX = 12
+const ROTATE_HANDLE_GAP_PX = 28
+// A fingertip covers far more than a mouse tip, so the same small handle needs
+// a 44px grab area on touch screens.
+const FINGER_GRAB_PX = 22
+const isCoarsePointer = () => window.matchMedia('(pointer: coarse)').matches
+const handleGrabPx = () => (isCoarsePointer() ? FINGER_GRAB_PX : 12)
+const rotateGrabPx = () => (isCoarsePointer() ? FINGER_GRAB_PX : 14)
 
 export type HandleCorner = 'nw' | 'ne' | 'sw' | 'se'
 
@@ -15,6 +28,47 @@ export function getSelectionBounds(
   selectedIds: string[],
 ): Bounds | null {
   return unionBounds(getShapesInOrder(page, selectedIds).map(getShapeBounds))
+}
+
+// One shape's frame turns with it. A group's frame stays axis-aligned, because
+// its members can each have a different angle.
+export type SelectionFrame = { bounds: Bounds; rotation: number }
+
+export function getSelectionFrame(
+  page: Page,
+  selectedIds: string[],
+): SelectionFrame | null {
+  const shapes = getShapesInOrder(page, selectedIds)
+  if (shapes.length === 1) {
+    return {
+      bounds: getLocalBounds(shapes[0]),
+      rotation: getRotation(shapes[0]),
+    }
+  }
+  const bounds = unionBounds(shapes.map(getShapeBounds))
+  return bounds && { bounds, rotation: 0 }
+}
+
+export function toFrameSpace(frame: SelectionFrame, point: Point): Point {
+  return rotatePoint(point, getBoundsCentre(frame.bounds), -frame.rotation)
+}
+
+export function getRotateHandlePoint(bounds: Bounds, unitsPerPixel: number) {
+  return {
+    x: (bounds.minX + bounds.maxX) / 2,
+    y: bounds.minY - ROTATE_HANDLE_GAP_PX * unitsPerPixel,
+  }
+}
+
+export function isOnRotateHandle(
+  frame: SelectionFrame,
+  point: Point,
+  unitsPerPixel: number,
+): boolean {
+  const local = toFrameSpace(frame, point)
+  const handle = getRotateHandlePoint(frame.bounds, unitsPerPixel)
+  const reach = rotateGrabPx() * unitsPerPixel
+  return Math.hypot(local.x - handle.x, local.y - handle.y) <= reach
 }
 
 export function getCornerPoint(bounds: Bounds, corner: HandleCorner) {
@@ -31,16 +85,20 @@ export function getOppositeCorner(corner: HandleCorner): HandleCorner {
 }
 
 export function findHandleAt(
-  bounds: Bounds,
+  frame: SelectionFrame,
   x: number,
   y: number,
   unitsPerPixel: number,
 ): HandleCorner | null {
-  const reach = HANDLE_GRAB_PX * unitsPerPixel
+  const reach = handleGrabPx() * unitsPerPixel
+  const local = toFrameSpace(frame, { x, y })
   return (
     HANDLE_CORNERS.find((corner) => {
-      const point = getCornerPoint(bounds, corner)
-      return Math.abs(point.x - x) <= reach && Math.abs(point.y - y) <= reach
+      const point = getCornerPoint(frame.bounds, corner)
+      return (
+        Math.abs(point.x - local.x) <= reach &&
+        Math.abs(point.y - local.y) <= reach
+      )
     }) ?? null
   )
 }
@@ -67,7 +125,7 @@ export function findLineEndAt(
   y: number,
   unitsPerPixel: number,
 ): LineEnd | null {
-  const reach = HANDLE_GRAB_PX * unitsPerPixel
+  const reach = handleGrabPx() * unitsPerPixel
   const ends: LineEnd[] = ['end', 'start']
   return (
     ends.find((end) => {

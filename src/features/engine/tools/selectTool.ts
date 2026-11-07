@@ -8,11 +8,13 @@ import {
   startResizeGesture,
 } from './selectGestures'
 import { startLineEndGesture } from './lineEndGesture'
+import { startRotateGesture } from './rotateGesture'
 import {
   findHandleAt,
   findLineEndAt,
-  getSelectionBounds,
+  getSelectionFrame,
   getSoloLine,
+  isOnRotateHandle,
 } from './selectionHandles'
 import type { BoardPointer, ToolGesture, ToolHandler } from './toolTypes'
 
@@ -84,13 +86,15 @@ export const selectTool: ToolHandler = {
       )
       if (end) return startLineEndGesture(soloLine, end)
     }
-    const bounds = soloLine
-      ? null
-      : getSelectionBounds(getCurrentPage(), selectedIds)
+    const frame = getSelectionFrame(getCurrentPage(), selectedIds)
+    if (frame && isOnRotateHandle(frame, pointer, pointer.unitsPerPixel)) {
+      return startRotateGesture(frame, pointer)
+    }
     const corner =
-      bounds &&
-      findHandleAt(bounds, pointer.x, pointer.y, pointer.unitsPerPixel)
-    if (bounds && corner) return startResizeGesture(bounds, corner)
+      frame && !soloLine
+        ? findHandleAt(frame, pointer.x, pointer.y, pointer.unitsPerPixel)
+        : null
+    if (frame && corner) return startResizeGesture(frame, corner)
     const id = findTopShapeAt(pointer)
     if (id) return startOnShape(pointer, id)
     lastClick = { id: '', time: 0 }

@@ -1,0 +1,79 @@
+/* Hand art: TinyHand by Kamran Ahmed, MIT. See LICENSE-tinyhand.txt. */
+.pointer-hand {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  overflow: clip;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.pointer-hand.is-shown {
+  visibility: visible;
+}
+
+.pointer-hand__arm {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 28%));
+}
+
+.pointer-hand__part {
+  position: absolute;
+  background-repeat: no-repeat;
+}
+
+/* Marks the tap for viewers, who can't see the click itself. */
+.pointer-hand__ripple {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border: 3px solid var(--color-brand-primary);
+  border-radius: 50%;
+  animation: pointer-hand-ripple 450ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes pointer-hand-ripple {
+  from {
+    opacity: 0.8;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pointer-hand__ripple {
+    animation-timing-function: linear;
+    transform: none;
+  }
+}
+
+.hand-choice {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.hand-choice:hover,
+.hand-choice.is-active {
+  background: var(--color-border-active);
+}
+
+.hand-choice__art {
+  width: 24px;
+  height: 30px;
+  background-repeat: no-repeat;
+  background-size: 48px 72px;
+}

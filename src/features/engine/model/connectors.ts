@@ -1,49 +1,29 @@
+import {
+  anchorPoint,
+  boxOf,
+  centreOf,
+  distanceOutside,
+  isBindable,
+  outlineOf,
+  toBoard,
+  type BindableShape,
+} from './connectorTargets'
 import { elbowEnds, type EndBox } from './elbowEnds'
-import { getOutline } from './geoOutline'
+import { getRotation, getShapeBounds, toShapeFrame } from './geometry'
 import { getLineControlPoint } from './lineRouting'
-import { getTableBox } from './tableBox'
 import { getColumnAnchor, getTableLayout, getTableView } from './tableLayout'
 import type { Binding, LineShape, Page, Point, Shape } from './types'
+
+export { isBindable }
 
 // Room between a block and the arrow tip, so the head never digs into the
 // outline and still reads as "pointing at" it.
 const ATTACH_GAP = 8
 
-type BindableShape = Extract<
-  Shape,
-  { type: 'block' | 'geo' | 'image' | 'table' }
->
-
-const BINDABLE_TYPES = new Set<Shape['type']>([
-  'block',
-  'geo',
-  'image',
-  'table',
-])
-
-export function isBindable(shape: Shape | undefined): shape is BindableShape {
-  return !!shape && BINDABLE_TYPES.has(shape.type)
-}
-
-// Tables are measured, every other bindable shape stores its box.
-function boxOf(shape: BindableShape) {
-  return shape.type === 'table' ? getTableBox(shape) : shape
-}
-
 function getTarget(page: Page, binding?: Binding): BindableShape | null {
   if (!binding) return null
   const shape = page.shapes[binding.shapeId]
   return isBindable(shape) ? shape : null
-}
-
-function centreOf(shape: BindableShape): Point {
-  const { x, y, w, h } = boxOf(shape)
-  return { x: x + w / 2, y: y + h / 2 }
-}
-
-function anchorPoint(shape: BindableShape, anchor: Point): Point {
-  const { x, y, w, h } = boxOf(shape)
-  return { x: x + anchor.x * w, y: y + anchor.y * h }
 }
 
 // What the other end aims at: a pinned spot, a foreign key's column row,
@@ -57,18 +37,9 @@ function aimOf(shape: BindableShape, binding?: Binding): Point {
   const row = getTableLayout(shape).rows.find(
     (r) => r.column.name.toLowerCase() === column,
   )
-  return row ? { x: centre.x, y: row.centreY } : centre
-}
-
-function outlineOf(shape: BindableShape): Point[] {
-  if (shape.type !== 'image') return getOutline(shape)
-  const { x, y, w, h } = shape
-  return [
-    { x, y },
-    { x: x + w, y },
-    { x: x + w, y: y + h },
-    { x, y: y + h },
-  ]
+  if (!row) return centre
+  const box = boxOf(shape)
+  return toBoard(shape, { x: box.x + box.w / 2, y: row.centreY })
 }
 
 // Distance along the ray (in units of `dir`) to the nearest outline edge.
@@ -99,8 +70,13 @@ function attachPoint(
   binding?: Binding,
 ): Point {
   if (target.type === 'table' && binding?.column) {
-    const anchor = getColumnAnchor(target, binding.column, toward, ATTACH_GAP)
-    if (anchor) return anchor
+    const anchor = getColumnAnchor(
+      target,
+      binding.column,
+      toShapeFrame(target, toward),
+      ATTACH_GAP,
+    )
+    if (anchor) return toBoard(target, anchor)
   }
   const centre = centreOf(target)
   if (binding?.anchor) return pinnedPoint(target, binding.anchor)
@@ -145,8 +121,9 @@ export function bindingAt(target: BindableShape, point: Point): Binding {
   if (target.type === 'table') return binding
   const { x, y, w, h } = boxOf(target)
   if (w <= 0 || h <= 0) return binding
-  const nx = (point.x - x) / w
-  const ny = (point.y - y) / h
+  const local = toShapeFrame(target, point)
+  const nx = (local.x - x) / w
+  const ny = (local.y - y) / h
   const offCentre = Math.max(Math.abs(nx - 0.5), Math.abs(ny - 0.5))
   if (offCentre < CENTRE_ZONE) return binding
   const snapped = SIDE_MIDPOINTS.find(
@@ -163,8 +140,14 @@ function elbowBox(
   binding: Binding | undefined,
   point: Point,
 ): EndBox {
-  if (shape && !binding?.anchor && !binding?.column) return boxOf(shape)
-  return { x: point.x, y: point.y, w: 0, h: 0 }
+  if (!shape || binding?.anchor || binding?.column) {
+    return { x: point.x, y: point.y, w: 0, h: 0 }
+  }
+  if (getRotation(shape) === 0) return boxOf(shape)
+  // Elbows run along the board's axes, so a rotated target counts as the
+  // upright box around it.
+  const { minX, minY, maxX, maxY } = getShapeBounds(shape)
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
 }
 
 // A curve bends toward its control point, so each end aims at that point
@@ -309,14 +292,6 @@ export function remapBindings(shape: Shape, idMap: Map<string, string>): Shape {
 export function detachLine(line: LineShape): LineShape {
   const { startBinding: _start, endBinding: _end, ...rest } = line
   return rest
-}
-
-// How far outside a box (in its own units) the point is; 0 when inside.
-function distanceOutside(target: BindableShape, point: Point): number {
-  const shape = boxOf(target)
-  const dx = Math.max(shape.x - point.x, 0, point.x - (shape.x + shape.w))
-  const dy = Math.max(shape.y - point.y, 0, point.y - (shape.y + shape.h))
-  return Math.hypot(dx, dy)
 }
 
 // The shape an arrow end at `point` would stick to. Inside the box counts

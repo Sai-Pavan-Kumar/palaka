@@ -14,6 +14,7 @@ import {
   getLineLabelLayout,
   type LabelLayout,
 } from '../model/labelLayout'
+import { getRotation, getRotationCentre } from '../model/geometry'
 import { getFontPx, getShapeLines, measureText } from '../model/textMetrics'
 import { getPalette } from '../model/paper'
 import type { Paper, Shape, TextShape } from '../model/types'
@@ -37,6 +38,23 @@ function placement(x: number, y: number, w: number, h: number, slide: Slide) {
   }
 }
 
+// The editor must lie on the drawn text, so it turns around the shape's pivot,
+// given relative to the editor's own top-left corner.
+function rotationStyle(
+  shape: Shape,
+  left: number,
+  top: number,
+  toWidth: (px: number) => string,
+) {
+  const rotation = getRotation(shape)
+  if (rotation === 0) return {}
+  const centre = getRotationCentre(shape)
+  return {
+    transform: `rotate(${rotation}deg)`,
+    transformOrigin: `${toWidth(centre.x - left)} ${toWidth(centre.y - top)}`,
+  }
+}
+
 function textStyle(paper: Paper, shape: TextShape, slide: Slide) {
   const fontPx = getFontPx(shape)
   const { w } = measureText(shape)
@@ -54,6 +72,7 @@ function textStyle(paper: Paper, shape: TextShape, slide: Slide) {
   )
   return {
     ...box,
+    ...rotationStyle(shape, shape.x, shape.y, toWidth),
     fontSize: toWidth(fontPx),
     fontFamily: FONT_FAMILY[shape.font],
     fontWeight: FONT_WEIGHT[shape.font],
@@ -68,10 +87,16 @@ function textStyle(paper: Paper, shape: TextShape, slide: Slide) {
   }
 }
 
-function labelStyle(layout: LabelLayout, color: string, slide: Slide) {
+function labelStyle(
+  shape: Shape,
+  layout: LabelLayout,
+  color: string,
+  slide: Slide,
+) {
   const lineHeight = getLineHeight(layout.font)
+  const left = layout.centreX - layout.width / 2
   const { toWidth, ...box } = placement(
-    layout.centreX - layout.width / 2,
+    left,
     layout.top,
     layout.width,
     layout.fontPx * lineHeight,
@@ -79,6 +104,7 @@ function labelStyle(layout: LabelLayout, color: string, slide: Slide) {
   )
   return {
     ...box,
+    ...rotationStyle(shape, left, layout.top, toWidth),
     fontSize: toWidth(layout.fontPx),
     fontFamily: FONT_FAMILY[layout.font],
     fontWeight: FONT_WEIGHT[layout.font],
@@ -100,7 +126,7 @@ function editorFor(shape: Shape, paper: Paper, slide: Slide) {
       // must be paper-on-ink too, or the letters vanish into the board.
       if (isBuildingBlock(shape)) {
         const ink = palette.ink[shape.color]
-        const style = labelStyle(layout, palette.paper, slide)
+        const style = labelStyle(shape, layout, palette.paper, slide)
         return {
           value: shape.label,
           style: { ...style, background: ink, caretColor: palette.paper },
@@ -108,11 +134,14 @@ function editorFor(shape: Shape, paper: Paper, slide: Slide) {
       }
       const color =
         shape.fill === 'solid' ? palette.onSolid : palette.ink[shape.color]
-      return { value: shape.label, style: labelStyle(layout, color, slide) }
+      return {
+        value: shape.label,
+        style: labelStyle(shape, layout, color, slide),
+      }
     }
     case 'line': {
       const layout = getLineLabelLayout(shape)
-      const style = labelStyle(layout, palette.ink[shape.color], slide)
+      const style = labelStyle(shape, layout, palette.ink[shape.color], slide)
       return {
         value: shape.label ?? '',
         style: { ...style, background: palette.paper },
