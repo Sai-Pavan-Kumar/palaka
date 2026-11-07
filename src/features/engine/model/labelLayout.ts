@@ -1,12 +1,7 @@
-import { FONT_SIZE, LINE_HEIGHT } from './boardSpec'
+import { FONT_SIZE, getLineHeight } from './boardSpec'
 import { getBuilding, getBuildingFrame } from './buildings'
 import { getLineMidpoint } from './lineRouting'
-import {
-  getBaselineOffset,
-  getFontCss,
-  getTextLines,
-  measureLine,
-} from './textMetrics'
+import { getBaselineOffset, getTextLines, measureFontLine } from './textMetrics'
 import type { BlockShape, FontKey, LineShape, SizeKey } from './types'
 
 // Labels reuse the text metrics, so the SVG label and the textarea that
@@ -62,7 +57,7 @@ function fitLabelPx(label: string, width: number, fontPx: number): number {
   const room = width - BLOCK_LABEL_PAD * 2
   const widest = Math.max(
     ...getTextLines(label).map((line) =>
-      measureLine(line, getFontCss(fontFor('brand', fontPx))),
+      measureFontLine(line, fontFor('brand', fontPx)),
     ),
   )
   if (widest <= room || widest === 0) return fontPx
@@ -104,7 +99,7 @@ function getBuildingLabelLayout(block: BlockShape): LabelLayout | null {
     lines = splitInTwo(block.label)
     fontPx = fitLabelPx(lines.join('\n'), plate.w, maxPx)
   }
-  const textH = lines.length * fontPx * LINE_HEIGHT
+  const textH = lines.length * fontPx * getLineHeight('brand')
   const signH = Math.max(plate.h, textH + SIGN_PAD)
   return {
     ...fontFor('brand', fontPx),
@@ -128,7 +123,7 @@ export function getBlockLabelLayout(block: BlockShape): LabelLayout {
       Math.max(BLOCK_LABEL_MIN_PX, block.h * BLOCK_LABEL_SHARE),
     ),
   )
-  const lineBox = fontPx * LINE_HEIGHT
+  const lineBox = fontPx * getLineHeight('brand')
   return {
     ...fontFor('brand', fontPx),
     centreX: block.x + block.w / 2,
@@ -139,7 +134,7 @@ export function getBlockLabelLayout(block: BlockShape): LabelLayout {
 }
 
 export function getLineLabelLayout(line: LineShape): LabelLayout {
-  const lineBox = LINE_LABEL_PX * LINE_HEIGHT
+  const lineBox = LINE_LABEL_PX * getLineHeight('code')
   const mid = getLineMidpoint(line)
   return {
     ...fontFor('code', LINE_LABEL_PX),

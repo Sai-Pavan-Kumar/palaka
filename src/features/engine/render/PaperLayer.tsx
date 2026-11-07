@@ -1,4 +1,4 @@
-import { FONT_FAMILY } from '../model/boardSpec'
+import { BRAND_FONT_FAMILY } from '../model/boardSpec'
 import { PAPER_COLORS, type BoardPalette } from '../model/paper'
 import type { Paper } from '../model/types'
 import { GRAIN_TILE, getGrainTile } from './grainTile'
@@ -144,7 +144,7 @@ export function BrandMark({ palette }: { palette: BoardPalette }) {
       x={BRAND_INSET}
       y={BRAND_INSET + BRAND_FONT_PX * 0.8}
       fill={palette.brand}
-      fontFamily={FONT_FAMILY.brand}
+      fontFamily={BRAND_FONT_FAMILY}
       fontWeight={BRAND_WEIGHT}
       fontSize={BRAND_FONT_PX}
       letterSpacing={-0.3}

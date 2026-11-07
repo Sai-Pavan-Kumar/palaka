@@ -1,4 +1,9 @@
-import { FONT_FAMILY, FONT_WEIGHT, LINE_HEIGHT } from '../model/boardSpec'
+import {
+  FONT_FAMILY,
+  FONT_WEIGHT,
+  fontSpacingStyle,
+  getLineHeight,
+} from '../model/boardSpec'
 import {
   getBaselineOffset,
   getFontPx,
@@ -20,7 +25,7 @@ export function TextView({
 }) {
   const palette = useBoardPalette()
   const fontPx = getFontPx(shape)
-  const lineBox = fontPx * LINE_HEIGHT
+  const lineBox = fontPx * getLineHeight(shape.font)
   const baseline = getBaselineOffset(shape)
   const lines = getShapeLines(shape)
   const hasFocus = focusLine !== undefined
@@ -40,7 +45,7 @@ export function TextView({
         fontFamily={FONT_FAMILY[shape.font]}
         fontWeight={FONT_WEIGHT[shape.font]}
         fontSize={fontPx}
-        style={{ whiteSpace: 'pre' }}
+        style={{ whiteSpace: 'pre', ...fontSpacingStyle(shape.font) }}
       >
         {lines.map((line, index) => (
           <tspan

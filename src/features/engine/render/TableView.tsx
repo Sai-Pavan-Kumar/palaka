@@ -1,4 +1,8 @@
-import { FONT_FAMILY, hatchPatternId } from '../model/boardSpec'
+import {
+  FONT_FAMILY,
+  fontSpacingStyle,
+  hatchPatternId,
+} from '../model/boardSpec'
 import { BLOCK_CORNER_RADIUS } from '../model/blockCatalog'
 import type { BoardPalette } from '../model/paper'
 import { getTableBox } from '../model/tableBox'
@@ -175,7 +179,7 @@ export function TableContents({
         fontFamily={FONT_FAMILY.brand}
         fontWeight={HEADER_WEIGHT}
         fontSize={TABLE_NAME_PX * shape.scale}
-        style={{ whiteSpace: 'pre' }}
+        style={{ whiteSpace: 'pre', ...fontSpacingStyle('brand') }}
       >
         {shape.name}
       </text>

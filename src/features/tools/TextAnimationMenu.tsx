@@ -1,7 +1,7 @@
 import {
   Focus,
   Keyboard,
-  Sparkles,
+  PenLine,
   TrendingUp,
   type LucideIcon,
 } from 'lucide-react'
@@ -21,9 +21,9 @@ type AnimOption = {
 const ANIM_OPTIONS: AnimOption[] = [
   {
     id: 'wipe',
-    label: 'Smooth Wipe',
-    desc: 'Clean left-to-right progressive sweep',
-    icon: Sparkles,
+    label: 'Handwriting',
+    desc: 'Writes letter by letter at a human pace',
+    icon: PenLine,
   },
   {
     id: 'typewriter',
@@ -72,11 +72,11 @@ function AnimMenuItem({
 }
 
 const REVEAL_OPTIONS: { id: TextReveal; label: string }[] = [
-  { id: 'word', label: 'Word by word' },
+  { id: 'word', label: 'Bit by bit' },
   { id: 'whole', label: 'All at once' },
 ]
 
-// Word by word is the default; "All at once" is the old whole-box reveal.
+// Bit by bit (letters or words, by animation) is the default; "All at once" is the old whole-box reveal.
 function RevealToggle({ current }: { current: TextReveal }) {
   return (
     <div className="text-anim-menu__reveal" role="group" aria-label="Reveal">

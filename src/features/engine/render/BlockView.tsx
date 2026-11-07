@@ -1,4 +1,4 @@
-import { FONT_FAMILY, FONT_WEIGHT } from '../model/boardSpec'
+import { FONT_FAMILY, FONT_WEIGHT, fontSpacingStyle } from '../model/boardSpec'
 import {
   getBlockIconBox,
   getBlockLabelLayout,
@@ -44,7 +44,7 @@ export function BlockContents({
           fontFamily={FONT_FAMILY[label.font]}
           fontWeight={FONT_WEIGHT[label.font]}
           fontSize={label.fontPx}
-          style={{ whiteSpace: 'pre' }}
+          style={{ whiteSpace: 'pre', ...fontSpacingStyle(label.font) }}
         >
           {shape.label}
         </text>

@@ -1,7 +1,8 @@
 import {
   FONT_FAMILY,
+  fontSpacingStyle,
+  getLineHeight,
   getStrokeWidth,
-  LINE_HEIGHT,
 } from '../engine/model/boardSpec'
 import {
   getBuilding,
@@ -256,13 +257,13 @@ function Sign({
           fontFamily={FONT_FAMILY.brand}
           fontWeight={700}
           fontSize={layout.fontPx}
-          style={{ whiteSpace: 'pre' }}
+          style={{ whiteSpace: 'pre', ...fontSpacingStyle('brand') }}
         >
           {(layout.lines ?? [shape.label]).map((line, i) => (
             <tspan
               key={i}
               x={layout.centreX}
-              dy={i === 0 ? 0 : layout.fontPx * LINE_HEIGHT}
+              dy={i === 0 ? 0 : layout.fontPx * getLineHeight('brand')}
             >
               {line}
             </tspan>

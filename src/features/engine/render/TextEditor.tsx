@@ -5,7 +5,8 @@ import { useEngineStore } from '../engineStore'
 import {
   FONT_FAMILY,
   FONT_WEIGHT,
-  LINE_HEIGHT,
+  fontSpacingStyle,
+  getLineHeight,
   SLIDE_SIZE,
 } from '../model/boardSpec'
 import {
@@ -40,6 +41,7 @@ function textStyle(paper: Paper, shape: TextShape, slide: Slide) {
   const fontPx = getFontPx(shape)
   const { w } = measureText(shape)
   const lines = getShapeLines(shape).length
+  const lineHeight = getLineHeight(shape.font)
   // A wrapping box is exactly its wrap width, so the textarea breaks lines
   // where the drawn text will.
   const width = shape.wrapWidth ?? w + fontPx * CARET_ROOM_EM
@@ -47,7 +49,7 @@ function textStyle(paper: Paper, shape: TextShape, slide: Slide) {
     shape.x,
     shape.y,
     width,
-    lines * fontPx * LINE_HEIGHT,
+    lines * fontPx * lineHeight,
     slide,
   )
   return {
@@ -55,7 +57,8 @@ function textStyle(paper: Paper, shape: TextShape, slide: Slide) {
     fontSize: toWidth(fontPx),
     fontFamily: FONT_FAMILY[shape.font],
     fontWeight: FONT_WEIGHT[shape.font],
-    lineHeight: LINE_HEIGHT,
+    ...fontSpacingStyle(shape.font),
+    lineHeight,
     color: getPalette(paper).ink[shape.color],
     opacity: shape.opacity,
     ...(shape.wrapWidth && {
@@ -66,11 +69,12 @@ function textStyle(paper: Paper, shape: TextShape, slide: Slide) {
 }
 
 function labelStyle(layout: LabelLayout, color: string, slide: Slide) {
+  const lineHeight = getLineHeight(layout.font)
   const { toWidth, ...box } = placement(
     layout.centreX - layout.width / 2,
     layout.top,
     layout.width,
-    layout.fontPx * LINE_HEIGHT,
+    layout.fontPx * lineHeight,
     slide,
   )
   return {
@@ -78,7 +82,8 @@ function labelStyle(layout: LabelLayout, color: string, slide: Slide) {
     fontSize: toWidth(layout.fontPx),
     fontFamily: FONT_FAMILY[layout.font],
     fontWeight: FONT_WEIGHT[layout.font],
-    lineHeight: LINE_HEIGHT,
+    ...fontSpacingStyle(layout.font),
+    lineHeight,
     textAlign: 'center' as const,
     color,
   }

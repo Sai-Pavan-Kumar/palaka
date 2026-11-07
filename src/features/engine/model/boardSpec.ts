@@ -74,16 +74,42 @@ export const FONT_SIZE: Record<SizeKey, number> = {
 }
 
 export const LINE_HEIGHT = 1.25
+const HANDWRITING_LINE_HEIGHT = 1.05
 
-// Same stacks as --font-brand / --font-code in tokens.css.
+export function getLineHeight(font: FontKey): number {
+  return font === 'brand' ? HANDWRITING_LINE_HEIGHT : LINE_HEIGHT
+}
+
+// The studio's name on the board stays in the brand font; same stack as
+// --font-brand in tokens.css.
+export const BRAND_FONT_FAMILY =
+  "'Overused Grotesk', system-ui, 'Segoe UI', Arial, sans-serif"
+
+// Saved boards store 'brand' for board writing, so the key stays and old
+// boards need no migration, even though that writing is now Gaegu.
 export const FONT_FAMILY: Record<FontKey, string> = {
-  brand: "'Overused Grotesk', system-ui, 'Segoe UI', Arial, sans-serif",
+  brand: "'Gaegu', 'Segoe Print', 'Comic Sans MS', cursive",
   code: "'Geist Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace",
 }
 
 export const FONT_WEIGHT: Record<FontKey, number> = {
-  brand: 500,
+  brand: 700,
   code: 400,
+}
+
+// Gaegu sets wide by default; the owner tuned these by eye on a real board.
+// In em, so they hold at every text size. Code keeps its fixed grid.
+export const FONT_SPACING_EM: Record<
+  FontKey,
+  { letter: number; word: number }
+> = {
+  brand: { letter: -0.025, word: -0.1 },
+  code: { letter: 0, word: 0 },
+}
+
+export function fontSpacingStyle(font: FontKey) {
+  const { letter, word } = FONT_SPACING_EM[font]
+  return { letterSpacing: `${letter}em`, wordSpacing: `${word}em` }
 }
 
 export function getStrokeWidth(shape: {

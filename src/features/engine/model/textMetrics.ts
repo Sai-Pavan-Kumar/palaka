@@ -1,4 +1,10 @@
-import { FONT_FAMILY, FONT_SIZE, FONT_WEIGHT, LINE_HEIGHT } from './boardSpec'
+import {
+  FONT_FAMILY,
+  FONT_SIZE,
+  FONT_SPACING_EM,
+  FONT_WEIGHT,
+  getLineHeight,
+} from './boardSpec'
 import type { TextShape } from './types'
 
 // One shared canvas for measuring. Widths are cached per font and line,
@@ -52,23 +58,38 @@ export function getFontCss(shape: Pick<TextShape, 'font' | 'size' | 'scale'>) {
   return `${FONT_WEIGHT[shape.font]} ${getFontPx(shape)}px ${FONT_FAMILY[shape.font]}`
 }
 
+type TextFont = Pick<TextShape, 'font' | 'size' | 'scale'>
+
+// Canvas letterSpacing is not in every browser we support, so spacing is
+// added by hand, the way the browser adds it when it draws the line.
+export function measureFontLine(line: string, font: TextFont): number {
+  const { letter, word } = FONT_SPACING_EM[font.font]
+  const fontPx = getFontPx(font)
+  const letters = [...line].length
+  const spaces = line.split(' ').length - 1
+  return (
+    measureLine(line, getFontCss(font)) +
+    fontPx * (letters * letter + spaces * word)
+  )
+}
+
 export function getTextLines(text: string): string[] {
   return text.split('\n')
 }
 
 // Longest start of `text` that fits: for one word wider than the line.
-function fittingPrefix(text: string, maxWidth: number, fontCss: string) {
+function fittingPrefix(text: string, maxWidth: number, font: TextFont) {
   let end = text.length - 1
-  while (end > 1 && measureLine(text.slice(0, end), fontCss) > maxWidth) end--
+  while (end > 1 && measureFontLine(text.slice(0, end), font) > maxWidth) end--
   return Math.max(end, 1)
 }
 
 // Greedy word wrap, the same rule a browser uses for a pre-wrap textarea:
 // spaces stay on the line they end and may hang past the edge, so the
 // editor and the drawn text break in the same places.
-function wrapLine(line: string, maxWidth: number, fontCss: string): string[] {
+function wrapLine(line: string, maxWidth: number, font: TextFont): string[] {
   const fits = (text: string) =>
-    measureLine(text.trimEnd(), fontCss) <= maxWidth
+    measureFontLine(text.trimEnd(), font) <= maxWidth
   if (fits(line)) return [line]
   const out: string[] = []
   let current = ''
@@ -78,7 +99,7 @@ function wrapLine(line: string, maxWidth: number, fontCss: string): string[] {
       current = word
     } else current += word
     while (!fits(current) && current.trimEnd().length > 1) {
-      const cut = fittingPrefix(current, maxWidth, fontCss)
+      const cut = fittingPrefix(current, maxWidth, font)
       out.push(current.slice(0, cut))
       current = current.slice(cut)
     }
@@ -91,20 +112,18 @@ function wrapLine(line: string, maxWidth: number, fontCss: string): string[] {
 export function getShapeLines(shape: TextShape): string[] {
   const lines = getTextLines(shape.text)
   if (!shape.wrapWidth) return lines
-  const fontCss = getFontCss(shape)
-  return lines.flatMap((line) => wrapLine(line, shape.wrapWidth!, fontCss))
+  return lines.flatMap((line) => wrapLine(line, shape.wrapWidth!, shape))
 }
 
 // Width of the widest line, height of all lines. An empty box keeps a
 // caret-sized width so a new text box is still clickable.
 export function measureText(shape: TextShape): { w: number; h: number } {
   const fontPx = getFontPx(shape)
-  const fontCss = getFontCss(shape)
   const lines = getShapeLines(shape)
-  const widest = Math.max(...lines.map((line) => measureLine(line, fontCss)))
+  const widest = Math.max(...lines.map((line) => measureFontLine(line, shape)))
   return {
     w: Math.max(widest, fontPx * 0.5),
-    h: lines.length * fontPx * LINE_HEIGHT,
+    h: lines.length * fontPx * getLineHeight(shape.font),
   }
 }
 
@@ -123,7 +142,7 @@ export function getBaselineOffset(
       const metrics = ctx.measureText('Hg')
       const ascent = metrics.fontBoundingBoxAscent
       const descent = metrics.fontBoundingBoxDescent
-      const lineBox = getFontPx(shape) * LINE_HEIGHT
+      const lineBox = getFontPx(shape) * getLineHeight(shape.font)
       offset = (lineBox - (ascent + descent)) / 2 + ascent
     } else {
       offset = getFontPx(shape) * 0.8

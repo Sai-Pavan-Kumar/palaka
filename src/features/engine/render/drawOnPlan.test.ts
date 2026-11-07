@@ -42,11 +42,23 @@ describe('getDrawPlan', () => {
 
   it('paces word reveals by word count, within limits', () => {
     const words = (n: number) => ({
-      ...createText({ x: 0, y: 0 }, DEFAULT_STYLE),
+      ...createText(
+        { x: 0, y: 0 },
+        { ...DEFAULT_STYLE, textAnimation: 'slide-up' },
+      ),
       text: Array.from({ length: n }, () => 'w').join(' '),
     })
     expect(getDrawDuration(words(10))).toBeCloseTo(1.1)
     expect(getDrawDuration(words(1))).toBe(0.35)
     expect(getDrawDuration(words(200))).toBe(4)
+  })
+
+  it('paces handwriting by letter count, within limits', () => {
+    const written = (letters: number) => ({
+      ...createText({ x: 0, y: 0 }, DEFAULT_STYLE),
+      text: 'w'.repeat(letters),
+    })
+    expect(getDrawDuration(written(20))).toBeCloseTo(1.5)
+    expect(getDrawDuration(written(500))).toBe(8)
   })
 })

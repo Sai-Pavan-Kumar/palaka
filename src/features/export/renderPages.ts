@@ -24,6 +24,11 @@ const EMBEDDED_FONTS = [
     weight: '300 900',
   },
   {
+    family: 'Gaegu',
+    url: '/fonts/Gaegu-Bold-latin.woff2',
+    weight: '700',
+  },
+  {
     family: 'Geist Mono',
     url: '/fonts/GeistMono-latin.woff2',
     weight: '100 900',

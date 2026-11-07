@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { FONT_FAMILY } from '../../engine/model/boardSpec'
+import { BRAND_FONT_FAMILY, FONT_FAMILY } from '../../engine/model/boardSpec'
 import type { BoardPalette } from '../../engine/model/paper'
 import type { PanelMetrics } from './panelLayout'
 
@@ -20,7 +20,7 @@ function PanelTitle({
       y={m.titleH * 0.68}
       fill={palette.ink.black}
       fillOpacity={0.55}
-      fontFamily={FONT_FAMILY.brand}
+      fontFamily={BRAND_FONT_FAMILY}
       fontWeight={600}
       fontSize={m.fontPx * 0.8}
       letterSpacing={m.fontPx * 0.04}

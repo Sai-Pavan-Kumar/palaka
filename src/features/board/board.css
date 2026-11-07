@@ -351,14 +351,34 @@
   transform-box: fill-box;
 }
 
+/* Handwriting: ink appears only behind the moving pen, at steady speed. A fade
+   or an ease would read as an effect rather than as someone writing. */
 .word-in-wipe {
-  animation-name: word-in-wipe;
+  animation-name: word-in-write;
+  animation-timing-function: linear;
 }
 
-@keyframes word-in-wipe {
+@keyframes word-in-write {
   from {
-    opacity: 0;
-    transform: translateX(-0.25em);
+    clip-path: inset(-30% 100% -30% 0);
+  }
+  to {
+    clip-path: inset(-30% -15% -30% -15%);
+  }
+}
+
+/* The pen itself. The gap is longer than the path so a round cap can't leave a
+   dot at the far end before the stroke starts. Resting state is fully drawn, so
+   reduced motion simply shows the letter. */
+.pen-stroke {
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 0;
+  animation: pen-stroke linear both;
+}
+
+@keyframes pen-stroke {
+  from {
+    stroke-dashoffset: 1;
   }
 }
 
@@ -396,7 +416,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .word-in {
+  .word-in,
+  .pen-stroke {
     animation: none;
   }
 }

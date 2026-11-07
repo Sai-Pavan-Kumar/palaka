@@ -10,6 +10,15 @@
   font-display: swap;
 }
 
+/* Board writing only. Bold alone: thinner weights wash out on compressed video. */
+@font-face {
+  font-family: 'Gaegu';
+  src: url('/fonts/Gaegu-Bold-latin.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @font-face {
   font-family: 'Geist Mono';
   src: url('/fonts/GeistMono-latin.woff2') format('woff2');

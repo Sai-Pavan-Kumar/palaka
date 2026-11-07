@@ -18,9 +18,13 @@ const MAX_DRAW_S = 1.6
 const PER_WORD_S = 0.11
 const PER_LETTER_S = 0.035
 const MAX_TEXT_S = 4
+// Handwriting is the point of the shot, so it may take longer than the other
+// reveals, but a long paragraph still must not stall the talk.
+const PER_WRITTEN_LETTER_S = 0.075
+const MAX_WRITING_S = 8
 // After this, a revealed shape is shown plainly whatever the animation did.
 export const DRAW_ON_SAFETY_MS =
-  Math.max(MAX_DRAW_S, MAX_TEXT_S) * SLOWEST_PACE * 1000 + 300
+  Math.max(MAX_DRAW_S, MAX_TEXT_S, MAX_WRITING_S) * SLOWEST_PACE * 1000 + 300
 // The mask band is wider than the ink so hand-drawn wobble and pen pressure
 // never poke out of it.
 export const MASK_WIDTH_FACTOR = 2.2
@@ -111,6 +115,12 @@ export function getDrawPlan(shape: Shape): DrawPlan | null {
 export function getDrawDuration(shape: Shape): number | null {
   const plan = getDrawPlan(shape)
   if (!plan) return null
+  if (plan.kind === 'words' && plan.animation === 'wipe') {
+    return Math.min(
+      MAX_WRITING_S,
+      Math.max(MIN_DRAW_S, plan.units * PER_WRITTEN_LETTER_S),
+    )
+  }
   if (plan.kind === 'words') {
     const perUnit = plan.animation === 'typewriter' ? PER_LETTER_S : PER_WORD_S
     return Math.min(MAX_TEXT_S, Math.max(MIN_DRAW_S, plan.units * perUnit))
