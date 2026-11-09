@@ -71,6 +71,7 @@ export function insertTemplate(template: DiagramTemplate): void {
         const to = blocks.get(item.edge[1])!
         shape = {
           ...createLine({ x: from.x, y: from.y }, true, style),
+          ...(item.edge[2] === 'both' && { arrowStart: true }),
           startBinding: { shapeId: from.id },
           endBinding: { shapeId: to.id },
         }

@@ -44,7 +44,7 @@ export function describeShape(doc: BoardDocument, shape: Shape): string {
         shape.label.trim().slice(0, MAX_LABEL_LENGTH) || BLOCK_NAMES[shape.kind]
       )
     case 'line': {
-      const kind = shape.arrowhead ? 'Arrow' : 'Line'
+      const kind = shape.arrowhead || shape.arrowStart ? 'Arrow' : 'Line'
       const label = shape.label?.trim()
       return label ? `${kind}: ${label.slice(0, MAX_LABEL_LENGTH)}` : kind
     }

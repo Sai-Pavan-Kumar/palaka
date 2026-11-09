@@ -58,7 +58,7 @@ function LockAndSpotlightActions({
       <IconButton
         icon={isLocked ? Unlock : Lock}
         label={isLocked ? 'Unlock' : 'Lock'}
-        shortcut="L"
+        shortcut="Shift L"
         isActive={isLocked}
         onClick={toggleLockSelected}
       />

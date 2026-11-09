@@ -43,11 +43,8 @@ describe('bindingAt', () => {
     expect(bindingAt(box, { x: 105, y: 52 }).anchor).toBeUndefined()
   })
 
-  it('pins to the dropped spot near an edge', () => {
-    expect(bindingAt(box, { x: 30, y: 2 }).anchor).toEqual({
-      x: 0.15,
-      y: 0.02,
-    })
+  it('glues to the whole block when dropped off a midpoint', () => {
+    expect(bindingAt(box, { x: 30, y: 2 }).anchor).toBeUndefined()
   })
 
   it('snaps to a side midpoint when close', () => {
@@ -55,16 +52,19 @@ describe('bindingAt', () => {
   })
 })
 
+// Boards saved before midpoint-only pinning still hold free spots.
+const oldPin = { shapeId: 'box', anchor: { x: 0.15, y: 0.02 } }
+
 describe('routeConnector with a pinned end', () => {
   it('lands on the pinned spot, not the centre edge', () => {
-    const pinned = { ...line, endBinding: bindingAt(box, { x: 30, y: 2 }) }
+    const pinned = { ...line, endBinding: oldPin }
     const routed = routeConnector(page, pinned)
     expect(routed.x2).toBeLessThan(40)
     expect(routed.y2).toBeLessThan(0)
   })
 
   it('still follows the shape when it moves', () => {
-    const pinned = { ...line, endBinding: bindingAt(box, { x: 30, y: 2 }) }
+    const pinned = { ...line, endBinding: oldPin }
     const moved = {
       ...page,
       shapes: { ...page.shapes, box: { ...box, x: 100 } },

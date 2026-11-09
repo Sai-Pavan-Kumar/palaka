@@ -65,7 +65,7 @@ export const REAL_SYSTEMS = [
       ],
     ],
     [
-      ['user', 'ws'],
+      ['user', 'ws', 'both'],
       ['ws', 'chat'],
       ['chat', 'db'],
       ['chat', 'bus'],

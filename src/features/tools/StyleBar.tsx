@@ -20,6 +20,7 @@ import { SqlActionMenu } from './SqlActionMenu'
 import { MoreStylesMenu } from './MoreStylesMenu'
 import { TextAnimationMenu } from './TextAnimationMenu'
 import { LineRoutingMenu } from './LineRoutingMenu'
+import { ArrowHeadsToggle } from './ArrowHeadsToggle'
 import { BlockEffectMenu } from './BlockEffectMenu'
 import { SelectionActions } from './SelectionActions'
 import { useShownStyle, type ShownStyle } from './styleActions'
@@ -39,6 +40,7 @@ function StyleLayerRow({ shown, tool }: { shown: ShownStyle; tool: string }) {
       {fields.has('routing') && (
         <LineRoutingMenu current={shown.values.routing} />
       )}
+      {fields.has('routing') && <ArrowHeadsToggle />}
       {fields.has('effect') && <span className="floating-bar__divider" />}
       {fields.has('effect') && (
         <BlockEffectMenu current={shown.values.effect} />

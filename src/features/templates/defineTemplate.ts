@@ -17,7 +17,9 @@ export type NodeSpec = [
   extras?: NodeExtras,
 ]
 
-export type EdgeSpec = [from: string, to: string]
+// 'both' = a two-headed arrow, for links where both sides talk (a WebSocket,
+// a request whose answer the template is about). Default is one-way.
+export type EdgeSpec = [from: string, to: string, way?: 'both']
 
 // Reveal order follows the drawing: each block appears right after the
 // arrow that leads into it, so Present tells the story request by request.

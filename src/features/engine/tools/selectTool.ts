@@ -1,5 +1,5 @@
 import { getCurrentPage } from '../boardActions'
-import { hitTestShape } from '../model/hitTest'
+import { hitTestShape, isInsideHollowGeo } from '../model/hitTest'
 import { selectShapes, useSessionStore } from '../sessionStore'
 import { hasEditableLabel, startTextEditing } from '../textEditing'
 import {
@@ -33,7 +33,22 @@ function findTopShapeAt(pointer: BoardPointer): string | null {
     const shape = page.shapes[page.order[i]]
     if (hitTestShape(shape, pointer.x, pointer.y, tolerance)) return shape.id
   }
-  return null
+  return findHollowShapeAround(pointer)
+}
+
+// No ink under the pointer: take the smallest empty shape around it, so a
+// click inside a nested box picks the inner one.
+function findHollowShapeAround(pointer: BoardPointer): string | null {
+  const page = getCurrentPage()
+  let best: { id: string; area: number } | null = null
+  for (const id of page.order) {
+    const shape = page.shapes[id]
+    if (shape.type !== 'geo') continue
+    if (!isInsideHollowGeo(shape, pointer.x, pointer.y)) continue
+    const area = shape.w * shape.h
+    if (!best || area < best.area) best = { id, area }
+  }
+  return best?.id ?? null
 }
 
 function isDoubleClickOn(id: string): boolean {

@@ -99,6 +99,8 @@ export type LineShape = ShapeBase & {
   x2: number
   y2: number
   arrowhead: boolean
+  // A second head at the start, for two-way links (request and answer).
+  arrowStart?: boolean
   routing?: LineRouting
   // Elbow only: which way the first leg runs. Set when both ends are glued,
   // so the arrow enters the facing side; missing = the longer axis first.

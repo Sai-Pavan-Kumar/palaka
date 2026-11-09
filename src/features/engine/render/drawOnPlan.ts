@@ -6,7 +6,7 @@ import { getRevealPieces, revealsByWord } from '../model/textReveal'
 import { getLocalBounds } from '../model/geometry'
 import { getLineSamplePoints } from '../model/lineRouting'
 import type { Point, Shape, TextAnimation } from '../model/types'
-import { getArrowheadWings } from './shapePaths'
+import { getArrowheads } from './shapePaths'
 
 // Slide pixels per second. Fast enough that a long arrow does not stall the
 // talk, slow enough that the eye follows the line being drawn.
@@ -73,13 +73,13 @@ export function getDrawPlan(shape: Shape): DrawPlan | null {
       // Follow the real route (curve, elbow), or the bent parts would stay
       // hidden while the arrow draws itself in.
       const body = polyline(getLineSamplePoints(shape))
-      if (!shape.arrowhead) return { kind: 'trace', ...body, width }
-      const { tip, left, right } = getArrowheadWings(shape, width)
-      const wings = polyline([left, tip, right])
+      const wings = getArrowheads(shape, width).map(({ tip, left, right }) =>
+        polyline([left, tip, right]),
+      )
       return {
         kind: 'trace',
-        d: `${body.d} ${wings.d}`,
-        length: body.length + wings.length,
+        d: [body.d, ...wings.map((wing) => wing.d)].join(' '),
+        length: wings.reduce((sum, wing) => sum + wing.length, body.length),
         width,
       }
     }

@@ -127,6 +127,7 @@
 
   .style-bar {
     top: calc(var(--top-chrome) + env(safe-area-inset-top));
+    width: auto;
     max-width: none;
     margin-inline: var(--space-2);
     background: none;
@@ -312,6 +313,29 @@
 @media (max-height: 500px) {
   :root {
     --top-chrome: 56px;
+  }
+
+  /* At the top the bar covered the left rail and a third of the board; the
+     strip above the page bar is free on a short screen. */
+  .style-bar {
+    top: auto;
+    bottom: calc(
+      var(--space-2) + 52px + var(--space-2) + env(safe-area-inset-bottom)
+    );
+    margin-left: calc(64px + env(safe-area-inset-left));
+  }
+
+  /* One row that scrolls sideways: a second row would climb onto the board.
+     Menus here open as fixed bottom sheets, so the scroll never clips them. */
+  .style-bar .style-bar__row {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .style-bar .style-bar__row > * {
+    flex-shrink: 0;
   }
 
   .shell:not(.is-focus) .board-stage {

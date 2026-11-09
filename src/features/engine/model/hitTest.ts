@@ -98,3 +98,11 @@ export function hitTestShape(
       return true
   }
 }
+
+// For clicks that miss every ink line: is the point inside this hollow
+// shape? The select tool uses it as a fallback so an empty box can be
+// grabbed from its middle, while the eraser still only takes what it touches.
+export function isInsideHollowGeo(shape: Shape, x: number, y: number): boolean {
+  if (shape.type !== 'geo' || shape.fill !== 'none') return false
+  return isInsidePolygon(toShapeFrame(shape, { x, y }), getOutline(shape))
+}

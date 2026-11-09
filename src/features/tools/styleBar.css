@@ -4,6 +4,9 @@
   left: 50%;
   /* Below the top bar, so its open menus (Rec settings, Export) cover this bar. */
   z-index: var(--z-raised);
+  /* Without max-content, left: 50% caps the bar at half the screen and its
+     rows wrap long before they need to. */
+  width: max-content;
   max-width: calc(100vw - var(--space-8));
   justify-content: center;
   border-radius: var(--radius-lg);
@@ -19,6 +22,7 @@
 
 .style-bar__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
   justify-content: center;
@@ -28,6 +32,23 @@
   padding-top: var(--space-1);
   border-top: 1px solid var(--color-border-subtle);
   width: 100%;
+}
+
+/* Wide screens have room for style and actions side by side: one row hides
+   half as much of the top of the board while a shape is selected. */
+@media (min-width: 1200px) {
+  .style-bar.style-bar--dual {
+    flex-direction: row;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .style-bar--dual .style-bar__row--actions {
+    width: auto;
+    padding-top: 0;
+    padding-left: var(--space-2);
+    border-top: 0;
+    border-left: 1px solid var(--color-border-subtle);
+  }
 }
 
 @keyframes style-bar-in {

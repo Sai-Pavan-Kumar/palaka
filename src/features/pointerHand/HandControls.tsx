@@ -1,5 +1,6 @@
 import { Hand, Volume2, VolumeX } from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
+import { Popover } from '../../shared/ui/Popover'
 import {
   HANDS,
   updateHandSettings,
@@ -7,25 +8,82 @@ import {
   type HandId,
 } from './handSettings'
 
-function HandChoice({ id, isActive }: { id: HandId; isActive: boolean }) {
+function HandArt({ id }: { id: HandId }) {
   const art = HANDS[id]
+  return (
+    <span
+      className="hand-choice__art"
+      aria-hidden
+      style={{
+        backgroundImage: `url(${art.url})`,
+        backgroundPosition: `${-art.tipX * 48 + 12}px ${-art.handTop * 72}px`,
+      }}
+    />
+  )
+}
+
+function HandChoice({ id, isActive }: { id: HandId; isActive: boolean }) {
   return (
     <button
       type="button"
       className={`hand-choice ${isActive ? 'is-active' : ''}`}
-      aria-label={art.label}
+      aria-label={HANDS[id].label}
       aria-pressed={isActive}
-      title={art.label}
+      title={HANDS[id].label}
       onClick={() => updateHandSettings({ handId: id })}
     >
-      <span
-        className="hand-choice__art"
-        style={{
-          backgroundImage: `url(${art.url})`,
-          backgroundPosition: `${-art.tipX * 48 + 12}px ${-art.handTop * 72}px`,
-        }}
-      />
+      <HandArt id={id} />
     </button>
+  )
+}
+
+// Hand picks and sound live behind one button: five extra buttons in the
+// style bar pushed it past the screen edge on laptops and phones.
+function HandStyleMenu({
+  handId,
+  soundOn,
+}: {
+  handId: HandId
+  soundOn: boolean
+}) {
+  return (
+    <Popover
+      side="below"
+      trigger={({ toggle }) => (
+        <button
+          type="button"
+          className="hand-choice"
+          aria-label="Hand style and tap sound"
+          title="Hand style and tap sound"
+          onClick={toggle}
+        >
+          <HandArt id={handId} />
+        </button>
+      )}
+    >
+      {() => (
+        <div className="hand-menu">
+          <div className="hand-menu__row">
+            {(Object.keys(HANDS) as HandId[]).map((id) => (
+              <HandChoice key={id} id={id} isActive={id === handId} />
+            ))}
+          </div>
+          <button
+            type="button"
+            className={`menu-item ${soundOn ? 'is-active' : ''}`}
+            aria-pressed={soundOn}
+            onClick={() => updateHandSettings({ soundOn: !soundOn })}
+          >
+            {soundOn ? (
+              <Volume2 size={18} strokeWidth={1.75} aria-hidden />
+            ) : (
+              <VolumeX size={18} strokeWidth={1.75} aria-hidden />
+            )}
+            Tap sound
+          </button>
+        </div>
+      )}
+    </Popover>
   )
 }
 
@@ -40,18 +98,7 @@ export function HandControls() {
         isActive={isOn}
         onClick={() => updateHandSettings({ isOn: !isOn })}
       />
-      {isOn &&
-        (Object.keys(HANDS) as HandId[]).map((id) => (
-          <HandChoice key={id} id={id} isActive={id === handId} />
-        ))}
-      {isOn && (
-        <IconButton
-          icon={soundOn ? Volume2 : VolumeX}
-          label={soundOn ? 'Mute the tap sound' : 'Turn on the tap sound'}
-          isActive={soundOn}
-          onClick={() => updateHandSettings({ soundOn: !soundOn })}
-        />
-      )}
+      {isOn && <HandStyleMenu handId={handId} soundOn={soundOn} />}
     </>
   )
 }

@@ -70,4 +70,27 @@ describe('flowActions', () => {
     current = getCurrentPage().shapes['line-1'] as LineShape
     expect(current.flow).toBeUndefined()
   })
+
+  it('turns the arrow heads to match the flow', () => {
+    insertShape(makeLine('arrow'))
+    selectShapes(['arrow'])
+    const heads = () => {
+      const line = getCurrentPage().shapes.arrow as LineShape
+      return [!!line.arrowStart, line.arrowhead]
+    }
+    setFlow('both')
+    expect(heads()).toEqual([true, true])
+    setFlow('backward')
+    expect(heads()).toEqual([true, false])
+    setFlow('forward')
+    expect(heads()).toEqual([false, true])
+  })
+
+  it('leaves a plain line without heads', () => {
+    insertShape({ ...makeLine('plain'), arrowhead: false })
+    selectShapes(['plain'])
+    setFlow('both')
+    const line = getCurrentPage().shapes.plain as LineShape
+    expect([!!line.arrowStart, line.arrowhead]).toEqual([false, false])
+  })
 })

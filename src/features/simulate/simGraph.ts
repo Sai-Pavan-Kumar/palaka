@@ -22,12 +22,14 @@ function toNode(shape: Shape): SimNode | null {
   }
 }
 
-// Which way a request may travel. An arrow points the way; a plain line
-// or a two-way flow carries traffic both ways.
+// Which way a request may travel. The heads point the way; a plain line,
+// a two-headed arrow or a two-way flow carries traffic both ways.
 function directions(line: LineShape): { forward: boolean; back: boolean } {
   const flow = line.flow?.direction
-  if (!line.arrowhead || flow === 'both') return { forward: true, back: true }
-  if (flow === 'backward') return { forward: false, back: true }
+  const end = line.arrowhead
+  const start = !!line.arrowStart
+  if (end === start || flow === 'both') return { forward: true, back: true }
+  if (flow === 'backward' || start) return { forward: false, back: true }
   return { forward: true, back: false }
 }
 

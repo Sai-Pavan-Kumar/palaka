@@ -17,7 +17,7 @@ import {
 } from './boardActions'
 import { useEngineStore } from './engineStore'
 import { armPasteFallback } from './systemClipboard'
-import { selectShapes, toggleTool, useSessionStore } from './sessionStore'
+import { selectShapes, setTool, useSessionStore } from './sessionStore'
 
 function handleCommandKey(event: KeyboardEvent, key: string): boolean {
   // Not prevented: the browser's paste event must still fire (Workspace).
@@ -47,7 +47,9 @@ function handlePlainKey(event: KeyboardEvent, key: string): boolean {
     useSessionStore.setState({ spotlightId: next })
     return true
   }
-  if (key === 'l' && selectedIds.length > 0) {
+  // Shift+L locks; plain L stays the Line tool even with a selection, so
+  // reaching for a line never silently locks a shape.
+  if (key === 'l' && event.shiftKey && selectedIds.length > 0) {
     toggleLockSelected()
     return true
   }
@@ -56,7 +58,7 @@ function handlePlainKey(event: KeyboardEvent, key: string): boolean {
     return true
   }
   const tool = toolForKey(key, event.shiftKey)
-  if (tool) toggleTool(tool)
+  if (tool) setTool(tool)
   else if (key === 'delete' || key === 'backspace') deleteSelected()
   else if (key === 'escape') selectShapes([])
   else if (key === ']') moveSelectedToEdge('front')

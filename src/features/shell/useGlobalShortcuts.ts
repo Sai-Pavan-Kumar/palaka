@@ -87,8 +87,11 @@ function handleKey(event: KeyboardEvent): boolean {
   } else if (key === 'n' && sim.active && sim.stepMode) {
     nextStep()
   } else if (key === 'f') ui.toggleFocusMode()
-  else if (key === 'p' && !isRecording) setPresenting(!presenting)
-  else if (event.key === 'PageDown') goToPageOffset(1)
+  // Shift+P, not plain P: a stray P (pen in other apps) used to grey out
+  // the whole board and looked like lost work.
+  else if (key === 'p' && event.shiftKey && !isRecording) {
+    setPresenting(!presenting)
+  } else if (event.key === 'PageDown') goToPageOffset(1)
   else if (event.key === 'PageUp') goToPageOffset(-1)
   else if (event.key === 'Escape' && ui.isFocusMode) ui.setFocusMode(false)
   else return presenting && handlePresentingKey(event, isRecording)

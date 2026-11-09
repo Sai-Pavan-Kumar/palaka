@@ -9,7 +9,7 @@ import {
 import { IconButton } from '../../shared/ui/IconButton'
 import { useFacecamStore } from '../facecam/facecamStore'
 import { useEngineStore } from '../engine/engineStore'
-import { toggleTool, useSessionStore } from '../engine/sessionStore'
+import { setTool, useSessionStore } from '../engine/sessionStore'
 import { ExportMenu } from '../export/ExportMenu'
 import { RecordControls } from '../recorder/RecordControls'
 import { useRecorderStore } from '../recorder/recorderStore'
@@ -28,7 +28,7 @@ function ToolButton({ tool }: { tool: ToolDefinition }) {
       label={tool.label}
       shortcut={tool.shortcut}
       isActive={isActive}
-      onClick={() => toggleTool(tool.id)}
+      onClick={() => setTool(tool.id)}
     />
   )
 }
@@ -86,7 +86,7 @@ function SessionGroup() {
       <IconButton
         icon={Presentation}
         label={isPresenting ? 'Stop presenting' : 'Present'}
-        shortcut="P"
+        shortcut="Shift P"
         isActive={isPresenting}
         disabled={isRecording}
         onClick={() => setPresenting(!isPresenting)}

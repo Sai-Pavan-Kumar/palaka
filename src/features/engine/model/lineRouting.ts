@@ -129,6 +129,30 @@ export function getLineEndPointTangent(line: LineShape): LineTangent {
   return { tip, angle: Math.atan2(line.y2 - line.y1, line.x2 - line.x1) }
 }
 
+// Same as the end tangent, but for a head at the start: the angle points
+// out of the line through (x1, y1). Not a reversed line, because reversing
+// would flip which side a curve bends to.
+export function getLineStartPointTangent(line: LineShape): LineTangent {
+  const tip = { x: line.x1, y: line.y1 }
+  const routing = line.routing ?? 'straight'
+
+  if (routing === 'curved') {
+    const cp = getLineControlPoint(line)
+    return { tip, angle: Math.atan2(line.y1 - cp.y, line.x1 - cp.x) }
+  }
+
+  if (routing === 'elbow') {
+    if (isElbowHorizontalFirst(line)) {
+      const midX = (line.x1 + line.x2) / 2
+      return { tip, angle: Math.atan2(0, line.x1 - midX) }
+    }
+    const midY = (line.y1 + line.y2) / 2
+    return { tip, angle: Math.atan2(line.y1 - midY, 0) }
+  }
+
+  return { tip, angle: Math.atan2(line.y1 - line.y2, line.x1 - line.x2) }
+}
+
 export function getLineMidpoint(line: LineShape): Point {
   const routing = line.routing ?? 'straight'
 

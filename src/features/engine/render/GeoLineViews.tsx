@@ -18,7 +18,7 @@ import { measureText } from '../model/textMetrics'
 import type { LineShape, Point } from '../model/types'
 import { useBoardPalette } from './paletteContext'
 import {
-  getArrowheadWings,
+  getArrowheads,
   getDashArray,
   getRoughGeoPaths,
   getRoughLinePaths,
@@ -111,9 +111,13 @@ function getLineSegments(shape: LineShape, width: number): [Point, Point][] {
   for (let i = 0; i < points.length - 1; i++) {
     segments.push([points[i], points[i + 1]])
   }
-  if (!shape.arrowhead) return segments
-  const { tip, left, right } = getArrowheadWings(shape, width)
-  return [...segments, [left, tip], [right, tip]]
+  const wings = getArrowheads(shape, width).flatMap(
+    ({ tip, left, right }): [Point, Point][] => [
+      [left, tip],
+      [right, tip],
+    ],
+  )
+  return [...segments, ...wings]
 }
 
 // The arrowhead is always solid: a dotted head would read as noise.
@@ -132,7 +136,7 @@ export function LineView({ shape }: { shape: LineShape }) {
   }
   const toPath = ([a, b]: [Point, Point]) => `M${a.x},${a.y} L${b.x},${b.y}`
   const bodyPath = getLinePath(shape)
-  const headWings = shape.arrowhead ? getArrowheadWings(shape, width) : null
+  const heads = getArrowheads(shape, width)
   return (
     <>
       <path
@@ -143,12 +147,12 @@ export function LineView({ shape }: { shape: LineShape }) {
         strokeLinecap="round"
         strokeDasharray={getDashArray(shape.dash, width)}
       />
-      {headWings && (
+      {heads.length > 0 && (
         <InkPaths
-          paths={[
-            toPath([headWings.left, headWings.tip]),
-            toPath([headWings.right, headWings.tip]),
-          ]}
+          paths={heads.flatMap((head) => [
+            toPath([head.left, head.tip]),
+            toPath([head.right, head.tip]),
+          ])}
           color={ink}
           width={width}
         />

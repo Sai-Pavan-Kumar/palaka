@@ -2,7 +2,10 @@ import { getStroke } from 'perfect-freehand'
 import rough from 'roughjs'
 import { getPenWidth } from '../model/boardSpec'
 import { getOutline, type OutlinedShape } from '../model/geoOutline'
-import { getLineEndPointTangent } from '../model/lineRouting'
+import {
+  getLineEndPointTangent,
+  getLineStartPointTangent,
+} from '../model/lineRouting'
 import type { DashStyle, LineShape, Point, StrokeShape } from '../model/types'
 
 const roughGenerator = rough.generator()
@@ -98,8 +101,15 @@ export function getRoughLinePaths(
 
 // The two short wings of an arrowhead, sized to the line width so a thick
 // arrow gets a bold head.
-export function getArrowheadWings(shape: LineShape, strokeWidth: number) {
-  const { tip, angle } = getLineEndPointTangent(shape)
+export function getArrowheadWings(
+  shape: LineShape,
+  strokeWidth: number,
+  at: 'start' | 'end' = 'end',
+) {
+  const { tip, angle } =
+    at === 'start'
+      ? getLineStartPointTangent(shape)
+      : getLineEndPointTangent(shape)
   const length = Math.max(18, strokeWidth * 4)
   const spread = Math.PI / 7
   const wing = (offset: number): Point => ({
@@ -116,4 +126,14 @@ export function getDashArray(
   if (dash === 'dashed') return `${width * 3} ${width * 2.5}`
   if (dash === 'dotted') return `0 ${width * 2.2}`
   return undefined
+}
+
+// Every head the line carries: the usual one at the end, plus one at the
+// start for two-way links.
+export function getArrowheads(shape: LineShape, strokeWidth: number) {
+  const heads = []
+  if (shape.arrowStart)
+    heads.push(getArrowheadWings(shape, strokeWidth, 'start'))
+  if (shape.arrowhead) heads.push(getArrowheadWings(shape, strokeWidth, 'end'))
+  return heads
 }

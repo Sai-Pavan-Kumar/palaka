@@ -3,31 +3,20 @@ import {
   setCameraFrame,
   setTool,
   toggleCameraFrame,
-  toggleTool,
   useSessionStore,
 } from './sessionStore'
 
-describe('sessionStore toggleTool', () => {
-  it('switches tool when inactive', () => {
+describe('sessionStore setTool', () => {
+  it('switches to the picked tool', () => {
     setTool('select')
-    expect(useSessionStore.getState().tool).toBe('select')
-
-    toggleTool('arrow')
-    expect(useSessionStore.getState().tool).toBe('arrow')
-  })
-
-  it('toggles back to select when active tool is clicked again', () => {
     setTool('arrow')
     expect(useSessionStore.getState().tool).toBe('arrow')
-
-    toggleTool('arrow')
-    expect(useSessionStore.getState().tool).toBe('select')
   })
 
-  it('remains select when select is toggled', () => {
-    setTool('select')
-    toggleTool('select')
-    expect(useSessionStore.getState().tool).toBe('select')
+  it('keeps the tool when the active tool is picked again', () => {
+    setTool('arrow')
+    setTool('arrow')
+    expect(useSessionStore.getState().tool).toBe('arrow')
   })
 })
 

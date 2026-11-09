@@ -102,10 +102,10 @@ function pinnedPoint(target: BindableShape, anchor: Point): Point {
   return { x: centre.x + dir.x * reach, y: centre.y + dir.y * reach }
 }
 
-// Inside this share of the box around the centre, a drop means "this block",
-// not "this spot", so the end keeps sliding to the nearest edge.
-const CENTRE_ZONE = 0.25
 // Near a side's midpoint the end clicks onto it, so tidy diagrams line up.
+// Anywhere else the end glues to the whole block and slides to the facing
+// side as blocks move; pinning every off-centre drop left arrows stuck on a
+// corner that no longer faced the other block.
 const MIDPOINT_SNAP = 0.12
 const SIDE_MIDPOINTS: Point[] = [
   { x: 0.5, y: 0 },
@@ -114,8 +114,8 @@ const SIDE_MIDPOINTS: Point[] = [
   { x: 0, y: 0.5 },
 ]
 
-// The binding for an end dropped at `point` on `target`: pinned to that spot
-// unless it landed near the centre (or on a table, which aims by column).
+// The binding for an end dropped at `point` on `target`: pinned to a side's
+// midpoint when dropped on one, else glued to the block (tables aim by column).
 export function bindingAt(target: BindableShape, point: Point): Binding {
   const binding: Binding = { shapeId: target.id }
   if (target.type === 'table') return binding
@@ -124,13 +124,10 @@ export function bindingAt(target: BindableShape, point: Point): Binding {
   const local = toShapeFrame(target, point)
   const nx = (local.x - x) / w
   const ny = (local.y - y) / h
-  const offCentre = Math.max(Math.abs(nx - 0.5), Math.abs(ny - 0.5))
-  if (offCentre < CENTRE_ZONE) return binding
   const snapped = SIDE_MIDPOINTS.find(
     (m) => Math.hypot(m.x - nx, m.y - ny) < MIDPOINT_SNAP,
   )
-  const clamp = (v: number) => Math.min(1.2, Math.max(-0.2, v))
-  return { ...binding, anchor: snapped ?? { x: clamp(nx), y: clamp(ny) } }
+  return snapped ? { ...binding, anchor: snapped } : binding
 }
 
 // A free end, or one pinned to a spot or a column, keeps its own point;

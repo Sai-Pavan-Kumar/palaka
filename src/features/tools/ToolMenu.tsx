@@ -41,8 +41,9 @@ export function ToolMenu({
             type="button"
             className={`menu-item ${tool.id === toolId ? 'is-active' : ''}`}
             onClick={() => {
-              if (tool.id === toolId) setTool('select')
-              else setTool(tool.id)
+              // Picking the tool you already hold keeps it: switching off
+              // here forced a second trip through the menu.
+              setTool(tool.id)
               close()
             }}
           >

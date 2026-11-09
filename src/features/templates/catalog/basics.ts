@@ -15,8 +15,8 @@ export const BASICS = [
       ['db', 'sqlDb', 2, 1, PG],
     ],
     [
-      ['user', 'server'],
-      ['server', 'db'],
+      ['user', 'server', 'both'],
+      ['server', 'db', 'both'],
     ],
   ),
   t(

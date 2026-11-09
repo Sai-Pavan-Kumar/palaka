@@ -21,7 +21,7 @@ export type TemplateNode = {
 // Steps in the order a teacher would draw them while talking, so Present
 // reveals the story left to right: node, the arrow into the next, node…
 export type TemplateStep =
-  { node: TemplateNode } | { edge: [from: string, to: string] }
+  { node: TemplateNode } | { edge: [from: string, to: string, way?: 'both'] }
 
 export type DiagramTemplate = {
   id: string
