@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react'
 import { isShownAt } from '../../animate/motion'
 import { CodeSimLayer } from '../../codesim/board/CodeSimLayer'
+import { GitLayer } from '../../gitsim/board/GitLayer'
 import { SimLayer } from '../../simulate/SimLayer'
 import { BoardFrame } from '../../board/BoardFrame'
 import { useBoardStore } from '../../board/boardStore'
@@ -125,6 +126,7 @@ function BoardCameraTrack({
       >
         <SimLayer page={page} paper={doc.paper} isVisible={isVisible} />
         <CodeSimLayer page={page} paper={doc.paper} isVisible={isVisible} />
+        <GitLayer aspect={doc.aspect} paper={doc.paper} />
         <LaserTrail />
       </svg>
     </div>

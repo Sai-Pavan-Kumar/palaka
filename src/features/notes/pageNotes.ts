@@ -4,11 +4,15 @@ type NotesState = {
   notes: Record<string, string>
   // Pasted SQL per page, so a schema can be tweaked and inserted again.
   sql: Record<string, string>
+  // Git command script per page, for the Git mode of the Explain panel.
+  git: Record<string, string>
   setNote: (pageId: string, text: string) => void
   setSql: (pageId: string, text: string) => void
+  setGit: (pageId: string, text: string) => void
   replaceNotes: (
     notes: Record<string, string>,
     sql?: Record<string, string>,
+    git?: Record<string, string>,
   ) => void
 }
 
@@ -17,7 +21,9 @@ type NotesState = {
 export const useNotesStore = create<NotesState>((set, get) => ({
   notes: {},
   sql: {},
+  git: {},
   setNote: (pageId, text) => set({ notes: { ...get().notes, [pageId]: text } }),
   setSql: (pageId, text) => set({ sql: { ...get().sql, [pageId]: text } }),
-  replaceNotes: (notes, sql = {}) => set({ notes, sql }),
+  setGit: (pageId, text) => set({ git: { ...get().git, [pageId]: text } }),
+  replaceNotes: (notes, sql = {}, git = {}) => set({ notes, sql, git }),
 }))

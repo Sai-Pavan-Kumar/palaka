@@ -50,12 +50,13 @@
 .code-panel__steps {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 0;
 }
 
 .code-panel__count {
   flex: 1;
   text-align: center;
+  white-space: nowrap;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-secondary);

@@ -118,6 +118,7 @@ export async function exportBoardFile(): Promise<string> {
     { ...board.document, assets },
     board.notes,
     board.sql,
+    board.git,
   )
   return saveToExports(`board-${timestampForFileName()}.json`, text)
 }

@@ -1,3 +1,4 @@
+import { isGitSimActive, stepGitSim, stopGitSim } from '../gitsim/gitSimStore'
 import { useEffect } from 'react'
 import {
   isCodeSimActive,
@@ -72,12 +73,30 @@ function handleCodeSimKey(event: KeyboardEvent, presenting: boolean): boolean {
   return true
 }
 
+// A Git run owns Space and Esc, while presenting too: the graph is what
+// the viewer is following at that moment.
+function handleGitSimKey(event: KeyboardEvent): boolean {
+  if (!isGitSimActive()) return false
+  if (event.key === ' ') stepGitSim(event.shiftKey ? -1 : 1)
+  else if (event.key === 'Escape') stopGitSim()
+  // Delete clears the run only when nothing is selected, so deleting a
+  // shape drawn over the graph still works.
+  else if (
+    (event.key === 'Delete' || event.key === 'Backspace') &&
+    useSessionStore.getState().selectedIds.length === 0
+  ) {
+    stopGitSim()
+  } else return false
+  return true
+}
+
 // Returns true when the key was ours.
 function handleKey(event: KeyboardEvent): boolean {
   const ui = useUiStore.getState()
   const isRecording = useRecorderStore.getState().status !== 'idle'
   const { presenting } = useSessionStore.getState()
   const key = event.key.toLowerCase()
+  if (handleGitSimKey(event)) return true
   if (handleCodeSimKey(event, presenting)) return true
 
   // Esc leaves the simulation first, then presenting on the next press.
@@ -111,7 +130,8 @@ export function useGlobalShortcuts(): void {
     // step, so its release must never press Present, Pause or Stop.
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key !== ' ' || isTypingTarget(event.target)) return
-      if (useSessionStore.getState().presenting || isCodeSimActive()) {
+      const stepping = isCodeSimActive() || isGitSimActive()
+      if (useSessionStore.getState().presenting || stepping) {
         event.preventDefault()
       }
     }

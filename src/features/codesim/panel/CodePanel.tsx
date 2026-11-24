@@ -1,12 +1,13 @@
 import { useState, type KeyboardEvent } from 'react'
 import { useEngineStore } from '../../engine/engineStore'
+import type { CodePins } from '../../engine/model/types'
 import { findPage } from '../../engine/model/documentOps'
 import { useSessionStore } from '../../engine/sessionStore'
+import { useUiStore } from '../../shell/uiStore'
 import { useCodeSimStore, type CodeSimStatus } from '../codeSimStore'
 import { findCodeCard, NO_PINS } from '../codeCard'
 import { runOnBoard } from '../runOnBoard'
 import { CODE_TEMPLATES } from '../templates'
-import { CodeStepControls } from './CodeStepControls'
 import { PinFields } from './PinFields'
 import { StepThroughSwitch } from './StepThroughSwitch'
 import '../../sql/sqlPanel.css'
@@ -20,6 +21,25 @@ const RUN_LABEL: Record<CodeSimStatus, string> = {
   running: 'Running…',
   ready: 'Run again',
   error: 'Run again',
+}
+
+// The panel covers the card, so a good run moves it out of the way and the
+// floating bar takes over. Loading and errors keep it open: their message
+// lives here.
+async function runAndReveal(
+  source: string,
+  call: string,
+  pins: CodePins,
+): Promise<void> {
+  await runOnBoard(source, call, pins)
+  const { status, steps } = useCodeSimStore.getState()
+  if (status !== 'ready') return
+  const ui = useUiStore.getState()
+  useUiStore.setState({ isLeftPanelOpen: false })
+  ui.showToast(
+    `${steps.length} steps ready. Space = next, Shift+Space = back, Esc = stop.`,
+    'info',
+  )
 }
 
 // Tab in a code box should indent, like every editor, not jump focus away.
@@ -38,8 +58,10 @@ function indentOnTab(
 }
 
 function TemplateChips({
+  current,
   onPick,
 }: {
+  current: string
   onPick: (source: string, call: string) => void
 }) {
   return (
@@ -48,7 +70,8 @@ function TemplateChips({
         <button
           key={template.id}
           type="button"
-          className="sql-panel__chip"
+          className={`sql-panel__chip ${current === template.source ? 'is-active' : ''}`}
+          aria-pressed={current === template.source}
           onClick={() => onPick(template.source, template.call)}
         >
           {template.label}
@@ -86,26 +109,62 @@ function useCardDraft() {
   const [source, setSource] = useState(card?.text ?? '')
   const [call, setCall] = useState(card?.codeCall ?? '')
   const [pins, setPins] = useState(card?.codePins ?? NO_PINS)
-  return { source, setSource, call, setCall, pins, setPins }
+  // Bumped on template pick: remounts the pin inputs so they clear too.
+  const [pinsKey, setPinsKey] = useState(0)
+  const pickTemplate = (nextSource: string, nextCall: string) => {
+    setSource(nextSource)
+    setCall(nextCall)
+    setPins(NO_PINS)
+    setPinsKey((key) => key + 1)
+  }
+  return {
+    source,
+    setSource,
+    call,
+    setCall,
+    pins,
+    setPins,
+    pinsKey,
+    pickTemplate,
+  }
+}
+
+function CallField({
+  call,
+  onChange,
+}: {
+  call: string
+  onChange: (call: string) => void
+}) {
+  return (
+    <label className="code-panel__call">
+      <span className="menu-label">Run with</span>
+      <input
+        value={call}
+        spellCheck={false}
+        placeholder="Solution().twoSum([2, 7, 11, 15], 9)"
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  )
 }
 
 export function CodePanel() {
-  const { source, setSource, call, setCall, pins, setPins } = useCardDraft()
+  const {
+    source,
+    setSource,
+    call,
+    setCall,
+    pins,
+    setPins,
+    pinsKey,
+    pickTemplate,
+  } = useCardDraft()
   const status = useCodeSimStore((s) => s.status)
-  // Bumped on template pick: remounts the pin inputs so they clear too.
-  const [pinsKey, setPinsKey] = useState(0)
   const isBusy = status === 'loading' || status === 'running'
-
   return (
     <div className="sql-panel code-panel">
-      <TemplateChips
-        onPick={(nextSource, nextCall) => {
-          setSource(nextSource)
-          setCall(nextCall)
-          setPins(NO_PINS)
-          setPinsKey((key) => key + 1)
-        }}
-      />
+      <TemplateChips current={source} onPick={pickTemplate} />
       <textarea
         className="sql-panel__input code-panel__input"
         value={source}
@@ -115,29 +174,20 @@ export function CodePanel() {
         onChange={(event) => setSource(event.target.value)}
         onKeyDown={(event) => indentOnTab(event, setSource)}
       />
-      <label className="code-panel__call">
-        <span className="menu-label">Run with</span>
-        <input
-          value={call}
-          spellCheck={false}
-          placeholder="Solution().twoSum([2, 7, 11, 15], 9)"
-          onChange={(event) => setCall(event.target.value)}
-        />
-      </label>
+      <CallField call={call} onChange={setCall} />
       <PinFields key={pinsKey} pins={pins} onChange={setPins} />
       <div className="sql-panel__actions">
         <button
           type="button"
           className="sql-panel__insert"
           disabled={isBusy || source.trim() === ''}
-          onClick={() => void runOnBoard(source, call, pins)}
+          onClick={() => void runAndReveal(source, call, pins)}
         >
           {RUN_LABEL[status]}
         </button>
       </div>
       <RunStatus />
       <StepThroughSwitch />
-      <CodeStepControls />
     </div>
   )
 }

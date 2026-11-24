@@ -17,6 +17,7 @@ export type BoardFile = {
   notes: Record<string, string>
   // Optional: boards saved before SQL tables existed have none.
   sql?: Record<string, string>
+  git?: Record<string, string>
 }
 
 // Boards from the tldraw build cannot be read by this engine. The owner chose
@@ -34,6 +35,7 @@ export function serializeBoard(
   document: BoardDocument,
   notes: Record<string, string>,
   sql: Record<string, string> = {},
+  git: Record<string, string> = {},
 ): string {
   const file: BoardFile = {
     app: APP_ID,
@@ -41,6 +43,7 @@ export function serializeBoard(
     document,
     notes,
     sql,
+    git,
   }
   return JSON.stringify(file)
 }
@@ -102,5 +105,6 @@ export function parseBoard(text: string): BoardFile {
     },
     notes: safeNotes,
     sql: stringRecord(parsed.sql),
+    git: stringRecord(parsed.git),
   }
 }

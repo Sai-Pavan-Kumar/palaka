@@ -6,6 +6,8 @@ import { EngineStage } from '../engine/render/EngineStage'
 import { useEngineShortcuts } from '../engine/useEngineShortcuts'
 import { NotesPanel } from '../notes/NotesPanel'
 import { PageBar } from '../pages/PageBar'
+import { CodeStepControls } from '../codesim/panel/CodeStepControls'
+import { GitControls } from '../gitsim/panel/GitControls'
 import { SimControls } from '../simulate/SimControls'
 import { allowBoardDrop, handleBoardDrop } from '../panel/addFolderImage'
 import { LeftPanel } from '../panel/LeftPanel'
@@ -96,6 +98,8 @@ function BoardChrome() {
       <NotesPanel />
       <PageBar />
       <SimControls />
+      <GitControls />
+      <CodeStepControls />
     </>
   )
 }

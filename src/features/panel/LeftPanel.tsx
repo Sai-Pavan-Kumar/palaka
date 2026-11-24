@@ -1,17 +1,17 @@
 import { useEffect } from 'react'
 import {
-  CodeXml,
   FolderOpen,
   ListOrdered,
-  Table2,
+  Presentation,
   type LucideIcon,
 } from 'lucide-react'
 import { IconButton } from '../../shared/ui/IconButton'
-import { CodePanel } from '../codesim/panel/CodePanel'
+import { useExplainStore } from '../explain/explainStore'
+import { ExplainPanel } from '../explain/ExplainPanel'
+import { findMode } from '../explain/modes'
 import { listProjectAssets } from '../project/openProject'
 import { useProjectStore } from '../project/projectStore'
 import { RevealOrderList } from '../reveal/RevealOrderList'
-import { SqlPanel } from '../sql/SqlPanel'
 import { useUiStore, type LeftPanelTab } from '../shell/uiStore'
 import { AssetGrid } from './AssetGrid'
 import './leftPanel.css'
@@ -49,29 +49,33 @@ const TABS: TabInfo[] = [
     label: 'Reveal order',
     kicker: 'Reveal order',
   },
-  { id: 'sql', icon: Table2, label: 'Tables from SQL', kicker: 'Blueprint' },
-  { id: 'code', icon: CodeXml, label: 'Code simulation', kicker: 'Code' },
+  {
+    id: 'explain',
+    icon: Presentation,
+    label: 'Explain: SQL, code, system design, Git',
+    kicker: 'Explain',
+  },
 ]
 
 function TabBody({ tab }: { tab: LeftPanelTab }) {
   if (tab === 'files') return <AssetGrid />
   if (tab === 'order') return <RevealOrderList />
-  if (tab === 'code') return <CodePanel />
-  return <SqlPanel />
+  return <ExplainPanel />
 }
 
-function tabTitle(tab: LeftPanelTab, folderName?: string): string {
+function useTabTitle(tab: LeftPanelTab): string {
+  const folderName = useProjectStore((s) => s.project?.folderName)
+  const explainMode = useExplainStore((s) => s.mode)
   if (tab === 'files') return folderName ?? 'No folder open'
   if (tab === 'order') return 'This page'
-  if (tab === 'code') return 'Step through Python'
-  return 'Tables from SQL'
+  return findMode(explainMode).title
 }
 
 export function LeftPanel() {
   const isOpen = useUiStore((s) => s.isLeftPanelOpen)
   const tab = useUiStore((s) => s.leftPanelTab)
   const toggleLeftPanel = useUiStore((s) => s.toggleLeftPanel)
-  const folderName = useProjectStore((s) => s.project?.folderName)
+  const title = useTabTitle(tab)
   const info = TABS.find((t) => t.id === tab) ?? TABS[0]
   useRescanOnFocus()
 
@@ -96,7 +100,7 @@ export function LeftPanel() {
       >
         <header className="left-panel__header">
           <p className="menu-label">{info.kicker}</p>
-          <h2 className="left-panel__title">{tabTitle(tab, folderName)}</h2>
+          <h2 className="left-panel__title">{title}</h2>
         </header>
         <TabBody tab={tab} />
       </section>

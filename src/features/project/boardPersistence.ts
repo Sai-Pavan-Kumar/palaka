@@ -30,11 +30,11 @@ export function isApplyingSavedBoard(): boolean {
 }
 
 function applySavedBoard(text: string): void {
-  const { document, notes, sql } = parseBoard(text)
+  const { document, notes, sql, git } = parseBoard(text)
   isApplying = true
   try {
     useEngineStore.getState().replaceDocument(document)
-    useNotesStore.getState().replaceNotes(notes, sql)
+    useNotesStore.getState().replaceNotes(notes, sql, git)
   } finally {
     isApplying = false
   }
@@ -87,6 +87,7 @@ export function currentBoardText(): string {
     useEngineStore.getState().doc,
     useNotesStore.getState().notes,
     useNotesStore.getState().sql,
+    useNotesStore.getState().git,
   )
 }
 

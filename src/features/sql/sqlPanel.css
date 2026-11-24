@@ -87,3 +87,17 @@
   color: var(--color-text-primary);
   border-color: var(--color-border-active);
 }
+
+/* Same treatment as the selected Explain mode, so "what is loaded" reads
+   the same everywhere in the panel. */
+.sql-panel__chip.is-active,
+.sql-panel__chip.is-active:hover {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+  color: var(--color-surface-card-light);
+}
+
+.sql-panel__chip:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 1px;
+}
